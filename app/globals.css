@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-sans: var(--font-neue);
+    --font-display: var(--font-neue);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+    --radius: 0.75rem;
+    --background: #050505;
+    --foreground: #f5f7ff;
+    --card: #10131c;
+    --card-foreground: #f5f7ff;
+    --popover: #10131c;
+    --popover-foreground: #f5f7ff;
+    --primary: #2c61b8;
+    --primary-foreground: #ffffff;
+    --secondary: #f29c11;
+    --secondary-foreground: #14110b;
+    --muted: #171b27;
+    --muted-foreground: #9aa3b8;
+    --accent: #1a2030;
+    --accent-foreground: #f5f7ff;
+    --destructive: #e35d5d;
+    --border: #243049;
+    --input: rgb(255 255 255 / 12%);
+    --ring: #2c61b8;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    html {
+        color-scheme: dark;
+    }
+
+    body {
+        @apply min-h-svh bg-background font-sans text-foreground antialiased;
+        background-image: radial-gradient(
+            circle at center,
+            #1e2245 0%,
+            #050505 70%,
+            #000 100%
+        );
+        background-attachment: fixed;
+    }
+
+    a {
+        @apply transition-colors;
+    }
+}
+
+@utility font-display {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+}
