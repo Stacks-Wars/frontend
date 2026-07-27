@@ -99,7 +99,8 @@ export async function getCustodialWallet(
             error?: string
         } | null
         throw new Error(
-            body?.error ?? `Failed to load custodial wallet (${response.status})`
+            body?.error ??
+                `Failed to load custodial wallet (${response.status})`
         )
     }
 
