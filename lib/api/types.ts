@@ -89,3 +89,39 @@ export type CreateLobbyPayload = {
     creatorId: string
     isPrivate?: boolean
 }
+
+export type Season = {
+    id: number
+    name: string
+    description: string | null
+    startsAt: string
+    endsAt: string
+    createdAt: string
+}
+
+export type LeaderboardEntry = {
+    rank: number
+    userId: string
+    points: number
+    totalMatches: number
+    totalWins: number
+    totalPnl: number
+    winRateBps: number
+    username: string | null
+    displayName: string | null
+    avatarUrl: string | null
+}
+
+export type LeaderboardPage = {
+    items: LeaderboardEntry[]
+    total: number
+    limit: number
+    offset: number
+}
+
+export type LeaderboardQuery = {
+    seasonId?: number
+    gameId?: string
+    limit?: number
+    offset?: number
+}

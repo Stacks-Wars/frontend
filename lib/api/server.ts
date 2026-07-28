@@ -4,7 +4,10 @@ import type {
     CreateLobbyPayload,
     CustodialWallet,
     GameMetadata,
+    LeaderboardPage,
+    LeaderboardQuery,
     LobbyDetail,
+    Season,
     UpsertUserPayload,
 } from "@/lib/api/types"
 
@@ -160,6 +163,40 @@ export async function getCustodialWallet(
         publicKey: data.publicKey,
         network: data.network,
     }
+}
+
+export async function getCurrentSeason(): Promise<Season | null> {
+    const response = await fetch(`${getApiBaseUrl()}/seasons/current`, {
+        method: "GET",
+        cache: "no-store",
+    })
+    if (response.status === 404) return null
+    if (!response.ok) {
+        throw new Error(`Failed to load current season (${response.status})`)
+    }
+    return response.json()
+}
+
+export async function getLeaderboard(
+    query: LeaderboardQuery = {}
+): Promise<LeaderboardPage> {
+    const params = new URLSearchParams()
+    if (query.seasonId != null) params.set("seasonId", String(query.seasonId))
+    if (query.gameId) params.set("gameId", query.gameId)
+    if (query.limit != null) params.set("limit", String(query.limit))
+    if (query.offset != null) params.set("offset", String(query.offset))
+    const qs = params.toString()
+    const response = await fetch(
+        `${getApiBaseUrl()}/leaderboard${qs ? `?${qs}` : ""}`,
+        {
+            method: "GET",
+            cache: "no-store",
+        }
+    )
+    if (!response.ok) {
+        throw new Error(`Failed to load leaderboard (${response.status})`)
+    }
+    return response.json()
 }
 
 export async function createCustodialWallet(
