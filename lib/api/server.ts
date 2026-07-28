@@ -1,7 +1,10 @@
 import type {
     AppUser,
     CreateCustodialWalletPayload,
+    CreateLobbyPayload,
     CustodialWallet,
+    GameMetadata,
+    LobbyDetail,
     UpsertUserPayload,
 } from "@/lib/api/types"
 
@@ -25,30 +28,70 @@ function internalHeaders() {
     }
 }
 
-function mapUser(data: {
-    id: string
-    username: string | null
-    display_name: string | null
-    email: string
-    email_verified_at: string | null
-    wallet_address: string | null
-    wallet_verified_at: string | null
-    avatar_url: string | null
-    created_at: string
-    updated_at: string
-}): AppUser {
-    return {
-        id: data.id,
-        username: data.username,
-        displayName: data.display_name,
-        email: data.email,
-        emailVerifiedAt: data.email_verified_at,
-        walletAddress: data.wallet_address,
-        walletVerifiedAt: data.wallet_verified_at,
-        avatarUrl: data.avatar_url,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
+export async function listGames(): Promise<GameMetadata[]> {
+    const response = await fetch(`${getApiBaseUrl()}/games`, {
+        method: "GET",
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        throw new Error(`Failed to load games (${response.status})`)
     }
+    return response.json()
+}
+
+export async function getGame(gameId: string): Promise<GameMetadata | null> {
+    const response = await fetch(`${getApiBaseUrl()}/games/${gameId}`, {
+        method: "GET",
+        cache: "no-store",
+    })
+    if (response.status === 404) return null
+    if (!response.ok) {
+        throw new Error(`Failed to load game (${response.status})`)
+    }
+    return response.json()
+}
+
+export async function createLobby(
+    payload: CreateLobbyPayload
+): Promise<LobbyDetail> {
+    const response = await fetch(`${getApiBaseUrl()}/lobbies`, {
+        method: "POST",
+        headers: internalHeaders(),
+        body: JSON.stringify({
+            name: payload.name,
+            description: payload.description ?? null,
+            gameId: payload.gameId,
+            creatorId: payload.creatorId,
+            isPrivate: payload.isPrivate ?? false,
+        }),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+            error?: string
+        } | null
+        throw new Error(
+            body?.error ?? `Failed to create lobby (${response.status})`
+        )
+    }
+    return response.json()
+}
+
+export async function getLobbyByPath(
+    path: string
+): Promise<LobbyDetail | null> {
+    const response = await fetch(
+        `${getApiBaseUrl()}/lobbies/by-path/${path}`,
+        {
+            method: "GET",
+            cache: "no-store",
+        }
+    )
+    if (response.status === 404) return null
+    if (!response.ok) {
+        throw new Error(`Failed to load lobby (${response.status})`)
+    }
+    return response.json()
 }
 
 export async function upsertAppUser(
@@ -59,9 +102,9 @@ export async function upsertAppUser(
         headers: internalHeaders(),
         body: JSON.stringify({
             email: payload.email,
-            display_name: payload.displayName ?? null,
-            avatar_url: payload.avatarUrl ?? null,
-            email_verified_at: payload.emailVerifiedAt ?? null,
+            displayName: payload.displayName ?? null,
+            avatarUrl: payload.avatarUrl ?? null,
+            emailVerifiedAt: payload.emailVerifiedAt ?? null,
         }),
         cache: "no-store",
     })
@@ -75,7 +118,7 @@ export async function upsertAppUser(
         )
     }
 
-    return mapUser(await response.json())
+    return response.json()
 }
 
 export async function getCustodialWallet(
@@ -105,16 +148,16 @@ export async function getCustodialWallet(
     }
 
     const data = (await response.json()) as {
-        user_id: string
-        stx_address: string
-        public_key: string
+        userId: string
+        stxAddress: string
+        publicKey: string
         network: string
     }
 
     return {
-        userId: data.user_id,
-        stxAddress: data.stx_address,
-        publicKey: data.public_key,
+        userId: data.userId,
+        stxAddress: data.stxAddress,
+        publicKey: data.publicKey,
         network: data.network,
     }
 }
@@ -129,10 +172,10 @@ export async function createCustodialWallet(
             method: "POST",
             headers: internalHeaders(),
             body: JSON.stringify({
-                stx_address: payload.stxAddress,
-                public_key: payload.publicKey,
-                encrypted_mnemonic: payload.encryptedMnemonic,
-                kms_key_version: payload.kmsKeyVersion,
+                stxAddress: payload.stxAddress,
+                publicKey: payload.publicKey,
+                encryptedMnemonic: payload.encryptedMnemonic,
+                kmsKeyVersion: payload.kmsKeyVersion,
                 network: payload.network,
             }),
             cache: "no-store",
@@ -150,16 +193,16 @@ export async function createCustodialWallet(
     }
 
     const data = (await response.json()) as {
-        user_id: string
-        stx_address: string
-        public_key: string
+        userId: string
+        stxAddress: string
+        publicKey: string
         network: string
     }
 
     return {
-        userId: data.user_id,
-        stxAddress: data.stx_address,
-        publicKey: data.public_key,
+        userId: data.userId,
+        stxAddress: data.stxAddress,
+        publicKey: data.publicKey,
         network: data.network,
     }
 }

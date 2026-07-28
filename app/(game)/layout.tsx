@@ -1,7 +1,7 @@
 import { Footer } from "@/components/layout/footer"
 import { Header } from "@/components/layout/header"
 
-export default function MainLayout({
+export default function GameLayout({
     children,
 }: Readonly<{
     children: React.ReactNode

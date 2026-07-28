@@ -4,7 +4,7 @@ import * as React from "react"
 
 import { appSocket } from "@/lib/ws/app-socket"
 
-/** Opens the multiplexed `/app` socket once for the app shell lifetime. */
+/** Opens the multiplexed `/app` socket once for the app lifetime. */
 export function AppWsProvider() {
     React.useEffect(() => {
         appSocket.connect()

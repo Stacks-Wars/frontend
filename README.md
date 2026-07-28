@@ -1,6 +1,6 @@
 # Stacks Wars Frontend
 
-Next.js shell for the reimplemented Stacks Wars arena UI, Neon Auth, and app-user sync against the Rust backend.
+Next.js app for the Stacks Wars arena UI, Neon Auth, and app-user sync against the Rust backend.
 
 ## Stack
 

@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { CreateLobbyButton } from "@/components/games/create-lobby-button"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -46,12 +47,15 @@ export function GameCard({
                         />
                     </div>
                 </div>
-                <Link
-                    href={`/games?create=${slug}`}
-                    className={cn(buttonVariants(), "mt-6 w-fit")}
-                >
-                    Create Lobby
-                </Link>
+                <div className="mt-6 flex flex-wrap gap-2">
+                    <CreateLobbyButton game={{ id: slug, name }} />
+                    <Link
+                        href={`/game/${slug}`}
+                        className={cn(buttonVariants({ variant: "outline" }))}
+                    >
+                        See Game
+                    </Link>
+                </div>
             </div>
         </article>
     )

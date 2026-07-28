@@ -1,8 +1,11 @@
 import { Hero } from "@/components/landing/hero"
 import { GameCard } from "@/components/games/game-card"
-import { GAMES } from "@/lib/games"
+import { listGames } from "@/lib/api/server"
+import { gameVisual } from "@/lib/games"
 
-export default function HomePage() {
+export default async function HomePage() {
+    const games = await listGames().catch(() => [])
+
     return (
         <>
             <Hero />
@@ -18,9 +21,19 @@ export default function HomePage() {
                     </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
-                    {GAMES.map((game) => (
-                        <GameCard key={game.slug} {...game} />
-                    ))}
+                    {games.map((game) => {
+                        const visual = gameVisual(game.id)
+                        return (
+                            <GameCard
+                                key={game.id}
+                                name={game.name}
+                                slug={game.id}
+                                blurb={game.description}
+                                image={visual.image}
+                                accent={visual.accent}
+                            />
+                        )
+                    })}
                 </div>
             </section>
         </>
