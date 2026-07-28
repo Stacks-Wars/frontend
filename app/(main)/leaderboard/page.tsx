@@ -11,8 +11,8 @@ export default function LeaderboardPage() {
                 Leaderboard
             </h1>
             <p className="mt-2 max-w-xl text-muted-foreground">
-                Season standings shell — Wars Points and podium UI ready for
-                live stats.
+                Season standings — Wars Points and podium UI ready for live
+                stats.
             </p>
 
             <div className="mt-10 grid gap-4 md:grid-cols-3">

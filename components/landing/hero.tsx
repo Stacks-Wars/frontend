@@ -15,8 +15,8 @@ export function Hero() {
                     Rise of the Arena
                 </h1>
                 <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-                    A cleaner competitive shell for lobbies, seasons, and
-                    on-chain stakes — built for speed, not clutter.
+                    Competitive lobbies, seasons, and on-chain stakes — built
+                    for speed, not clutter.
                 </p>
                 <div className="mt-8 flex flex-wrap items-center gap-3">
                     <Link

@@ -3,8 +3,7 @@ export default function LobbyPage() {
         <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
             <h1 className="font-display text-4xl tracking-tight">Lobby</h1>
             <p className="mt-2 max-w-xl text-muted-foreground">
-                Live lobby browser shell. WebSocket feed and join flows land
-                here.
+                Live lobby browser. WebSocket feed and join flows land here.
             </p>
             <div className="mt-10 grid gap-3">
                 {[1, 2, 3].map((slot) => (
