@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { RiLockLine, RiSparkling2Line } from "@remixicon/react"
 
+import { GameArt } from "@/components/common/game-art"
 import { LobbyStatusBadge } from "@/components/common/status-badge"
 import { Badge, Button, Progress } from "@/components/ui"
 import type { GameMetadata, Lobby } from "@/lib/api/types"
@@ -24,6 +25,7 @@ export function LobbyCard({
     const capacity = game?.maxPlayers ?? Math.max(players, 2)
     const full = players >= capacity
     const joinable = lobby.status === "waiting" && !full
+    const gameName = game?.name ?? lobby.gameId
 
     return (
         <article
@@ -31,35 +33,51 @@ export function LobbyCard({
             style={{ "--index": index } as React.CSSProperties}
         >
             <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 space-y-1">
-                    <div className="flex items-center gap-1.5">
+                <div className="flex min-w-0 items-start gap-3">
+                    {showGame ? (
                         <Link
-                            href={`/room/${lobby.path}`}
-                            className="truncate font-display text-base hover:text-primary"
+                            href={`/games/${lobby.gameId}`}
+                            className="shrink-0"
+                            aria-label={gameName}
                         >
-                            {lobby.name}
-                        </Link>
-                        {lobby.isPrivate ? (
-                            <RiLockLine
-                                className="size-3.5 shrink-0 text-muted-foreground"
-                                aria-label="Private"
+                            <GameArt
+                                gameId={lobby.gameId}
+                                name={gameName}
+                                aspect="square"
+                                className="size-11 rounded-lg"
                             />
-                        ) : null}
+                        </Link>
+                    ) : null}
+                    <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-1.5">
+                            <Link
+                                href={`/room/${lobby.path}`}
+                                className="truncate font-display text-base hover:text-primary"
+                            >
+                                {lobby.name}
+                            </Link>
+                            {lobby.isPrivate ? (
+                                <RiLockLine
+                                    className="size-3.5 shrink-0 text-muted-foreground"
+                                    aria-label="Private"
+                                />
+                            ) : null}
+                        </div>
+                        <p className="truncate text-xs text-muted-foreground">
+                            {showGame ? (
+                                <>
+                                    <Link
+                                        href={`/games/${lobby.gameId}`}
+                                        className="hover:text-foreground"
+                                    >
+                                        {gameName}
+                                    </Link>
+                                    <span className="mx-1.5">·</span>
+                                </>
+                            ) : null}
+                            {timeAgo(lobby.createdAt)}
+                        </p>
                     </div>
-                    <p className="truncate text-xs text-muted-foreground">
-                        {showGame ? (
-                            <>
-                                <Link
-                                    href={`/games/${lobby.gameId}`}
-                                    className="hover:text-foreground"
-                                >
-                                    {game?.name ?? lobby.gameId}
-                                </Link>
-                                <span className="mx-1.5">·</span>
-                            </>
-                        ) : null}
-                        {timeAgo(lobby.createdAt)}
-                    </p>
                 </div>
                 <LobbyStatusBadge status={lobby.status} />
             </div>

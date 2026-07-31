@@ -29,7 +29,10 @@ function hue(seed: string): number {
 }
 
 function glyph(name: string): string {
-    const words = name.trim().split(/[\s_-]+/).filter(Boolean)
+    const words = name
+        .trim()
+        .split(/[\s_-]+/)
+        .filter(Boolean)
     if (words.length === 0) return "?"
     if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
     return `${words[0][0]}${words[1][0]}`.toUpperCase()
@@ -100,7 +103,7 @@ export function GameArt({
                     </span>
                 </>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-background/85 via-background/10 to-transparent" />
             {children}
         </div>
     )
