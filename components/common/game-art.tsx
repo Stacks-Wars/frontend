@@ -1,11 +1,14 @@
+"use client"
+
+import * as React from "react"
+
 import { cn } from "@/lib/utils"
 
 /**
- * Placeholder cover art.
+ * Game cover art.
  *
- * We have no game artwork yet, so each game gets a deterministic generated
- * cover: two hue-rotated washes plus a diagonal weave, seeded from the game id
- * so a game always looks the same everywhere it appears.
+ * Prefers `/games/{gameId}.png` from `public/`. If that asset is missing,
+ * falls back to a deterministic generated cover seeded from the game id.
  */
 
 type Aspect = "cover" | "square" | "banner"
@@ -32,6 +35,10 @@ function glyph(name: string): string {
     return `${words[0][0]}${words[1][0]}`.toUpperCase()
 }
 
+export function gameArtSrc(gameId: string): string {
+    return `/games/${gameId}.png`
+}
+
 export function GameArt({
     gameId,
     name,
@@ -45,6 +52,7 @@ export function GameArt({
     className?: string
     children?: React.ReactNode
 }) {
+    const [useFallback, setUseFallback] = React.useState(false)
     const base = hue(gameId)
     const secondary = (base + 58) % 360
 
@@ -55,27 +63,43 @@ export function GameArt({
                 ASPECT[aspect],
                 className
             )}
-            style={{
-                background: `radial-gradient(120% 100% at 15% 0%, oklch(0.55 0.19 ${base} / 0.75), transparent 62%),
+            style={
+                useFallback
+                    ? {
+                          background: `radial-gradient(120% 100% at 15% 0%, oklch(0.55 0.19 ${base} / 0.75), transparent 62%),
                     radial-gradient(110% 110% at 100% 100%, oklch(0.5 0.17 ${secondary} / 0.6), transparent 58%),
                     oklch(0.19 0.02 264)`,
-            }}
+                      }
+                    : undefined
+            }
         >
-            <div
-                aria-hidden
-                className="absolute inset-0 opacity-[0.18]"
-                style={{
-                    backgroundImage:
-                        "repeating-linear-gradient(135deg, oklch(1 0 0 / 0.5) 0 1px, transparent 1px 14px)",
-                }}
-            />
-            <span
-                aria-hidden
-                className="absolute inset-0 flex items-center justify-center font-display text-[clamp(2rem,22cqw,4.5rem)] leading-none text-white/12"
-                style={{ containerType: "inline-size" }}
-            >
-                {glyph(name)}
-            </span>
+            {!useFallback ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                    src={gameArtSrc(gameId)}
+                    alt=""
+                    className="absolute inset-0 size-full object-cover"
+                    onError={() => setUseFallback(true)}
+                />
+            ) : (
+                <>
+                    <div
+                        aria-hidden
+                        className="absolute inset-0 opacity-[0.18]"
+                        style={{
+                            backgroundImage:
+                                "repeating-linear-gradient(135deg, oklch(1 0 0 / 0.5) 0 1px, transparent 1px 14px)",
+                        }}
+                    />
+                    <span
+                        aria-hidden
+                        className="absolute inset-0 flex items-center justify-center font-display text-[clamp(2rem,22cqw,4.5rem)] leading-none text-white/12"
+                        style={{ containerType: "inline-size" }}
+                    >
+                        {glyph(name)}
+                    </span>
+                </>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
             {children}
         </div>
