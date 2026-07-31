@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { RiFlagLine, RiLoader4Line, RiLogoutBoxRLine, RiPlayFill } from "@remixicon/react"
 
 import {
@@ -34,6 +35,7 @@ export function RoomControls({
     game?: GameMetadata | null
     onForfeit?: () => void
 }) {
+    const router = useRouter()
     const toast = useNotificationsStore((s) => s.toast)
     const balance = useSessionStore((s) => s.balance)
     const { open: openAddFunds } = useAddFunds()
@@ -206,9 +208,33 @@ export function RoomControls({
                     <Button
                         variant="ghost"
                         disabled={pending !== null}
-                        onClick={() =>
-                            run("leave", () => leaveLobbyAction(lobby.id))
-                        }
+                        onClick={() => {
+                            void (async () => {
+                                setPending("leave")
+                                try {
+                                    const result = await leaveLobbyAction(
+                                        lobby.id
+                                    )
+                                    if (!result.ok) {
+                                        toast({
+                                            title:
+                                                result.error ??
+                                                "Could not leave lobby",
+                                            tone: "danger",
+                                        })
+                                        return
+                                    }
+                                    router.push("/lobbies")
+                                } catch {
+                                    toast({
+                                        title: "Network error. Try again.",
+                                        tone: "danger",
+                                    })
+                                } finally {
+                                    setPending(null)
+                                }
+                            })()
+                        }}
                     >
                         {pending === "leave" ? (
                             <RiLoader4Line className="animate-spin" />
