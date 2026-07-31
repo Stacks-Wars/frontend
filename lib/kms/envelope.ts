@@ -1,15 +1,6 @@
-import {
-    createCipheriv,
-    createDecipheriv,
-    randomBytes,
-    scryptSync,
-} from "node:crypto"
-
 import { KeyManagementServiceClient } from "@google-cloud/kms"
 
 import { getKmsConfig } from "@/lib/kms/config"
-
-const DEV_KEY_VERSION = "dev:local-aes-256-gcm"
 
 let kmsClient: KeyManagementServiceClient | null = null
 
@@ -30,7 +21,21 @@ function getServiceAccountCredentials() {
     }
 }
 
+function requireKmsConfig() {
+    if (
+        !process.env.GOOGLE_CLOUD_PROJECT?.trim() ||
+        !process.env.KMS_KEY_RING?.trim() ||
+        !process.env.KMS_CRYPTO_KEY?.trim() ||
+        !process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim()
+    ) {
+        throw new Error(
+            "Google Cloud KMS is required for custodial wallets. Set GOOGLE_CLOUD_PROJECT, KMS_KEY_RING, KMS_CRYPTO_KEY, and GOOGLE_SERVICE_ACCOUNT_KEY."
+        )
+    }
+}
+
 function getKmsClient() {
+    requireKmsConfig()
     if (!kmsClient) {
         const { projectId } = getKmsConfig()
         kmsClient = new KeyManagementServiceClient({
@@ -42,62 +47,8 @@ function getKmsClient() {
     return kmsClient
 }
 
-function hasKmsConfig() {
-    return Boolean(
-        process.env.GOOGLE_CLOUD_PROJECT &&
-        process.env.KMS_KEY_RING &&
-        process.env.KMS_CRYPTO_KEY &&
-        process.env.GOOGLE_SERVICE_ACCOUNT_KEY
-    )
-}
-
-function getDevSecretKey() {
-    const secret = process.env.CUSTODIAL_DEV_SECRET?.trim()
-    if (!secret || secret.length < 32) {
-        throw new Error(
-            "Set Google Cloud KMS env vars, or CUSTODIAL_DEV_SECRET (min 32 chars) for local development."
-        )
-    }
-
-    return scryptSync(secret, "stacks-wars-custodial", 32)
-}
-
-function encryptWithDevSecret(plaintext: string) {
-    const key = getDevSecretKey()
-    const iv = randomBytes(12)
-    const cipher = createCipheriv("aes-256-gcm", key, iv)
-    const encrypted = Buffer.concat([
-        cipher.update(plaintext, "utf8"),
-        cipher.final(),
-    ])
-    const tag = cipher.getAuthTag()
-
-    return {
-        ciphertext: Buffer.concat([iv, tag, encrypted]).toString("base64"),
-        kmsKeyVersion: DEV_KEY_VERSION,
-    }
-}
-
-function decryptWithDevSecret(ciphertextBase64: string) {
-    const key = getDevSecretKey()
-    const payload = Buffer.from(ciphertextBase64, "base64")
-    const iv = payload.subarray(0, 12)
-    const tag = payload.subarray(12, 28)
-    const encrypted = payload.subarray(28)
-    const decipher = createDecipheriv("aes-256-gcm", key, iv)
-    decipher.setAuthTag(tag)
-
-    return Buffer.concat([
-        decipher.update(encrypted),
-        decipher.final(),
-    ]).toString("utf8")
-}
-
 export async function encryptWithKms(plaintext: string) {
-    if (!hasKmsConfig()) {
-        return encryptWithDevSecret(plaintext)
-    }
-
+    requireKmsConfig()
     const { cryptoKeyName } = getKmsConfig()
     const [result] = await getKmsClient().encrypt({
         name: cryptoKeyName,
@@ -114,14 +65,9 @@ export async function encryptWithKms(plaintext: string) {
     }
 }
 
-export async function decryptWithKms(
-    ciphertextBase64: string,
-    kmsKeyVersion?: string
-) {
-    if (!hasKmsConfig() || kmsKeyVersion === DEV_KEY_VERSION) {
-        return decryptWithDevSecret(ciphertextBase64)
-    }
-
+/** Symmetric Cloud KMS ciphertext carries its own key version. */
+export async function decryptWithKms(ciphertextBase64: string) {
+    requireKmsConfig()
     const { cryptoKeyName } = getKmsConfig()
     const [result] = await getKmsClient().decrypt({
         name: cryptoKeyName,

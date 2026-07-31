@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200" fill="none">
+  <rect width="320" height="200" rx="12" fill="#162033"/>
+  <rect x="40" y="30" width="240" height="140" rx="8" fill="#2c61b8" fill-opacity="0.35"/>
+  <circle cx="100" cy="80" r="18" fill="#1a1a1a"/>
+  <circle cx="160" cy="110" r="18" fill="#f5f0e6"/>
+  <circle cx="220" cy="80" r="18" fill="#1a1a1a"/>
+  <text x="160" y="185" text-anchor="middle" fill="#9aa3b8" font-family="system-ui" font-size="12">Checkers</text>
+</svg>

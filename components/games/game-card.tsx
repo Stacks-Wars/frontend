@@ -1,62 +1,139 @@
-import Image from "next/image"
+"use client"
+
 import Link from "next/link"
+import { RiGroupLine, RiPlayCircleLine, RiTrophyLine } from "@remixicon/react"
 
-import { CreateLobbyButton } from "@/components/games/create-lobby-button"
-import { buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-
-export type GameCardProps = {
-    name: string
-    slug: string
-    blurb: string
-    image: string
-    accent?: string
-}
+import { GameArt } from "@/components/common/game-art"
+import { LiveNumber } from "@/components/common/live-number"
+import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
+import { Badge, Button, LiveDot } from "@/components/ui"
+import { isPlayable } from "@/games/playable"
+import type { GameActivity, GameMetadata } from "@/lib/api/types"
+import { compact, formatUsdc, label } from "@/lib/format"
 
 export function GameCard({
-    name,
-    slug,
-    blurb,
-    image,
-    accent = "from-primary/40",
-}: GameCardProps) {
+    game,
+    activity,
+    index = 0,
+}: {
+    game: GameMetadata
+    activity: GameActivity
+    index?: number
+}) {
+    const live = activity.liveLobbies > 0
+    const open = activity.waitingLobbies
+
     return (
-        <article className="group relative overflow-hidden rounded-[1.75rem] border border-border/70 bg-card">
-            <div
-                className={cn(
-                    "absolute inset-0 bg-linear-to-br to-transparent opacity-80 transition-opacity group-hover:opacity-100",
-                    accent
-                )}
-            />
-            <div className="relative flex min-h-64 flex-col justify-between p-5">
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <h3 className="font-display text-2xl tracking-tight">
-                            {name}
+        <article
+            className="stagger group flex animate-rise-in flex-col overflow-hidden rounded-2xl border border-border/70 transition-colors surface-raised hover:border-border-strong"
+            style={{ "--index": index } as React.CSSProperties}
+        >
+            <Link href={`/games/${game.id}`} className="relative block">
+                <GameArt gameId={game.id} name={game.name} aspect="cover" />
+                <div className="absolute top-3 left-3 flex gap-1.5">
+                    {live ? (
+                        <Badge variant="live">
+                            {compact(activity.liveLobbies)} live
+                        </Badge>
+                    ) : null}
+                    {!isPlayable(game.id) ? (
+                        <Badge variant="outline">Preview</Badge>
+                    ) : null}
+                </div>
+                <div className="absolute right-3 bottom-3 left-3 flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                        <h3 className="truncate font-display text-lg">
+                            {game.name}
                         </h3>
-                        <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-                            {blurb}
+                        <p className="text-xs text-muted-foreground">
+                            {game.minPlayers === game.maxPlayers
+                                ? `${game.minPlayers} players`
+                                : `${game.minPlayers}–${game.maxPlayers} players`}
                         </p>
                     </div>
-                    <div className="relative size-20 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                        <Image
-                            src={image}
-                            alt={name}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                    </div>
+                    {activity.openPotMicro > 0 ? (
+                        <span className="shrink-0 rounded-lg bg-gold/15 px-2 py-1 text-xs font-medium text-gold">
+                            {formatUsdc(activity.openPotMicro)} up
+                        </span>
+                    ) : null}
                 </div>
-                <div className="mt-6 flex flex-wrap gap-2">
-                    <CreateLobbyButton game={{ id: slug, name }} />
-                    <Link
-                        href={`/game/${slug}`}
-                        className={cn(buttonVariants({ variant: "outline" }))}
+            </Link>
+
+            <div className="flex flex-1 flex-col gap-4 p-4">
+                <p className="line-clamp-2 text-sm text-muted-foreground">
+                    {game.description}
+                </p>
+
+                <div className="flex flex-wrap gap-1.5">
+                    {game.categories.slice(0, 3).map((category) => (
+                        <Badge key={category} variant="outline">
+                            {label(category)}
+                        </Badge>
+                    ))}
+                </div>
+
+                <dl className="grid grid-cols-3 gap-2 border-t border-border/60 pt-3 text-center">
+                    <Metric
+                        icon={<RiGroupLine />}
+                        label="Playing"
+                        value={activity.activePlayers}
+                        accent={activity.activePlayers > 0}
+                    />
+                    <Metric
+                        icon={<RiPlayCircleLine />}
+                        label="Open"
+                        value={open}
+                    />
+                    <Metric
+                        icon={<RiTrophyLine />}
+                        label="Live"
+                        value={activity.liveLobbies}
+                    />
+                </dl>
+
+                <div className="mt-auto flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        render={<Link href={`/games/${game.id}`} />}
                     >
-                        See Game
-                    </Link>
+                        Open
+                    </Button>
+                    <CreateLobbyButton
+                        gameId={game.id}
+                        size="sm"
+                        className="flex-1"
+                        withIcon={false}
+                    >
+                        Create lobby
+                    </CreateLobbyButton>
                 </div>
             </div>
         </article>
+    )
+}
+
+function Metric({
+    icon,
+    label,
+    value,
+    accent,
+}: {
+    icon: React.ReactNode
+    label: string
+    value: number
+    accent?: boolean
+}) {
+    return (
+        <div className="space-y-0.5">
+            <dt className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground [&_svg]:size-3">
+                {accent ? <LiveDot /> : icon}
+                {label}
+            </dt>
+            <dd className="font-display text-base">
+                <LiveNumber value={value} />
+            </dd>
+        </div>
     )
 }

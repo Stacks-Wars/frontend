@@ -1,19 +1,59 @@
 import Link from "next/link"
+import { RiArrowLeftLine } from "@remixicon/react"
+
+import { Brand } from "@/components/shell/brand"
+import { Button } from "@/components/ui"
+
+const POINTS = [
+    "Entry fees sit in an on-chain vault, not with us.",
+    "Leave before the start and the refund is automatic.",
+    "Season points update the moment a match settles.",
+]
 
 export default function AuthLayout({
     children,
 }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <div className="min-h-svh bg-[radial-gradient(circle_at_top,rgba(44,97,184,0.22),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(242,156,17,0.12),transparent_30%)]">
-            <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-6 sm:px-6">
-                <Link
-                    href="/"
-                    className="font-display text-xl tracking-tight hover:text-secondary"
-                >
-                    Stacks Wars
-                </Link>
+        <div className="grid min-h-svh lg:grid-cols-2">
+            <div className="flex flex-col">
+                <div className="flex items-center justify-between px-4 py-6 sm:px-8">
+                    <Brand />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground"
+                        render={<Link href="/" />}
+                    >
+                        <RiArrowLeftLine />
+                        Home
+                    </Button>
+                </div>
+                <div className="flex flex-1 items-center justify-center px-4 pb-16 sm:px-8">
+                    <div className="w-full max-w-sm">{children}</div>
+                </div>
             </div>
-            {children}
+
+            <aside className="relative hidden overflow-hidden border-l border-border/60 bg-grid lg:block">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-gold/10" />
+                <div className="relative flex h-full flex-col justify-end gap-8 p-12">
+                    <p className="font-display text-4xl leading-tight">
+                        Skill games,
+                        <br />
+                        settled on-chain.
+                    </p>
+                    <ul className="space-y-3 border-t border-border/50 pt-6">
+                        {POINTS.map((point) => (
+                            <li
+                                key={point}
+                                className="flex gap-3 text-sm text-muted-foreground"
+                            >
+                                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                                {point}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </aside>
         </div>
     )
 }
