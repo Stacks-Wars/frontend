@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth/server"
 import type { AppUser } from "@/lib/api/types"
 
 type SessionUser = {
+    id: string
     email: string
     name?: string | null
     image?: string | null
@@ -34,14 +35,18 @@ function resolveEmailVerifiedAt(sessionUser: SessionUser) {
     return null
 }
 
-/** Sync Neon Auth identity to the API and provision a custodial vault on first signup. */
+/** Sync Neon Auth identity (`sub` = users.id) and provision custodial wallet. */
 export async function syncAuthUser(sessionUser: SessionUser): Promise<AppUser> {
+    if (!sessionUser.id?.trim()) {
+        throw new Error("Neon Auth user id (sub) is required.")
+    }
     const email = normalizeEmail(sessionUser.email)
     const displayName = sessionUser.name?.trim() || null
     const avatarUrl = sessionUser.image?.trim() || null
     const emailVerifiedAt = resolveEmailVerifiedAt(sessionUser)
 
     const user = await upsertAppUser({
+        id: sessionUser.id,
         email,
         displayName,
         avatarUrl,
@@ -60,9 +65,9 @@ export async function syncAuthUser(sessionUser: SessionUser): Promise<AppUser> {
 export async function getCurrentUser() {
     const { data: session } = await auth.getSession()
 
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !(session.user as { id?: string }).id) {
         throw new Error("You must be signed in.")
     }
 
-    return syncAuthUser(session.user)
+    return syncAuthUser(session.user as SessionUser)
 }

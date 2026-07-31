@@ -1,15 +1,32 @@
+import { cva, type VariantProps } from "class-variance-authority"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+const cardVariants = cva(
+    "rounded-2xl border border-border/70 text-card-foreground surface-raised",
+    {
+        variants: {
+            interactive: {
+                true: "transition hover:-translate-y-0.5 hover:border-border-strong",
+                false: "",
+            },
+        },
+        defaultVariants: {
+            interactive: false,
+        },
+    }
+)
+
+function Card({
+    className,
+    interactive = false,
+    ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof cardVariants>) {
     return (
         <div
             data-slot="card"
-            className={cn(
-                "rounded-2xl border border-border/70 bg-card/80 text-card-foreground backdrop-blur-sm",
-                className
-            )}
+            className={cn(cardVariants({ interactive, className }))}
             {...props}
         />
     )
@@ -29,7 +46,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
     return (
         <h3
             data-slot="card-title"
-            className={cn("text-lg leading-none font-semibold", className)}
+            className={cn("font-display text-lg leading-none", className)}
             {...props}
         />
     )
@@ -55,4 +72,25 @@ function CardContent({ className, ...props }: React.ComponentProps<"div">) {
     )
 }
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent }
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+    return (
+        <div
+            data-slot="card-footer"
+            className={cn(
+                "flex items-center gap-3 border-t border-border/60 px-6 py-4",
+                className
+            )}
+            {...props}
+        />
+    )
+}
+
+export {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+    CardFooter,
+    cardVariants,
+}

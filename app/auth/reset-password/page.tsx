@@ -84,8 +84,8 @@ function ResetPasswordForm() {
     }
 
     return (
-        <div className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-lg items-center px-4 py-8 sm:px-6">
-            <Card className="w-full self-center">
+        <div className="w-full">
+            <Card className="w-full">
                 <CardHeader>
                     <CardTitle>Set a new password</CardTitle>
                     <CardDescription>

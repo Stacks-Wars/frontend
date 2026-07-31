@@ -12,7 +12,7 @@ type GoogleOAuthButtonProps = {
 }
 
 export function GoogleOAuthButton({
-    callbackURL = "/games",
+    callbackURL = "/",
     label = "Continue with Google",
 }: GoogleOAuthButtonProps) {
     const [isLoading, setIsLoading] = React.useState(false)

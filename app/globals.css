@@ -4,10 +4,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-sans: var(--font-neue);
-    --font-display: var(--font-neue);
+    --font-sans: var(--font-neue), ui-sans-serif, system-ui, sans-serif;
+    --font-display: var(--font-neue), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
     --color-background: var(--background);
     --color-foreground: var(--foreground);
+    --color-surface: var(--surface);
+    --color-surface-foreground: var(--surface-foreground);
     --color-card: var(--card);
     --color-card-foreground: var(--card-foreground);
     --color-popover: var(--popover);
@@ -20,36 +24,63 @@
     --color-muted-foreground: var(--muted-foreground);
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
+    --color-gold: var(--gold);
+    --color-gold-foreground: var(--gold-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
     --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-live: var(--live);
     --color-border: var(--border);
+    --color-border-strong: var(--border-strong);
     --color-input: var(--input);
     --color-ring: var(--ring);
+
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 10px);
+    --radius-3xl: calc(var(--radius) + 18px);
 }
 
 :root {
     --radius: 0.75rem;
-    --background: #050505;
-    --foreground: #f5f7ff;
-    --card: #10131c;
-    --card-foreground: #f5f7ff;
-    --popover: #10131c;
-    --popover-foreground: #f5f7ff;
-    --primary: #2c61b8;
-    --primary-foreground: #ffffff;
-    --secondary: #f29c11;
-    --secondary-foreground: #14110b;
-    --muted: #171b27;
-    --muted-foreground: #9aa3b8;
-    --accent: #1a2030;
-    --accent-foreground: #f5f7ff;
-    --destructive: #e35d5d;
-    --border: #243049;
-    --input: rgb(255 255 255 / 12%);
-    --ring: #2c61b8;
+
+    --background: oklch(0.145 0.012 264);
+    --foreground: oklch(0.971 0.006 264);
+    --surface: oklch(0.178 0.014 264);
+    --surface-foreground: oklch(0.971 0.006 264);
+    --card: oklch(0.192 0.015 264);
+    --card-foreground: oklch(0.971 0.006 264);
+    --popover: oklch(0.205 0.016 264);
+    --popover-foreground: oklch(0.971 0.006 264);
+
+    --primary: oklch(0.672 0.183 259);
+    --primary-foreground: oklch(0.145 0.012 264);
+    --secondary: oklch(0.262 0.019 264);
+    --secondary-foreground: oklch(0.971 0.006 264);
+    --muted: oklch(0.242 0.017 264);
+    --muted-foreground: oklch(0.688 0.019 264);
+    --accent: oklch(0.288 0.028 264);
+    --accent-foreground: oklch(0.971 0.006 264);
+
+    --gold: oklch(0.812 0.152 79);
+    --gold-foreground: oklch(0.185 0.03 79);
+    --success: oklch(0.723 0.168 156);
+    --success-foreground: oklch(0.16 0.03 156);
+    --warning: oklch(0.795 0.148 68);
+    --warning-foreground: oklch(0.18 0.03 68);
+    --destructive: oklch(0.652 0.213 20);
+    --destructive-foreground: oklch(0.98 0.01 20);
+    --live: oklch(0.688 0.232 12);
+
+    --border: oklch(0.288 0.018 264);
+    --border-strong: oklch(0.372 0.024 264);
+    --input: oklch(1 0 0 / 8%);
+    --ring: oklch(0.672 0.183 259);
 }
 
 @layer base {
@@ -59,25 +90,160 @@
 
     html {
         color-scheme: dark;
+        -webkit-tap-highlight-color: transparent;
     }
 
     body {
         @apply min-h-svh bg-background font-sans text-foreground antialiased;
-        background-image: radial-gradient(
-            circle at center,
-            #1e2245 0%,
-            #050505 70%,
-            #000 100%
-        );
+        background-image:
+            radial-gradient(
+                ellipse 70% 45% at 50% -8%,
+                oklch(0.672 0.183 259 / 0.2),
+                transparent 60%
+            ),
+            radial-gradient(
+                ellipse 50% 40% at 100% 8%,
+                oklch(0.688 0.232 12 / 0.07),
+                transparent 60%
+            ),
+            radial-gradient(
+                ellipse 60% 50% at 0% 60%,
+                oklch(0.812 0.152 79 / 0.04),
+                transparent 60%
+            );
         background-attachment: fixed;
+        background-repeat: no-repeat;
+    }
+
+    ::selection {
+        background: oklch(0.672 0.183 259 / 0.32);
     }
 
     a {
         @apply transition-colors;
     }
+
+    /* Numeric alignment for money, ranks, counters. */
+    .tnum {
+        font-variant-numeric: tabular-nums;
+    }
 }
 
 @utility font-display {
-    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+/* Faint grid used behind hero / empty stages. */
+@utility bg-grid {
+    background-image:
+        linear-gradient(to right, oklch(1 0 0 / 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, oklch(1 0 0 / 0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+}
+
+/* Card surface with a hairline top highlight. */
+@utility surface-raised {
+    background:
+        linear-gradient(
+            to bottom,
+            oklch(1 0 0 / 0.04),
+            transparent 40%
+        ),
+        var(--card);
+}
+
+@keyframes rise-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pop-in {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes live-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 oklch(0.688 0.232 12 / 0.55);
+    }
+    50% {
+        opacity: 0.75;
+        box-shadow: 0 0 0 5px oklch(0.688 0.232 12 / 0);
+    }
+}
+
+@keyframes shimmer {
+    from {
+        background-position: -200% 0;
+    }
+    to {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@utility animate-rise-in {
+    animation: rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-pop-in {
+    animation: pop-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-live-pulse {
+    animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@utility animate-marquee {
+    animation: marquee 40s linear infinite;
+}
+
+@utility shimmer {
+    background-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        oklch(1 0 0 / 0.06) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Stagger helper for list entrances. */
+@utility stagger {
+    animation-delay: calc(var(--index, 0) * 45ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
