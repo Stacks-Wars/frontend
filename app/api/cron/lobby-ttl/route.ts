@@ -30,7 +30,7 @@ function apiBase() {
 }
 
 function cronAuthorized(request: Request): boolean {
-    const secret = process.env.CRON_SECRET?.trim() || process.env.INTERNAL_API_SECRET?.trim()
+    const secret = process.env.INTERNAL_API_SECRET?.trim()
     if (!secret) return false
     const header = request.headers.get("authorization")
     const bearer = header?.startsWith("Bearer ") ? header.slice(7) : null
