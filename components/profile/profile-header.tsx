@@ -1,5 +1,6 @@
 import { RiCalendarLine } from "@remixicon/react"
 
+import { GetDeveloperId } from "@/components/profile/get-developer-id"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui"
 import type { UserProfile } from "@/lib/api/types"
 import { compact, displayNameFor, formatDate, ordinal } from "@/lib/format"
@@ -22,7 +23,7 @@ export function ProfileHeader({ profile }: { profile: UserProfile }) {
             <div aria-hidden className="absolute inset-0 -z-10 bg-grid" />
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 bg-gradient-to-r from-primary/15 via-transparent to-gold/10"
+                className="absolute inset-0 -z-10 bg-linear-to-r from-primary/15 via-transparent to-gold/10"
             />
             <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-6 p-5 sm:p-6">
                 <div className="flex min-w-0 items-center gap-4">
@@ -41,10 +42,13 @@ export function ProfileHeader({ profile }: { profile: UserProfile }) {
                                 @{user.username}
                             </p>
                         ) : null}
-                        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <RiCalendarLine className="size-3.5" />
-                            Joined {formatDate(user.createdAt)}
-                        </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <RiCalendarLine className="size-3.5" />
+                                Joined {formatDate(user.createdAt)}
+                            </p>
+                            <GetDeveloperId userId={user.id} />
+                        </div>
                     </div>
                 </div>
 
@@ -90,7 +94,12 @@ function Headline({
             <dt className="text-[11px] font-medium tracking-[0.16em] text-muted-foreground uppercase">
                 {label}
             </dt>
-            <dd className={cn("tnum font-display text-2xl leading-none", accent)}>
+            <dd
+                className={cn(
+                    "tnum font-display text-2xl leading-none",
+                    accent
+                )}
+            >
                 {value}
             </dd>
         </div>
