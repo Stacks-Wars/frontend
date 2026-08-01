@@ -6,7 +6,7 @@ Next.js app for the Stacks Wars arena UI, Neon Auth, and app-user sync against t
 
 - Next.js 16 / React 19 / Tailwind CSS v4
 - Neon Auth (`@neondatabase/auth`) — same flow as Chill Flow
-- Custodial Stacks wallets via `@stacks/wallet-sdk` + Google Cloud KMS
+- Custodial Stacks wallets via `@stacks/wallet-sdk` (`CUSTODIAL_DEV_SECRET` locally; Google Cloud KMS in production)
 - Posts synced users to the Rust API (`POST /users`) with Bearer JWT
 
 ## Develop
