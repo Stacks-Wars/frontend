@@ -57,30 +57,33 @@ export function CheckersBoardView({
                         const isSelected =
                             selected != null && samePosition(selected, position)
                         const isDestination = destinations.has(key)
-                        const canPick =
-                            interactive && origins.has(key) && !selected
+                        const isMovable = interactive && origins.has(key)
                         const inLastMove =
                             lastMove != null &&
                             (samePosition(lastMove.from, position) ||
                                 samePosition(lastMove.to, position))
 
+                        // Origins stay clickable while another piece is selected
+                        // so players can switch focus mid-turn.
+                        const canClick =
+                            interactive &&
+                            (isMovable || isDestination || isSelected)
+
                         return (
                             <button
                                 key={key}
                                 type="button"
-                                disabled={
-                                    !interactive ||
-                                    (!canPick && !isDestination && !isSelected)
-                                }
+                                disabled={!canClick}
                                 onClick={() => onSelect(position)}
                                 aria-label={`Square ${row + 1}, ${col + 1}`}
                                 className={cn(
                                     "relative aspect-square transition-colors",
                                     dark
-                                        ? "bg-[oklch(0.28_0.03_264)]"
-                                        : "bg-[oklch(0.86_0.02_84)]",
+                                        ? "bg-[oklch(0.48_0.05_250)]"
+                                        : "bg-[oklch(0.88_0.02_84)]",
                                     inLastMove && "bg-primary/25",
-                                    isSelected && "ring-2 ring-primary ring-inset",
+                                    isSelected &&
+                                        "ring-2 ring-primary ring-inset",
                                     !interactive && "cursor-default"
                                 )}
                             >
@@ -89,9 +92,10 @@ export function CheckersBoardView({
                                         className={cn(
                                             "absolute inset-[14%] grid place-items-center rounded-full shadow-lg transition-transform",
                                             piece.color === "black"
-                                                ? "bg-[oklch(0.24_0.02_264)] ring-2 ring-white/15 ring-inset"
-                                                : "bg-[oklch(0.72_0.19_25)] ring-2 ring-white/25 ring-inset",
-                                            canPick && "hover:scale-105"
+                                                ? "bg-[oklch(0.16_0.01_264)] ring-2 ring-white/55 ring-inset"
+                                                : "bg-[oklch(0.72_0.19_25)] ring-2 ring-white/30 ring-inset",
+                                            isMovable &&
+                                                "animate-piece-nudge hover:scale-105"
                                         )}
                                     >
                                         {piece.kind === "king" ? (
@@ -111,8 +115,8 @@ export function CheckersBoardView({
                                     </span>
                                 ) : null}
 
-                                {canPick ? (
-                                    <span className="absolute inset-1 rounded-md ring-1 ring-primary/40 ring-inset" />
+                                {isMovable ? (
+                                    <span className="absolute inset-1 animate-live-pulse rounded-md ring-1 ring-primary/55 ring-inset" />
                                 ) : null}
                             </button>
                         )

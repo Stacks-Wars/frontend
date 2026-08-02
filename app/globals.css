@@ -188,6 +188,26 @@
     }
 }
 
+@keyframes piece-nudge {
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-2px) scale(1.04);
+    }
+}
+
+@keyframes action-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 oklch(0.672 0.183 259 / 0.28);
+    }
+    50% {
+        box-shadow: 0 0 0 5px oklch(0.672 0.183 259 / 0);
+    }
+}
+
 @keyframes shimmer {
     from {
         background-position: -200% 0;
@@ -216,6 +236,14 @@
 
 @utility animate-live-pulse {
     animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@utility animate-piece-nudge {
+    animation: piece-nudge 1.1s ease-in-out infinite;
+}
+
+@utility animate-action-pulse {
+    animation: action-pulse 1.4s ease-in-out infinite;
 }
 
 @utility animate-marquee {

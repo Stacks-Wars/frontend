@@ -20,11 +20,12 @@ import { TurnBar } from "@/games/shared/turn-bar"
 import type { GameRoomProps } from "@/games/types"
 import { displayNameFor } from "@/lib/format"
 
-function pieceCount(board: CheckersBoard | null, color: "red" | "black"): number {
+function pieceCount(
+    board: CheckersBoard | null,
+    color: "red" | "black"
+): number {
     if (!board) return 0
-    return board.cells
-        .flat()
-        .filter((piece) => piece?.color === color).length
+    return board.cells.flat().filter((piece) => piece?.color === color).length
 }
 
 export function CheckersRoom({
@@ -148,16 +149,18 @@ export function CheckersRoom({
                 <TurnBar
                     name={turn ? displayNameFor(turn.player) : null}
                     isYou={Boolean(isMyTurn)}
-                    timeoutSecs={turn?.timeoutSecs}
+                    timeoutSecs={isMyTurn ? turn?.timeoutSecs : null}
                     resetKey={
-                        turn ? `${turn.player.userId}-${lines.length}` : "idle"
+                        turn
+                            ? `${turn.player.userId}-${turn.timeoutSecs}`
+                            : "idle"
                     }
                     hint={
                         error ??
                         (isMyTurn
                             ? selected
-                                ? "Pick a highlighted square"
-                                : "Select a piece to move"
+                                ? "Pick a square — or tap another piece"
+                                : "Tap a glowing piece to move"
                             : undefined)
                     }
                 />
@@ -174,7 +177,7 @@ export function CheckersRoom({
                         onSelect={onSelect}
                     />
                 ) : (
-                    <div className="grid aspect-square w-full max-w-[560px] animate-pulse grid-cols-8 overflow-hidden rounded-xl">
+                    <div className="grid aspect-square w-full max-w-140 animate-pulse grid-cols-8 overflow-hidden rounded-xl">
                         {Array.from({ length: 64 }).map((_, index) => (
                             <div
                                 key={index}

@@ -108,8 +108,12 @@ export function LexiWarsRoom({
                 <TurnBar
                     name={turn ? displayNameFor(turn.player) : null}
                     isYou={Boolean(isMyTurn)}
-                    timeoutSecs={turn?.timeoutSecs}
-                    resetKey={turn?.player.userId ?? "idle"}
+                    timeoutSecs={isMyTurn ? turn?.timeoutSecs : null}
+                    resetKey={
+                        turn
+                            ? `${turn.player.userId}-${turn.timeoutSecs}`
+                            : "idle"
+                    }
                     hint={`${remaining} still standing`}
                 />
             }
