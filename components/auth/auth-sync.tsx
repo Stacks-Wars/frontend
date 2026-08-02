@@ -5,6 +5,7 @@ import * as React from "react"
 import { getMyBalance } from "@/actions/wallet"
 import { syncAuthUser } from "@/actions/users"
 import { authClient } from "@/lib/auth/client"
+import { isEmailVerified, isVerificationDisabled } from "@/lib/auth/flags"
 import {
     clearAccessTokenCache,
     useUserTopic,
@@ -41,6 +42,19 @@ export function AuthSync() {
             const current =
                 id && email ? { id, email, name, image, emailVerified } : null
             if (!current) {
+                clearAccessTokenCache()
+                setUser(null)
+                setBalance(null)
+                setLoading(false)
+                return
+            }
+
+            // Keep unverified email signups out of the app users table until OTP passes
+            // (unless local DISABLE_VERIFICATION is set).
+            if (
+                !isVerificationDisabled() &&
+                !isEmailVerified(emailVerified)
+            ) {
                 clearAccessTokenCache()
                 setUser(null)
                 setBalance(null)

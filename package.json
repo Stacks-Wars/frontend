@@ -24,6 +24,7 @@
         "@tanstack/react-query": "^5.101.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "fakeout": "^1.0.74",
         "next": "16.2.12",
         "next-themes": "^0.4.6",
         "react": "19.2.4",

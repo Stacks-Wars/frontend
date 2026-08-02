@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -7,7 +8,9 @@ import { useForm } from "react-hook-form"
 
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button"
 import { OAuthDivider } from "@/components/auth/oauth-divider"
+import { VerifyEmailOtp } from "@/components/auth/verify-email-otp"
 import { authClient } from "@/lib/auth/client"
+import { isVerificationDisabled } from "@/lib/auth/flags"
 import { signUpSchema, type SignUpFormValues } from "@/lib/auth/schemas"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,26 +18,58 @@ import { Label } from "@/components/ui/label"
 
 export default function SignUpPage() {
     const router = useRouter()
+    const skipVerification = isVerificationDisabled()
+    const [pendingEmail, setPendingEmail] = React.useState<string | null>(null)
     const {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
         setError,
+        reset,
     } = useForm<SignUpFormValues>({
         resolver: zodResolver(signUpSchema),
         defaultValues: { name: "", email: "", password: "" },
     })
 
+    function enterApp() {
+        router.push("/")
+        router.refresh()
+    }
+
     async function onSubmit(values: SignUpFormValues) {
-        const { error } = await authClient.signUp.email(values)
+        const { data, error } = await authClient.signUp.email(values)
         if (error) {
             setError("root", {
                 message: error.message || "Failed to create account.",
             })
             return
         }
-        router.push("/")
-        router.refresh()
+
+        if (skipVerification) {
+            enterApp()
+            return
+        }
+
+        // Neon Verify-at-Sign-up (code): OTP is emailed; stay on this page until verified.
+        if (data?.user && !data.user.emailVerified) {
+            setPendingEmail(values.email)
+            return
+        }
+
+        enterApp()
+    }
+
+    if (pendingEmail && !skipVerification) {
+        return (
+            <VerifyEmailOtp
+                email={pendingEmail}
+                onVerified={enterApp}
+                onBack={() => {
+                    setPendingEmail(null)
+                    reset({ name: "", email: "", password: "" })
+                }}
+            />
+        )
     }
 
     return (
@@ -67,6 +102,7 @@ export default function SignUpPage() {
                         <Input
                             id="email"
                             type="email"
+                            autoComplete="email"
                             {...register("email")}
                         />
                         {errors.email ? (
@@ -80,6 +116,7 @@ export default function SignUpPage() {
                         <Input
                             id="password"
                             type="password"
+                            autoComplete="new-password"
                             {...register("password")}
                         />
                         {errors.password ? (
