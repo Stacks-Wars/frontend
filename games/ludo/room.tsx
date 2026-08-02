@@ -26,6 +26,27 @@ type Dice = {
     dice2Remaining: boolean
 }
 
+function orderedPlayableValues(
+    dice1: number | null,
+    dice2: number | null,
+    playable: number[]
+): number[] {
+    if (dice1 == null || dice2 == null) return playable
+    const preferred = [dice1, dice1 + dice2, dice2]
+    const seen = new Set<number>()
+    const ordered: number[] = []
+    for (const value of preferred) {
+        if (playable.includes(value) && !seen.has(value)) {
+            seen.add(value)
+            ordered.push(value)
+        }
+    }
+    for (const value of playable) {
+        if (!seen.has(value)) ordered.push(value)
+    }
+    return ordered
+}
+
 export function LudoRoom({
     players,
     selfUserId,
@@ -57,6 +78,10 @@ export function LudoRoom({
     const [movablePawns, setMovablePawns] = React.useState<number[]>(
         snapshot?.movablePawns ?? []
     )
+    /** Engine-driven shot clock (roll = 5s, move = 15s via countdown events). */
+    const [clockSecs, setClockSecs] = React.useState<number | null>(
+        snapshot?.turn?.timeoutSecs ?? null
+    )
     const [error, setError] = React.useState<string | null>(null)
     const { lines, push } = useEventFeed()
 
@@ -79,7 +104,12 @@ export function LudoRoom({
                     setPlayableValues([])
                     setSelectedValue(null)
                     setMovablePawns([])
+                    setClockSecs(event.timeoutSecs)
                     setError(null)
+                    break
+                case "countdown":
+                    // Engine is the source of truth for remaining time (5s roll / 15s move).
+                    setClockSecs(event.time)
                     break
                 case "diceRolled":
                     setPhase("WaitingForMove")
@@ -92,6 +122,7 @@ export function LudoRoom({
                     setPlayableValues(event.playableValues)
                     setSelectedValue(null)
                     setMovablePawns([])
+                    // Next `countdown` tick carries MOVE_TIMEOUT_SECS from the engine.
                     push(
                         `${displayNameFor(event.player)} rolled ${event.dice1} and ${event.dice2}`
                     )
@@ -127,13 +158,22 @@ export function LudoRoom({
                     )
                     break
                 case "bonusTurn":
-                    push(`${displayNameFor(event.player)} earned a bonus turn`, "good")
+                    push(
+                        `${displayNameFor(event.player)} earned a bonus turn`,
+                        "good"
+                    )
                     break
                 case "noValidMoves":
-                    push(`${displayNameFor(event.player)} had no legal move`, "muted")
+                    push(
+                        `${displayNameFor(event.player)} had no legal move`,
+                        "muted"
+                    )
                     break
                 case "playerQuit":
-                    push(`${displayNameFor(event.player)} left the match`, "muted")
+                    push(
+                        `${displayNameFor(event.player)} left the match`,
+                        "muted"
+                    )
                     break
                 case "invalid":
                     setError(event.reason)
@@ -148,6 +188,12 @@ export function LudoRoom({
     const live = connection === "open"
     const myPlayerIndex =
         board?.players.find((p) => p.userId === selfUserId)?.playerIndex ?? null
+
+    const moveValues = orderedPlayableValues(
+        dice.dice1,
+        dice.dice2,
+        playableValues
+    )
 
     function roll() {
         setError(null)
@@ -171,14 +217,6 @@ export function LudoRoom({
                     value={dice.dice1}
                     spent={dice.dice1 != null && !dice.dice1Remaining}
                 />
-                {dice.dice1 != null && dice.dice2 != null ? (
-                    <span
-                        className="font-display text-2xl text-gold tabular-nums"
-                        aria-label={`Sum ${dice.dice1 + dice.dice2}`}
-                    >
-                        {dice.dice1 + dice.dice2}
-                    </span>
-                ) : null}
                 <Die
                     value={dice.dice2}
                     spent={dice.dice2 != null && !dice.dice2Remaining}
@@ -186,7 +224,13 @@ export function LudoRoom({
             </div>
 
             {isMyTurn && phase === "WaitingForRoll" ? (
-                <Button variant="primary" size="lg" disabled={!live} onClick={roll}>
+                <Button
+                    variant="primary"
+                    size="lg"
+                    disabled={!live}
+                    onClick={roll}
+                    className="animate-action-pulse"
+                >
                     Roll the dice
                 </Button>
             ) : null}
@@ -197,24 +241,30 @@ export function LudoRoom({
                         <p className="text-xs text-muted-foreground">
                             {selectedValue == null
                                 ? "Choose a value to play"
-                                : "Tap a highlighted pawn"}
+                                : "Tap a glowing pawn"}
                         </p>
                         <div className="flex flex-wrap justify-center gap-2">
-                            {playableValues.map((value) => (
-                                <Button
-                                    key={value}
-                                    size="sm"
-                                    variant={
-                                        selectedValue === value
-                                            ? "primary"
-                                            : "outline"
-                                    }
-                                    disabled={!live}
-                                    onClick={() => chooseValue(value)}
-                                >
-                                    Move {value}
-                                </Button>
-                            ))}
+                            {moveValues.map((value) => {
+                                const selected = selectedValue === value
+                                return (
+                                    <Button
+                                        key={value}
+                                        size="sm"
+                                        variant={
+                                            selected ? "primary" : "outline"
+                                        }
+                                        disabled={!live}
+                                        onClick={() => chooseValue(value)}
+                                        className={
+                                            selectedValue == null
+                                                ? "animate-action-pulse"
+                                                : undefined
+                                        }
+                                    >
+                                        Move {value}
+                                    </Button>
+                                )
+                            })}
                         </div>
                     </div>
                 ) : (
@@ -225,7 +275,9 @@ export function LudoRoom({
             ) : null}
 
             {error ? (
-                <p className="animate-pop-in text-sm text-destructive">{error}</p>
+                <p className="animate-pop-in text-sm text-destructive">
+                    {error}
+                </p>
             ) : null}
         </div>
     )
@@ -236,13 +288,15 @@ export function LudoRoom({
                 <TurnBar
                     name={turn ? displayNameFor(turn.player) : null}
                     isYou={Boolean(isMyTurn)}
-                    timeoutSecs={turn?.timeoutSecs}
-                    resetKey={`${turn?.player.userId ?? "idle"}-${phase}`}
+                    timeoutSecs={isMyTurn ? clockSecs : null}
+                    resetKey={`${turn?.player.userId ?? "idle"}-${phase}-${clockSecs ?? 0}`}
                     hint={
                         isMyTurn
                             ? phase === "WaitingForRoll"
                                 ? "Roll to start your turn"
-                                : "Play your dice"
+                                : selectedValue == null
+                                  ? "Play your dice"
+                                  : "Tap a glowing pawn"
                             : undefined
                     }
                 />
@@ -258,7 +312,7 @@ export function LudoRoom({
                             onMovePawn={movePawn}
                         />
                     ) : (
-                        <div className="aspect-square w-full max-w-[620px] animate-pulse rounded-xl bg-muted/50" />
+                        <div className="aspect-square w-full max-w-155 animate-pulse rounded-xl bg-muted/50" />
                     )}
                     {controls}
                 </div>
@@ -283,7 +337,10 @@ export function LudoRoom({
                             }
                         })}
                     />
-                    <EventFeed lines={lines} emptyLabel="Waiting for the first roll…" />
+                    <EventFeed
+                        lines={lines}
+                        emptyLabel="Waiting for the first roll…"
+                    />
                 </>
             }
         />
@@ -297,9 +354,13 @@ export function LudoLobbyPanel({ rush }: { rush?: boolean }) {
                 How {rush ? "Ludo Rush" : "Ludo"} plays here
             </p>
             <ul className="space-y-1.5 text-sm text-muted-foreground">
-                <li>Two dice per turn — play each value separately or as a sum.</li>
+                <li>
+                    Two dice per turn — play each value separately or as a sum.
+                </li>
                 <li>Only a single die can bring a pawn out of the yard.</li>
-                <li>Land on an opponent off a safe square to send them home.</li>
+                <li>
+                    Land on an opponent off a safe square to send them home.
+                </li>
                 <li>
                     {rush
                         ? "Shorter track, faster finishes."

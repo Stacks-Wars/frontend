@@ -4,7 +4,7 @@ import { Countdown } from "@/components/common/countdown"
 import { Avatar, AvatarFallback } from "@/components/ui"
 import { cn } from "@/lib/utils"
 
-/** Whose turn it is, plus the shot clock. The loudest element on the stage. */
+/** Whose turn it is. The shot clock only renders on your turn. */
 export function TurnBar({
     name,
     isYou,
@@ -15,11 +15,13 @@ export function TurnBar({
 }: {
     name: string | null
     isYou: boolean
-    timeoutSecs?: number
+    timeoutSecs?: number | null
     resetKey?: string | number
     hint?: React.ReactNode
     className?: string
 }) {
+    const showClock = Boolean(isYou && timeoutSecs && timeoutSecs > 0)
+
     return (
         <div
             className={cn(
@@ -49,9 +51,9 @@ export function TurnBar({
                     </p>
                 ) : null}
             </div>
-            {timeoutSecs && timeoutSecs > 0 ? (
+            {showClock ? (
                 <Countdown
-                    seconds={timeoutSecs}
+                    seconds={timeoutSecs!}
                     resetKey={resetKey}
                     className="text-lg"
                 />

@@ -145,10 +145,8 @@ export function LudoBoardView({
                             onClick={() => onMovePawn(pawn.id)}
                             aria-label={`Pawn ${pawn.id + 1}`}
                             className={cn(
-                                "absolute grid size-[5.2%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[8px] font-semibold shadow-md transition-all duration-300 ease-out",
-                                canMove
-                                    ? "z-20 cursor-pointer ring-2 ring-white hover:scale-125"
-                                    : "z-10 cursor-default",
+                                "absolute grid size-[5.2%] -translate-x-1/2 -translate-y-1/2 place-items-center",
+                                canMove ? "z-20" : "z-10",
                                 parked && "opacity-90"
                             )}
                             style={{
@@ -156,14 +154,25 @@ export function LudoBoardView({
                                 top,
                                 marginLeft: stackIndex * 5,
                                 marginTop: stackIndex * -3,
-                                background: PLAYER_COLORS[pawn.playerIndex],
-                                color: "oklch(0.16 0.02 264)",
                             }}
                         >
-                            {canMove ? (
-                                <span className="absolute inset-0 animate-live-pulse rounded-full" />
-                            ) : null}
-                            {pawn.id + 1}
+                            <span
+                                className={cn(
+                                    "relative grid size-full place-items-center rounded-full text-[8px] font-semibold shadow-md transition-transform duration-300 ease-out",
+                                    canMove
+                                        ? "animate-piece-nudge cursor-pointer ring-2 ring-white hover:scale-110"
+                                        : "cursor-default"
+                                )}
+                                style={{
+                                    background: PLAYER_COLORS[pawn.playerIndex],
+                                    color: "oklch(0.16 0.02 264)",
+                                }}
+                            >
+                                {canMove ? (
+                                    <span className="pointer-events-none absolute -inset-1 animate-live-pulse rounded-full ring-2 ring-primary/70" />
+                                ) : null}
+                                {pawn.id + 1}
+                            </span>
                         </button>
                     )
                 })
