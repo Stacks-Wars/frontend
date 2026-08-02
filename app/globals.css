@@ -201,12 +201,10 @@
 @keyframes action-pulse {
     0%,
     100% {
-        box-shadow: 0 0 0 0 oklch(0.672 0.183 259 / 0.45);
-        transform: scale(1);
+        box-shadow: 0 0 0 0 oklch(0.672 0.183 259 / 0.28);
     }
     50% {
-        box-shadow: 0 0 0 8px oklch(0.672 0.183 259 / 0);
-        transform: scale(1.02);
+        box-shadow: 0 0 0 5px oklch(0.672 0.183 259 / 0);
     }
 }
 

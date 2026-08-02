@@ -79,8 +79,8 @@ export function CheckersBoardView({
                                 className={cn(
                                     "relative aspect-square transition-colors",
                                     dark
-                                        ? "bg-[oklch(0.28_0.03_264)]"
-                                        : "bg-[oklch(0.86_0.02_84)]",
+                                        ? "bg-[oklch(0.48_0.05_250)]"
+                                        : "bg-[oklch(0.88_0.02_84)]",
                                     inLastMove && "bg-primary/25",
                                     isSelected &&
                                         "ring-2 ring-primary ring-inset",
@@ -92,8 +92,8 @@ export function CheckersBoardView({
                                         className={cn(
                                             "absolute inset-[14%] grid place-items-center rounded-full shadow-lg transition-transform",
                                             piece.color === "black"
-                                                ? "bg-[oklch(0.24_0.02_264)] ring-2 ring-white/15 ring-inset"
-                                                : "bg-[oklch(0.72_0.19_25)] ring-2 ring-white/25 ring-inset",
+                                                ? "bg-[oklch(0.16_0.01_264)] ring-2 ring-white/55 ring-inset"
+                                                : "bg-[oklch(0.72_0.19_25)] ring-2 ring-white/30 ring-inset",
                                             isMovable &&
                                                 "animate-piece-nudge hover:scale-105"
                                         )}

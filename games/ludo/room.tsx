@@ -85,6 +85,24 @@ export function LudoRoom({
     const [error, setError] = React.useState<string | null>(null)
     const { lines, push } = useEventFeed()
 
+    const diceRef = React.useRef(dice)
+    const playableRef = React.useRef(playableValues)
+    const turnHoldTimer = React.useRef<number | null>(null)
+
+    React.useEffect(() => {
+        diceRef.current = dice
+    }, [dice])
+    React.useEffect(() => {
+        playableRef.current = playableValues
+    }, [playableValues])
+    React.useEffect(() => {
+        return () => {
+            if (turnHoldTimer.current != null) {
+                window.clearTimeout(turnHoldTimer.current)
+            }
+        }
+    }, [])
+
     React.useEffect(() => {
         return channel.on((raw) => {
             const event = raw as LudoEvent
@@ -92,21 +110,42 @@ export function LudoRoom({
                 case "boardUpdate":
                     setBoard(event.board)
                     break
-                case "turn":
-                    setTurn(event)
-                    setPhase("WaitingForRoll")
-                    setDice({
-                        dice1: null,
-                        dice2: null,
-                        dice1Remaining: false,
-                        dice2Remaining: false,
-                    })
-                    setPlayableValues([])
-                    setSelectedValue(null)
-                    setMovablePawns([])
-                    setClockSecs(event.timeoutSecs)
-                    setError(null)
+                case "turn": {
+                    const applyTurn = () => {
+                        turnHoldTimer.current = null
+                        setTurn(event)
+                        setPhase("WaitingForRoll")
+                        setDice({
+                            dice1: null,
+                            dice2: null,
+                            dice1Remaining: false,
+                            dice2Remaining: false,
+                        })
+                        setPlayableValues([])
+                        setSelectedValue(null)
+                        setMovablePawns([])
+                        setClockSecs(event.timeoutSecs)
+                        setError(null)
+                    }
+
+                    // Keep a no-move roll on screen briefly so players can read the dice.
+                    const rolled =
+                        diceRef.current.dice1 != null &&
+                        diceRef.current.dice2 != null
+                    const noMoves = playableRef.current.length === 0
+                    if (rolled && noMoves) {
+                        if (turnHoldTimer.current != null) {
+                            window.clearTimeout(turnHoldTimer.current)
+                        }
+                        turnHoldTimer.current = window.setTimeout(
+                            applyTurn,
+                            1600
+                        )
+                    } else {
+                        applyTurn()
+                    }
                     break
+                }
                 case "countdown":
                     // Engine is the source of truth for remaining time (5s roll / 15s move).
                     setClockSecs(event.time)
@@ -255,11 +294,6 @@ export function LudoRoom({
                                         }
                                         disabled={!live}
                                         onClick={() => chooseValue(value)}
-                                        className={
-                                            selectedValue == null
-                                                ? "animate-action-pulse"
-                                                : undefined
-                                        }
                                     >
                                         Move {value}
                                     </Button>
