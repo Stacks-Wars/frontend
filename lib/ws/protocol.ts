@@ -120,6 +120,14 @@ export type LobbyNoticePayload =
     | { type: "playerReady"; userId: string; ready: boolean }
     | { type: "gameStarted"; gameId: string }
 
+/** Rank/prize/points carried on `lobby.finished` so live UI doesn't wait for a refresh. */
+export type FinishedStanding = {
+    userId: string
+    rank: number
+    prizeMicro?: number | null
+    warsPoint?: number | null
+}
+
 export type LobbyFinishedPayload = {
     lobbyId: string
     lobbyPath: string
@@ -127,6 +135,8 @@ export type LobbyFinishedPayload = {
     winners: string[]
     needsOnChainClaim: boolean
     claims: VaultClaimIntent[]
+    /** Ordered final standings; present on new finishes, optional on older Redis payloads. */
+    standings?: FinishedStanding[]
 }
 
 export type GameActivityPayload = {

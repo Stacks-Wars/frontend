@@ -34,13 +34,47 @@ export function MatchResult({
     const setBalance = useSessionStore((s) => s.setBalance)
     const claimStarted = React.useRef(false)
 
-    const standings = React.useMemo(
-        () =>
-            [...players].sort(
-                (a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity)
-            ),
-        [players]
-    )
+    const standings = React.useMemo(() => {
+        if (finished.standings?.length) {
+            const byUser = new Map(players.map((p) => [p.userId, p]))
+            return [...finished.standings]
+                .sort((a, b) => a.rank - b.rank)
+                .map((row, index) => {
+                    const player = byUser.get(row.userId)
+                    return {
+                        userId: row.userId,
+                        username: player?.username ?? null,
+                        displayName: player?.displayName ?? null,
+                        status: player?.status ?? "joined",
+                        state: player?.state ?? "accepted",
+                        rank: row.rank ?? index + 1,
+                        prizeMicro:
+                            row.prizeMicro !== undefined
+                                ? row.prizeMicro
+                                : (player?.prizeMicro ?? null),
+                        warsPoint:
+                            row.warsPoint !== undefined
+                                ? row.warsPoint
+                                : (player?.warsPoint ?? null),
+                        isCreator: player?.isCreator ?? false,
+                        ready: player?.ready ?? false,
+                        joinedAt: player?.joinedAt ?? 0,
+                        updatedAt: player?.updatedAt ?? 0,
+                    } satisfies PlayerState
+                })
+        }
+
+        return [...players].sort((a, b) => {
+            const rankA = a.rank ?? Infinity
+            const rankB = b.rank ?? Infinity
+            if (rankA !== rankB) return rankA - rankB
+            // Stable fallback: winners first, then join order.
+            const winA = finished.winners.includes(a.userId) ? 0 : 1
+            const winB = finished.winners.includes(b.userId) ? 0 : 1
+            if (winA !== winB) return winA - winB
+            return a.joinedAt - b.joinedAt
+        })
+    }, [finished.standings, finished.winners, players])
 
     const myClaim = finished.claims?.find(
         (claim) => claim.userId === selfUserId && claim.amountMicro > 0
@@ -108,8 +142,7 @@ export function MatchResult({
                     // paint that amount on every row — only the claim recipient.
                     // Free / no-claim matches still use per-player prizeMicro.
                     const claimForPlayer = finished.claims?.find(
-                        (c) =>
-                            c.userId === player.userId && c.amountMicro > 0
+                        (c) => c.userId === player.userId && c.amountMicro > 0
                     )
                     const wonMicro =
                         finished.needsOnChainClaim ||
