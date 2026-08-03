@@ -2,6 +2,8 @@
 
 import { create } from "zustand"
 
+import { playSfx } from "@/lib/audio/play-sound"
+
 export type NotificationItem = {
     id: string
     title: string
@@ -16,6 +18,8 @@ type ToastItem = {
     title: string
     body?: string
     tone?: "default" | "success" | "danger"
+    /** Skip the default toast SFX (caller plays a custom cue). */
+    silent?: boolean
 }
 
 type NotificationsState = {
@@ -59,6 +63,11 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
         })),
     toast: (toast) => {
         const toastId = id()
+        if (!toast.silent) {
+            if (toast.tone === "danger") playSfx("error")
+            else if (toast.tone === "success") playSfx("success")
+            else playSfx("alert")
+        }
         set((state) => ({
             toasts: [...state.toasts, { ...toast, id: toastId }],
         }))

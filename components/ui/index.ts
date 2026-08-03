@@ -49,6 +49,7 @@ export {
     SelectValue,
 } from "./select"
 export { Separator } from "./separator"
+export { Slider } from "./slider"
 export {
     Sheet,
     SheetBody,
