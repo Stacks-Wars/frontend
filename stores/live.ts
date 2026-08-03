@@ -81,6 +81,40 @@ function sortPlayers(players: PlayerState[]): PlayerState[] {
     return [...players].sort((a, b) => a.joinedAt - b.joinedAt)
 }
 
+/** Patch rank / prize / points from `lobby.finished.standings` onto the roster. */
+function mergeFinishedStandings(
+    players: PlayerState[],
+    finished: LobbyFinishedPayload
+): PlayerState[] {
+    const standings = finished.standings
+    if (!standings?.length) {
+        // Older payloads: at least mark winners as rank 1 so the podium isn't random.
+        if (!finished.winners.length) return players
+        const winners = new Set(finished.winners)
+        return players.map((player) =>
+            winners.has(player.userId) && player.rank == null
+                ? { ...player, rank: 1 }
+                : player
+        )
+    }
+
+    const byUser = new Map(standings.map((row) => [row.userId, row]))
+    return players.map((player) => {
+        const row = byUser.get(player.userId)
+        if (!row) return player
+        return {
+            ...player,
+            rank: row.rank ?? player.rank,
+            prizeMicro:
+                row.prizeMicro !== undefined
+                    ? row.prizeMicro
+                    : player.prizeMicro,
+            warsPoint:
+                row.warsPoint !== undefined ? row.warsPoint : player.warsPoint,
+        }
+    })
+}
+
 export const useLiveStore = create<LiveState>((set) => ({
     rooms: {},
     roomIdByPath: {},
@@ -132,7 +166,8 @@ export const useLiveStore = create<LiveState>((set) => ({
                         lobby: payload.lobby,
                         state: payload.state,
                         players: sortPlayers(payload.players),
-                        joinRequests: payload.joinRequests ?? previous.joinRequests,
+                        joinRequests:
+                            payload.joinRequests ?? previous.joinRequests,
                     },
                 },
             }
@@ -194,6 +229,10 @@ export const useLiveStore = create<LiveState>((set) => ({
                     [payload.lobbyId]: {
                         ...previous,
                         finished: payload,
+                        players: mergeFinishedStandings(
+                            previous.players,
+                            payload
+                        ),
                         lobby: { ...previous.lobby, status: finishedStatus },
                         state: previous.state
                             ? { ...previous.state, status: finishedStatus }
