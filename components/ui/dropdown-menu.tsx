@@ -3,19 +3,28 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import * as React from "react"
 
+import { playSound } from "@/lib/audio/play-sound"
 import { cn } from "@/lib/utils"
 
 function DropdownMenu(props: MenuPrimitive.Root.Props) {
     return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />
 }
 
-function DropdownMenuTrigger(
-    props: Omit<MenuPrimitive.Trigger.Props, "className"> & {
-        className?: string
-    }
-) {
+function DropdownMenuTrigger({
+    onClick,
+    ...props
+}: Omit<MenuPrimitive.Trigger.Props, "className"> & {
+    className?: string
+}) {
     return (
-        <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
+        <MenuPrimitive.Trigger
+            data-slot="dropdown-menu-trigger"
+            {...props}
+            onClick={(event) => {
+                playSound()
+                onClick?.(event)
+            }}
+        />
     )
 }
 
@@ -56,6 +65,7 @@ function DropdownMenuContent({
 function DropdownMenuItem({
     className,
     variant = "default",
+    onClick,
     ...props
 }: Omit<MenuPrimitive.Item.Props, "className"> & {
     className?: string
@@ -72,6 +82,10 @@ function DropdownMenuItem({
                 className
             )}
             {...props}
+            onClick={(event) => {
+                playSound()
+                onClick?.(event)
+            }}
         />
     )
 }

@@ -41,16 +41,18 @@ export function AppHeader() {
 
     return (
         <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-            <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto flex h-16 w-full max-w-350 items-center gap-4 px-4 sm:px-6 lg:px-8">
                 <Brand />
 
                 <nav className="hidden items-center gap-1 md:flex">
                     {NAV.map((item) => (
-                        <Link
+                        <Button
                             key={item.href}
-                            href={item.href}
+                            variant="ghost"
+                            size="sm"
+                            render={<Link href={item.href} />}
                             className={cn(
-                                "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                "relative h-auto rounded-lg px-3 py-2 text-sm font-medium hover:bg-transparent",
                                 isActive(pathname, item.href)
                                     ? "text-foreground"
                                     : "text-muted-foreground hover:text-foreground"
@@ -60,7 +62,7 @@ export function AppHeader() {
                             {isActive(pathname, item.href) ? (
                                 <span className="absolute inset-x-3 -bottom-px h-px bg-primary" />
                             ) : null}
-                        </Link>
+                        </Button>
                     ))}
                 </nav>
 
@@ -93,36 +95,40 @@ export function AppHeader() {
                     </SheetHeader>
                     <SheetBody className="flex flex-col gap-1">
                         {NAV.map((item) => (
-                            <Link
+                            <Button
                                 key={item.href}
-                                href={item.href}
+                                variant="ghost"
+
+                                render={<Link href={item.href} />}
                                 onClick={closeMenu}
                                 className={cn(
-                                    "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                                    "h-auto justify-start rounded-lg px-3 py-2.5 text-sm font-medium",
                                     isActive(pathname, item.href)
                                         ? "bg-muted text-foreground"
                                         : "text-muted-foreground hover:bg-muted/60"
                                 )}
                             >
                                 {item.label}
-                            </Link>
+                            </Button>
                         ))}
                         {user ? (
                             <>
-                                <Link
-                                    href="/wallet"
+                                <Button
+                                    variant="ghost"
+                                    render={<Link href="/wallet" />}
                                     onClick={closeMenu}
-                                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
+                                    className="h-auto justify-start rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
                                 >
                                     Wallet
-                                </Link>
-                                <Link
-                                    href="/settings"
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    render={<Link href="/settings" />}
                                     onClick={closeMenu}
-                                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
+                                    className="h-auto justify-start rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
                                 >
                                     Settings
-                                </Link>
+                                </Button>
                             </>
                         ) : null}
                         <LiveTicker className="mt-4 self-start" />

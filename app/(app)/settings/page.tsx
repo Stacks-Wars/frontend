@@ -13,6 +13,7 @@ import { PageContainer } from "@/components/common/page-container"
 import { PageHeader, SectionHeader } from "@/components/common/section"
 import { AccountOverview } from "@/components/settings/account-overview"
 import { ProfileForm } from "@/components/settings/profile-form"
+import { SoundPreferences } from "@/components/settings/sound-preferences"
 import { Button, EmptyState, Skeleton } from "@/components/ui"
 import { authClient } from "@/lib/auth/client"
 import { useNotificationsStore } from "@/stores/notifications"
@@ -46,7 +47,7 @@ export default function SettingsPage() {
             <PageHeader
                 eyebrow="Account"
                 title="Settings"
-                description="Your public identity, account details, and session."
+                description="Your public identity, sound, account details, and session."
             />
 
             {!user ? (
@@ -86,6 +87,14 @@ export default function SettingsPage() {
                             description="Read-only details from sign-in and your custodial wallet."
                         />
                         <AccountOverview user={user} />
+                    </section>
+
+                    <section className="animate-rise-in space-y-4">
+                        <SectionHeader
+                            title="Sound"
+                            description="Background music and effect levels for the arena."
+                        />
+                        <SoundPreferences />
                     </section>
 
                     <section className="animate-rise-in space-y-4">

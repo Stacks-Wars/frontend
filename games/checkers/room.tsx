@@ -18,6 +18,7 @@ import { GameShell } from "@/games/shared/game-shell"
 import { PlayerRail } from "@/games/shared/player-rail"
 import { TurnBar } from "@/games/shared/turn-bar"
 import type { GameRoomProps } from "@/games/types"
+import { playSfx } from "@/lib/audio/play-sound"
 import { displayNameFor } from "@/lib/format"
 
 function pieceCount(
@@ -62,6 +63,7 @@ export function CheckersRoom({
                 case "moveMade": {
                     setLastMove(event.mv)
                     const who = displayNameFor(event.player)
+                    playSfx(event.mv.captured ? "pawnCapture" : "pawnMove")
                     push(
                         event.mv.captured
                             ? `${who} captured a piece`
@@ -71,10 +73,12 @@ export function CheckersRoom({
                     break
                 }
                 case "invalid":
+                    playSfx("invalid")
                     setError(event.reason)
                     setSelected(null)
                     break
                 case "gameDraw":
+                    playSfx("end")
                     push(`Draw — ${event.reason}`, "muted")
                     break
                 default:
@@ -113,6 +117,7 @@ export function CheckersRoom({
         }
 
         if (legalMoves.some((move) => samePosition(move.from, position))) {
+            playSfx("click")
             setSelected(position)
         }
     }

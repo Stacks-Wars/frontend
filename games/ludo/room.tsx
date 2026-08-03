@@ -17,6 +17,7 @@ import { GameShell } from "@/games/shared/game-shell"
 import { PlayerRail } from "@/games/shared/player-rail"
 import { TurnBar } from "@/games/shared/turn-bar"
 import type { GameRoomProps } from "@/games/types"
+import { playSfx } from "@/lib/audio/play-sound"
 import { displayNameFor } from "@/lib/format"
 
 type Dice = {
@@ -161,6 +162,7 @@ export function LudoRoom({
                     setPlayableValues(event.playableValues)
                     setSelectedValue(null)
                     setMovablePawns([])
+                    playSfx("diceRoll")
                     // Next `countdown` tick carries MOVE_TIMEOUT_SECS from the engine.
                     push(
                         `${displayNameFor(event.player)} rolled ${event.dice1} and ${event.dice2}`
@@ -184,19 +186,25 @@ export function LudoRoom({
                             event.diceValue !== prev.dice2,
                     }))
                     break
+                case "pawnMoved":
+                    playSfx("pawnMove")
+                    break
                 case "pawnCaptured":
+                    playSfx("pawnCapture")
                     push(
                         `${displayNameFor(event.attacker)} knocked out ${displayNameFor(event.victim)}`,
                         "bad"
                     )
                     break
                 case "pawnFinished":
+                    playSfx("success")
                     push(
                         `${displayNameFor(event.player)} brought a pawn home — ${event.pawnsRemaining} to go`,
                         "good"
                     )
                     break
                 case "bonusTurn":
+                    playSfx("alert")
                     push(
                         `${displayNameFor(event.player)} earned a bonus turn`,
                         "good"
@@ -215,6 +223,7 @@ export function LudoRoom({
                     )
                     break
                 case "invalid":
+                    playSfx("invalid")
                     setError(event.reason)
                     break
                 default:

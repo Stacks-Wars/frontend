@@ -1,6 +1,10 @@
+"use client"
+
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
+import { SFX } from "@/lib/audio/sounds"
+import { playSound } from "@/lib/audio/play-sound"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
@@ -45,14 +49,24 @@ function Button({
     variant = "default",
     size = "default",
     pill = false,
+    sound = SFX.click,
+    onClick,
     ...props
 }: Omit<ButtonPrimitive.Props, "className"> &
-    VariantProps<typeof buttonVariants> & { className?: string }) {
+    VariantProps<typeof buttonVariants> & {
+        className?: string
+        /** Sound to play on click. Defaults to click SFX. Pass `null` to disable. */
+        sound?: string | null
+    }) {
     return (
         <ButtonPrimitive
             data-slot="button"
             className={cn(buttonVariants({ variant, size, pill, className }))}
             {...props}
+            onClick={(event) => {
+                if (sound) playSound(sound)
+                onClick?.(event)
+            }}
         />
     )
 }

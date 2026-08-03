@@ -14,6 +14,7 @@ import { PlayerRail } from "@/games/shared/player-rail"
 import { TurnBar } from "@/games/shared/turn-bar"
 import type { GameRoomProps } from "@/games/types"
 import { Button, Input } from "@/components/ui"
+import { playSfx } from "@/lib/audio/play-sound"
 import { displayNameFor } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -54,20 +55,24 @@ export function LexiWarsRoom({
                     break
                 case "wordEntry":
                     setWords((prev) => [event.word, ...prev].slice(0, 40))
+                    playSfx("success")
                     push(
                         `${displayNameFor(event.player)} played "${event.word}"`
                     )
                     setPending(false)
                     break
                 case "usedWord":
+                    playSfx("invalid")
                     setError(`"${event.word}" has already been played`)
                     setPending(false)
                     break
                 case "invalid":
+                    playSfx("invalid")
                     setError(event.reason)
                     setPending(false)
                     break
                 case "eliminated":
+                    playSfx("end")
                     setEliminated((prev) =>
                         new Set(prev).add(event.player.userId)
                     )

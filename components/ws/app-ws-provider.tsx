@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
+import { playSfx } from "@/lib/audio/play-sound"
 import { appSocket, type ConnectionStatus } from "@/lib/ws/app-socket"
 import { emitGameEvent } from "@/lib/ws/game-bus"
 import {
@@ -126,7 +127,12 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     const payload = payloadAs<LobbyFinishedPayload>(message)
                     live.applyFinished(payload)
                     live.removeLobby(payload.lobbyId)
-                    notify.toast({ title: "Match finished", tone: "success" })
+                    playSfx("end")
+                    notify.toast({
+                        title: "Match finished",
+                        tone: "success",
+                        silent: true,
+                    })
                     notify.push({
                         title: "Match finished",
                         href: `/room/${payload.lobbyPath}`,
@@ -243,7 +249,12 @@ function handleNotice(
     notify: ReturnType<typeof useNotificationsStore.getState>
 ) {
     if (notice.type === "gameStarted") {
-        notify.toast({ title: "Match starting", tone: "success" })
+        playSfx("beep")
+        notify.toast({
+            title: "Match starting",
+            tone: "success",
+            silent: true,
+        })
     }
 }
 
