@@ -9,6 +9,8 @@ const LINKS = [
     { href: "/games", label: "Games" },
     { href: "/lobbies", label: "Lobbies" },
     { href: "/leaderboard", label: "Leaderboard" },
+    { href: "/terms", label: "Terms" },
+    { href: "/privacy", label: "Privacy" },
     { href: "https://docs.stackswars.com", label: "Docs", external: true },
     { href: "https://t.me/stackswars", label: "Telegram", external: true },
 ]

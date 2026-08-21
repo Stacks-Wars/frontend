@@ -21,6 +21,7 @@ import type {
     UserProfile,
     WalletBalance,
 } from "@/lib/api/types"
+import { AccountDeleteError } from "@/lib/api/account-delete"
 
 function getApiBaseUrl() {
     const url = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8080"
@@ -936,5 +937,91 @@ export async function clearVaultDraft(
     )
     if (!response.ok) {
         throw new Error(`Failed to clear vault draft (${response.status})`)
+    }
+}
+
+export async function acceptLegal(version: string): Promise<AppUser> {
+    const response = await fetch(`${getApiBaseUrl()}/users/me/legal-accept`, {
+        method: "POST",
+        headers: await authHeaders(),
+        body: JSON.stringify({ version }),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        throw new Error(`Failed to record legal acceptance (${response.status})`)
+    }
+    return response.json()
+}
+
+export async function updatePreferences(payload: {
+    lobbyAlertsEnabled?: boolean
+}): Promise<AppUser> {
+    const response = await fetch(`${getApiBaseUrl()}/users/me/preferences`, {
+        method: "PATCH",
+        headers: await authHeaders(),
+        body: JSON.stringify(payload),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        throw new Error(`Failed to update preferences (${response.status})`)
+    }
+    return response.json()
+}
+
+export async function savePushSubscription(payload: {
+    endpoint: string
+    keys: { p256dh: string; auth: string }
+    userAgent?: string
+}): Promise<void> {
+    const response = await fetch(
+        `${getApiBaseUrl()}/users/me/push-subscription`,
+        {
+            method: "POST",
+            headers: await authHeaders(),
+            body: JSON.stringify(payload),
+            cache: "no-store",
+        }
+    )
+    if (!response.ok) {
+        throw new Error(`Failed to save push subscription (${response.status})`)
+    }
+}
+
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+    const response = await fetch(
+        `${getApiBaseUrl()}/users/me/push-subscription`,
+        {
+            method: "DELETE",
+            headers: await authHeaders(),
+            body: JSON.stringify({ endpoint }),
+            cache: "no-store",
+        }
+    )
+    if (!response.ok) {
+        throw new Error(
+            `Failed to delete push subscription (${response.status})`
+        )
+    }
+}
+
+export async function deleteAppAccount(): Promise<void> {
+    const response = await fetch(`${getApiBaseUrl()}/users/me`, {
+        method: "DELETE",
+        headers: await authHeaders(),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+            code?: string
+            error?: string
+            availableMicro?: number
+            pendingClaimMicro?: number
+        } | null
+        if (response.status === 409 && body) {
+            throw new AccountDeleteError(body)
+        }
+        throw new Error(
+            body?.error ?? `Failed to delete account (${response.status})`
+        )
     }
 }

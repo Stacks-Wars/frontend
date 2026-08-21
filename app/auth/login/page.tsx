@@ -1,11 +1,13 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button"
+import { LegalAgree } from "@/components/auth/legal-agree"
 import { OAuthDivider } from "@/components/auth/oauth-divider"
 import { authClient } from "@/lib/auth/client"
 import { signInSchema, type SignInFormValues } from "@/lib/auth/schemas"
@@ -15,6 +17,7 @@ import { Label } from "@/components/ui/label"
 
 export default function LoginPage() {
     const router = useRouter()
+    const [agreed, setAgreed] = React.useState(false)
     const {
         register,
         handleSubmit,
@@ -44,7 +47,12 @@ export default function LoginPage() {
                 Enter the arena.
             </p>
             <div className="mt-8 space-y-4">
-                <GoogleOAuthButton callbackURL="/" />
+                <LegalAgree
+                    checked={agreed}
+                    onCheckedChange={setAgreed}
+                    id="legal-agree-login"
+                />
+                <GoogleOAuthButton callbackURL="/" disabled={!agreed} />
                 <OAuthDivider />
                 <form
                     onSubmit={handleSubmit(onSubmit)}

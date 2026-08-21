@@ -1,7 +1,8 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 
 import { Provider } from "@/app/provider"
+import { APP_BACKGROUND } from "@/lib/theme"
 
 import "./globals.css"
 
@@ -32,7 +33,12 @@ const neueMontreal = localFont({
     display: "swap",
 })
 
+const appOrigin =
+    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
+    "https://stackswars.com"
+
 export const metadata: Metadata = {
+    metadataBase: new URL(appOrigin),
     title: {
         default: "Stacks Wars",
         template: "%s · Stacks Wars",
@@ -40,10 +46,8 @@ export const metadata: Metadata = {
     description:
         "Competitive Stacks arena — lobbies, seasons, and skill-based games.",
     applicationName: "Stacks Wars",
-    manifest: "/site.webmanifest",
     icons: {
         icon: [
-            { url: "/favicon.ico" },
             { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
             { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
             {
@@ -57,12 +61,30 @@ export const metadata: Metadata = {
                 type: "image/png",
             },
         ],
-        apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
     },
     appleWebApp: {
+        capable: true,
         title: "Stacks Wars",
-        statusBarStyle: "black-translucent",
+        statusBarStyle: "black",
     },
+    openGraph: {
+        type: "website",
+        siteName: "Stacks Wars",
+        title: "Stacks Wars",
+        description:
+            "Competitive Stacks arena — lobbies, seasons, and skill-based games.",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Stacks Wars",
+        description:
+            "Competitive Stacks arena — lobbies, seasons, and skill-based games.",
+    },
+}
+
+export const viewport: Viewport = {
+    themeColor: APP_BACKGROUND,
+    colorScheme: "dark",
 }
 
 export default function RootLayout({

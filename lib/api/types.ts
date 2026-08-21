@@ -9,6 +9,9 @@ export type AppUser = {
     walletAddress: string | null
     walletVerifiedAt: string | null
     avatarUrl: string | null
+    lobbyAlertsEnabled?: boolean
+    legalAcceptedAt?: string | null
+    legalVersion?: string | null
     createdAt: string
     updatedAt: string
 }

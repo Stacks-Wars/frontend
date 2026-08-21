@@ -3,9 +3,12 @@
 import * as React from "react"
 
 import { getMyBalance } from "@/actions/wallet"
-import { syncAuthUser } from "@/actions/users"
+import { acceptLegalTerms, syncAuthUser } from "@/actions/users"
+import { LEGAL_VERSION } from "@/lib/legal"
 import { authClient } from "@/lib/auth/client"
 import { isEmailVerified, isVerificationDisabled } from "@/lib/auth/flags"
+import { isWebPushSupported } from "@/lib/push"
+import { usePushStore } from "@/stores/push"
 import {
     clearAccessTokenCache,
     useUserTopic,
@@ -64,9 +67,22 @@ export function AuthSync() {
 
             setLoading(true)
             try {
-                const user = await syncAuthUser(current)
+                let synced = await syncAuthUser(current)
+                try {
+                    const intent = sessionStorage.getItem("sw-legal-intent")
+                    if (
+                        intent === LEGAL_VERSION &&
+                        (synced.legalAcceptedAt == null ||
+                            synced.legalVersion !== LEGAL_VERSION)
+                    ) {
+                        synced = await acceptLegalTerms(LEGAL_VERSION)
+                        sessionStorage.removeItem("sw-legal-intent")
+                    }
+                } catch {
+                    /* modal will catch remaining users */
+                }
                 if (cancelled) return
-                setUser(user)
+                setUser(synced)
                 // The socket usually opens before the session exists.
                 clearAccessTokenCache()
                 appSocket.refreshAuth()
@@ -76,6 +92,13 @@ export function AuthSync() {
                     if (!cancelled) setBalance(balance)
                 } catch {
                     // No wallet yet on a brand new account.
+                }
+
+                if (
+                    isWebPushSupported() &&
+                    Notification.permission === "granted"
+                ) {
+                    void usePushStore.getState().enable()
                 }
             } catch (error) {
                 console.error("Failed to sync app user", error)
