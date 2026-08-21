@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import * as React from "react"
 
 import { acceptLegalTerms } from "@/actions/users"
@@ -16,15 +17,18 @@ import { LEGAL_VERSION } from "@/lib/legal"
 import { useSessionStore } from "@/stores/session"
 
 export function LegalConsentGate() {
+    const pathname = usePathname()
     const user = useSessionStore((s) => s.user)
     const setUser = useSessionStore((s) => s.setUser)
     const loading = useSessionStore((s) => s.loading)
     const [busy, setBusy] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
 
+    const readingLegal = pathname === "/terms" || pathname === "/privacy"
     const needsAccept = Boolean(
         user &&
             !loading &&
+            !readingLegal &&
             (user.legalAcceptedAt == null ||
                 user.legalVersion !== LEGAL_VERSION)
     )
