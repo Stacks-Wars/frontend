@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button"
 type GoogleOAuthButtonProps = {
     callbackURL?: string
     label?: string
+    disabled?: boolean
 }
 
 export function GoogleOAuthButton({
     callbackURL = "/",
     label = "Continue with Google",
+    disabled = false,
 }: GoogleOAuthButtonProps) {
     const [isLoading, setIsLoading] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
@@ -52,7 +54,7 @@ export function GoogleOAuthButton({
                 type="button"
                 variant="outline"
                 className="w-full gap-2"
-                disabled={isLoading}
+                disabled={isLoading || disabled}
                 onClick={() => void handleGoogleSignIn()}
             >
                 {isLoading ? (

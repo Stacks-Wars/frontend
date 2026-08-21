@@ -7,6 +7,7 @@ import {
     upsertAppUser,
 } from "@/lib/api/server"
 import { auth } from "@/lib/auth/server"
+import { AccountDeleteError, type DeleteAccountResult } from "@/lib/api/account-delete"
 import type { AppUser } from "@/lib/api/types"
 
 type SessionUser = {
@@ -60,6 +61,61 @@ export async function syncAuthUser(sessionUser: SessionUser): Promise<AppUser> {
     }
 
     return user
+}
+
+export async function acceptLegalTerms(version: string) {
+    const { acceptLegal } = await import("@/lib/api/server")
+    return acceptLegal(version)
+}
+
+export async function updateUserPreferences(payload: {
+    lobbyAlertsEnabled?: boolean
+}) {
+    const { updatePreferences } = await import("@/lib/api/server")
+    return updatePreferences(payload)
+}
+
+export async function saveUserPushSubscription(payload: {
+    endpoint: string
+    keys: { p256dh: string; auth: string }
+    userAgent?: string
+}) {
+    const { savePushSubscription } = await import("@/lib/api/server")
+    return savePushSubscription(payload)
+}
+
+export async function removeUserPushSubscription(endpoint: string) {
+    const { deletePushSubscription } = await import("@/lib/api/server")
+    return deletePushSubscription(endpoint)
+}
+
+export async function deleteMyAccount(): Promise<DeleteAccountResult> {
+    const { deleteAppAccount } = await import("@/lib/api/server")
+    try {
+        await deleteAppAccount()
+        try {
+            const neon = auth as unknown as {
+                deleteUser?: (args: Record<string, unknown>) => Promise<unknown>
+            }
+            if (typeof neon.deleteUser === "function") {
+                await neon.deleteUser({})
+            }
+        } catch {
+            /* client also calls deleteUser after this succeeds */
+        }
+        return { ok: true }
+    } catch (err) {
+        if (err instanceof AccountDeleteError) {
+            return {
+                ok: false,
+                code: err.code,
+                availableMicro: err.availableMicro,
+                pendingClaimMicro: err.pendingClaimMicro,
+                error: err.message,
+            }
+        }
+        throw err
+    }
 }
 
 export async function getCurrentUser() {

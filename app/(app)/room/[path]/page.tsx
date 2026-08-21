@@ -19,7 +19,7 @@ function gameOgImage(gameId: string | undefined): string {
     if (gameId) {
         return `${origin}/games/${gameId}.png`
     }
-    return `${origin}/games/default.png`
+    return `${origin}/opengraph-image`
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {

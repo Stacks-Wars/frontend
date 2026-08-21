@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button"
+import { LegalAgree } from "@/components/auth/legal-agree"
 import { OAuthDivider } from "@/components/auth/oauth-divider"
 import { VerifyEmailOtp } from "@/components/auth/verify-email-otp"
 import { authClient } from "@/lib/auth/client"
@@ -20,6 +21,7 @@ export default function SignUpPage() {
     const router = useRouter()
     const skipVerification = isVerificationDisabled()
     const [pendingEmail, setPendingEmail] = React.useState<string | null>(null)
+    const [agreed, setAgreed] = React.useState(false)
     const {
         register,
         handleSubmit,
@@ -37,6 +39,12 @@ export default function SignUpPage() {
     }
 
     async function onSubmit(values: SignUpFormValues) {
+        if (!agreed) {
+            setError("root", {
+                message: "Agree to the Terms and Privacy Policy to continue.",
+            })
+            return
+        }
         const { data, error } = await authClient.signUp.email(values)
         if (error) {
             setError("root", {
@@ -81,7 +89,8 @@ export default function SignUpPage() {
                 Join Stacks Wars.
             </p>
             <div className="mt-8 space-y-4">
-                <GoogleOAuthButton callbackURL="/" />
+                <LegalAgree checked={agreed} onCheckedChange={setAgreed} />
+                <GoogleOAuthButton callbackURL="/" disabled={!agreed} />
                 <OAuthDivider />
                 <form
                     onSubmit={handleSubmit(onSubmit)}
@@ -133,7 +142,7 @@ export default function SignUpPage() {
                     <Button
                         className="w-full"
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !agreed}
                     >
                         {isSubmitting ? "Creating…" : "Create account"}
                     </Button>

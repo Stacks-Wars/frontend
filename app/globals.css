@@ -250,6 +250,22 @@
     animation: marquee 40s linear infinite;
 }
 
+@keyframes splash-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.72;
+        transform: scale(0.96);
+    }
+}
+
+@utility animate-splash-pulse {
+    animation: splash-pulse 1.8s ease-in-out infinite;
+}
+
 @utility shimmer {
     background-image: linear-gradient(
         90deg,
