@@ -12,12 +12,14 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui"
 import { timeAgo } from "@/lib/format"
-import { useNotificationsStore } from "@/stores/notifications"
+import {
+    useNotificationActions,
+    useNotificationItems,
+} from "@/stores/notifications"
 
 export function NotificationsMenu() {
-    const items = useNotificationsStore((s) => s.items)
-    const markAllRead = useNotificationsStore((s) => s.markAllRead)
-    const markRead = useNotificationsStore((s) => s.markRead)
+    const items = useNotificationItems()
+    const { markAllRead, markRead } = useNotificationActions()
     const unread = items.filter((item) => !item.read).length
 
     return (

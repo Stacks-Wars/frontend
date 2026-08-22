@@ -5,16 +5,15 @@ import * as React from "react"
 
 import { Button } from "@/components/ui"
 import { LEGAL_VERSION } from "@/lib/legal"
-import { usePushStore } from "@/stores/push"
-import { useSessionStore } from "@/stores/session"
+import { usePushActions, usePushDismissed, usePushStatus, usePushStore } from "@/stores/push"
+import { useSessionLoading, useSessionUser } from "@/stores/session"
 
 export function PushPrompt() {
-    const user = useSessionStore((s) => s.user)
-    const loading = useSessionStore((s) => s.loading)
-    const dismissed = usePushStore((s) => s.dismissed)
-    const status = usePushStore((s) => s.status)
-    const enablePush = usePushStore((s) => s.enable)
-    const dismiss = usePushStore((s) => s.dismiss)
+    const user = useSessionUser()
+    const loading = useSessionLoading()
+    const dismissed = usePushDismissed()
+    const status = usePushStatus()
+    const { enable: enablePush, dismiss } = usePushActions()
     const [busy, setBusy] = React.useState(false)
 
     const hydrated = React.useSyncExternalStore(

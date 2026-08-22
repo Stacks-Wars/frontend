@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import * as React from "react"
 import { RiTrophyLine } from "@remixicon/react"
 
@@ -9,13 +8,12 @@ import {
     settleVaultClaimsAction,
 } from "@/actions/lobbies"
 import { UserChip } from "@/components/common/user-chip"
-import { Button } from "@/components/ui"
+import { ButtonLink } from "@/components/ui"
 import type { PlayerState } from "@/lib/api/types"
 import type { LobbyFinishedPayload } from "@/lib/ws/protocol"
 import { formatUsdc, ordinal } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
 
 /**
  * Final standings. Paid winners are claimed on-chain automatically; the
@@ -30,8 +28,7 @@ export function MatchResult({
     players: PlayerState[]
     selfUserId: string | null
 }) {
-    const toast = useNotificationsStore((s) => s.toast)
-    const setBalance = useSessionStore((s) => s.setBalance)
+    const { toast } = useNotificationActions()
     const claimStarted = React.useRef(false)
 
     const standings = React.useMemo(() => {
@@ -109,7 +106,6 @@ export function MatchResult({
                 })
                 return
             }
-            setBalance(null)
             toast({ title: "Winnings claimed", tone: "success" })
         })()
     }, [
@@ -117,7 +113,6 @@ export function MatchResult({
         finished.lobbyId,
         finished.lobbyPath,
         myClaim,
-        setBalance,
         toast,
     ])
 
@@ -187,12 +182,12 @@ export function MatchResult({
             </ol>
 
             <div className="flex flex-wrap gap-2">
-                <Button variant="outline" render={<Link href="/lobbies" />}>
+                <ButtonLink href="/lobbies" variant="outline">
                     Find another match
-                </Button>
-                <Button variant="ghost" render={<Link href="/leaderboard" />}>
+                </ButtonLink>
+                <ButtonLink href="/leaderboard" variant="ghost">
                     View leaderboard
-                </Button>
+                </ButtonLink>
             </div>
         </section>
     )

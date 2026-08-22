@@ -4,15 +4,14 @@ import * as React from "react"
 
 import { updateUserPreferences } from "@/actions/users"
 import { Label, Switch } from "@/components/ui"
-import { usePushStore } from "@/stores/push"
-import { useSessionStore } from "@/stores/session"
+import { usePushActions, usePushEnabled } from "@/stores/push"
+import { useSessionActions, useSessionUser } from "@/stores/session"
 
 export function NotificationPreferences() {
-    const user = useSessionStore((s) => s.user)
-    const setUser = useSessionStore((s) => s.setUser)
-    const enabled = usePushStore((s) => s.enabled)
-    const enable = usePushStore((s) => s.enable)
-    const disable = usePushStore((s) => s.disable)
+    const user = useSessionUser()
+    const { setUser } = useSessionActions()
+    const enabled = usePushEnabled()
+    const { enable, disable } = usePushActions()
     const [busy, setBusy] = React.useState(false)
     const [hint, setHint] = React.useState<string | null>(null)
 

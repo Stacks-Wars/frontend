@@ -13,7 +13,7 @@ import {
     Avatar,
     AvatarFallback,
     AvatarImage,
-    Button,
+    ButtonLink,
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -22,13 +22,12 @@ import {
 } from "@/components/ui"
 import { authClient } from "@/lib/auth/client"
 import { displayNameFor, formatUsdc } from "@/lib/format"
-import { useSessionStore } from "@/stores/session"
+import { useSessionBalance, useSessionLoading, useSessionUser } from "@/stores/session"
 
 export function UserMenu() {
     const router = useRouter()
-    const user = useSessionStore((s) => s.user)
-    const balance = useSessionStore((s) => s.balance)
-    const loading = useSessionStore((s) => s.loading)
+    const user = useSessionUser()
+    const loading = useSessionLoading()
 
     if (loading && !user) {
         return <span className="size-9 animate-pulse rounded-full bg-muted/60" />
@@ -37,21 +36,17 @@ export function UserMenu() {
     if (!user) {
         return (
             <div className="flex items-center gap-2">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    render={<Link href="/auth/login" />}
-                >
+                <ButtonLink href="/auth/login" variant="ghost" size="sm">
                     Sign in
-                </Button>
-                <Button
+                </ButtonLink>
+                <ButtonLink
+                    href="/auth/sign-up"
                     variant="primary"
                     size="sm"
                     pill
-                    render={<Link href="/auth/sign-up" />}
                 >
                     Play now
-                </Button>
+                </ButtonLink>
             </div>
         )
     }
@@ -100,11 +95,7 @@ export function UserMenu() {
                 <DropdownMenuItem render={<Link href="/wallet" />}>
                     <RiWallet3Line />
                     Wallet
-                    <span className="tnum ml-auto text-xs text-muted-foreground">
-                        {formatUsdc(balance?.availableMicro ?? 0, {
-                            zero: "$0.00",
-                        })}
-                    </span>
+                    <WalletMenuBalance />
                 </DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/settings" />}>
                     <RiSettings3Line />
@@ -117,5 +108,16 @@ export function UserMenu() {
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
+    )
+}
+
+function WalletMenuBalance() {
+    const balance = useSessionBalance()
+    return (
+        <span className="tnum ml-auto text-xs text-muted-foreground">
+            {formatUsdc(balance?.availableMicro ?? 0, {
+                zero: "$0.00",
+            })}
+        </span>
     )
 }

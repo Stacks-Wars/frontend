@@ -25,11 +25,15 @@ type ToastItem = {
 type NotificationsState = {
     items: NotificationItem[]
     toasts: ToastItem[]
-    push: (item: Omit<NotificationItem, "id" | "createdAt" | "read">) => void
-    markRead: (id: string) => void
-    markAllRead: () => void
-    toast: (toast: Omit<ToastItem, "id">) => void
-    dismissToast: (id: string) => void
+    actions: {
+        push: (
+            item: Omit<NotificationItem, "id" | "createdAt" | "read">
+        ) => void
+        markRead: (id: string) => void
+        markAllRead: () => void
+        toast: (toast: Omit<ToastItem, "id">) => void
+        dismissToast: (id: string) => void
+    }
 }
 
 function id() {
@@ -39,46 +43,54 @@ function id() {
 export const useNotificationsStore = create<NotificationsState>((set) => ({
     items: [],
     toasts: [],
-    push: (item) =>
-        set((state) => ({
-            items: [
-                {
-                    ...item,
-                    id: id(),
-                    createdAt: Date.now(),
-                    read: false,
-                },
-                ...state.items,
-            ].slice(0, 50),
-        })),
-    markRead: (itemId) =>
-        set((state) => ({
-            items: state.items.map((n) =>
-                n.id === itemId ? { ...n, read: true } : n
-            ),
-        })),
-    markAllRead: () =>
-        set((state) => ({
-            items: state.items.map((n) => ({ ...n, read: true })),
-        })),
-    toast: (toast) => {
-        const toastId = id()
-        if (!toast.silent) {
-            if (toast.tone === "danger") playSfx("error")
-            else if (toast.tone === "success") playSfx("success")
-            else playSfx("alert")
-        }
-        set((state) => ({
-            toasts: [...state.toasts, { ...toast, id: toastId }],
-        }))
-        window.setTimeout(() => {
+    actions: {
+        push: (item) =>
+            set((state) => ({
+                items: [
+                    {
+                        ...item,
+                        id: id(),
+                        createdAt: Date.now(),
+                        read: false,
+                    },
+                    ...state.items,
+                ].slice(0, 50),
+            })),
+        markRead: (itemId) =>
+            set((state) => ({
+                items: state.items.map((n) =>
+                    n.id === itemId ? { ...n, read: true } : n
+                ),
+            })),
+        markAllRead: () =>
+            set((state) => ({
+                items: state.items.map((n) => ({ ...n, read: true })),
+            })),
+        toast: (toast) => {
+            const toastId = id()
+            if (!toast.silent) {
+                if (toast.tone === "danger") playSfx("error")
+                else if (toast.tone === "success") playSfx("success")
+                else playSfx("alert")
+            }
+            set((state) => ({
+                toasts: [...state.toasts, { ...toast, id: toastId }],
+            }))
+            window.setTimeout(() => {
+                set((state) => ({
+                    toasts: state.toasts.filter((t) => t.id !== toastId),
+                }))
+            }, 4200)
+        },
+        dismissToast: (toastId) =>
             set((state) => ({
                 toasts: state.toasts.filter((t) => t.id !== toastId),
-            }))
-        }, 4200)
+            })),
     },
-    dismissToast: (toastId) =>
-        set((state) => ({
-            toasts: state.toasts.filter((t) => t.id !== toastId),
-        })),
 }))
+
+export const useNotificationItems = () =>
+    useNotificationsStore((s) => s.items)
+export const useToasts = () => useNotificationsStore((s) => s.toasts)
+export const useNotificationActions = () =>
+    useNotificationsStore((s) => s.actions)

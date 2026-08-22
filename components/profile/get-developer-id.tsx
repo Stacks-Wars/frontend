@@ -12,8 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
+import { useSessionUser } from "@/stores/session"
 
 type GetDeveloperIdProps = {
     /** Profile owner's platform user id (Neon `sub` / `UserId`). */
@@ -26,8 +26,8 @@ type GetDeveloperIdProps = {
  * Hidden for other visitors so the profile stays uncluttered.
  */
 export function GetDeveloperId({ userId }: GetDeveloperIdProps) {
-    const sessionUserId = useSessionStore((s) => s.user?.id)
-    const toast = useNotificationsStore((s) => s.toast)
+    const sessionUserId = useSessionUser()?.id
+    const { toast } = useNotificationActions()
     const [open, setOpen] = React.useState(false)
     const [copied, setCopied] = React.useState(false)
 

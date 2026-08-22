@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui"
 import { useUserCards } from "@/hooks/use-user-cards"
 import type { GameMetadata, RecentMatch } from "@/lib/api/types"
 import { formatUsdc, timeAgo } from "@/lib/format"
-import { useLiveStore } from "@/stores/live"
+import { useRecentResults } from "@/stores/live"
 
 type Row = {
     key: string
@@ -41,7 +41,7 @@ export function RecentResults({
     initial: RecentMatch[]
     games: GameMetadata[]
 }) {
-    const live = useLiveStore((state) => state.recentResults)
+    const live = useRecentResults()
     const gameName = React.useCallback(
         (id: string) => games.find((game) => game.id === id)?.name ?? id,
         [games]

@@ -14,13 +14,13 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { LEGAL_VERSION } from "@/lib/legal"
-import { useSessionStore } from "@/stores/session"
+import { useSessionActions, useSessionLoading, useSessionUser } from "@/stores/session"
 
 export function LegalConsentGate() {
     const pathname = usePathname()
-    const user = useSessionStore((s) => s.user)
-    const setUser = useSessionStore((s) => s.setUser)
-    const loading = useSessionStore((s) => s.loading)
+    const user = useSessionUser()
+    const { setUser } = useSessionActions()
+    const loading = useSessionLoading()
     const [busy, setBusy] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
 

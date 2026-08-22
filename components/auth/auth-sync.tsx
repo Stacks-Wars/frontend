@@ -14,7 +14,7 @@ import {
     useUserTopic,
 } from "@/components/ws/app-ws-provider"
 import { appSocket } from "@/lib/ws/app-socket"
-import { useSessionStore } from "@/stores/session"
+import { useSessionActions, useSessionUser } from "@/stores/session"
 
 /**
  * Mirrors the auth session into the app: upserts the backend user record,
@@ -22,10 +22,8 @@ import { useSessionStore } from "@/stores/session"
  */
 export function AuthSync() {
     const { data: session, isPending } = authClient.useSession()
-    const setUser = useSessionStore((state) => state.setUser)
-    const setLoading = useSessionStore((state) => state.setLoading)
-    const setBalance = useSessionStore((state) => state.setBalance)
-    const userId = useSessionStore((state) => state.user?.id)
+    const { setUser, setLoading, setBalance } = useSessionActions()
+    const userId = useSessionUser()?.id
 
     useUserTopic(userId)
 
@@ -98,7 +96,7 @@ export function AuthSync() {
                     isWebPushSupported() &&
                     Notification.permission === "granted"
                 ) {
-                    void usePushStore.getState().enable()
+                    void usePushStore.getState().actions.enable()
                 }
             } catch (error) {
                 console.error("Failed to sync app user", error)

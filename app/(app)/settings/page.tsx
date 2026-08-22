@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { RiShieldUserLine } from "@remixicon/react"
 
 import { PageContainer } from "@/components/common/page-container"
@@ -10,12 +9,12 @@ import { DeleteAccountCard } from "@/components/settings/delete-account-card"
 import { NotificationPreferences } from "@/components/settings/notification-preferences"
 import { ProfileForm } from "@/components/settings/profile-form"
 import { SoundPreferences } from "@/components/settings/sound-preferences"
-import { Button, EmptyState, Skeleton } from "@/components/ui"
-import { useSessionStore } from "@/stores/session"
+import { ButtonLink, EmptyState, Skeleton } from "@/components/ui"
+import { useSessionLoading, useSessionUser } from "@/stores/session"
 
 export default function SettingsPage() {
-    const user = useSessionStore((s) => s.user)
-    const loading = useSessionStore((s) => s.loading)
+    const user = useSessionUser()
+    const loading = useSessionLoading()
 
     return (
         <PageContainer size="default" className="space-y-8">
@@ -37,12 +36,9 @@ export default function SettingsPage() {
                         title="Sign in to manage your account"
                         description="Settings are tied to your player account."
                         action={
-                            <Button
-                                variant="primary"
-                                render={<Link href="/auth/login" />}
-                            >
+                            <ButtonLink href="/auth/login" variant="primary">
                                 Sign in
-                            </Button>
+                            </ButtonLink>
                         }
                     />
                 )

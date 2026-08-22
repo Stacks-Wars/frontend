@@ -14,7 +14,7 @@ import { Button, EmptyState, Skeleton } from "@/components/ui"
 import type { RankedEntry } from "@/hooks/use-leaderboard"
 import { formatUsdc, compact } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { useSessionStore } from "@/stores/session"
+import { useSessionUser } from "@/stores/session"
 
 export function LeaderboardTable({
     items,
@@ -31,7 +31,7 @@ export function LeaderboardTable({
     pageCount: number
     onPage: (page: number) => void
 }) {
-    const selfId = useSessionStore((s) => s.user?.id ?? null)
+    const selfId = useSessionUser()?.id ?? null
 
     if (loading) {
         return (

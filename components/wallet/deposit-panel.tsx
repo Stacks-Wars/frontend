@@ -1,18 +1,17 @@
 "use client"
 
 import * as React from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { RiCheckLine, RiFileCopyLine, RiLoader4Line } from "@remixicon/react"
 
 import { getMyDepositWallet, refreshMyBalance } from "@/actions/wallet"
 import { Badge, Button, Skeleton } from "@/components/ui"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
+import { useSessionActions } from "@/stores/session"
 
 export function DepositPanel() {
-    const setBalance = useSessionStore((s) => s.setBalance)
-    const toast = useNotificationsStore((s) => s.toast)
-    const queryClient = useQueryClient()
+    const { setBalance } = useSessionActions()
+    const { toast } = useNotificationActions()
     const [copied, setCopied] = React.useState(false)
     const [checking, setChecking] = React.useState(false)
 
@@ -45,7 +44,6 @@ export function DepositPanel() {
         try {
             const next = await refreshMyBalance()
             setBalance(next)
-            queryClient.setQueryData(["balance"], next)
             toast({ title: "Balance re-read from chain", tone: "success" })
         } catch (err) {
             toast({

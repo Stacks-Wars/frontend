@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import * as React from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -11,14 +10,14 @@ import {
 } from "@remixicon/react"
 
 import { getMyDepositWallet } from "@/actions/wallet"
-import { Badge, Button, Skeleton } from "@/components/ui"
+import { Badge, Button, ButtonLink, Skeleton } from "@/components/ui"
 import type { AppUser } from "@/lib/api/types"
 import { formatDate, shortId } from "@/lib/format"
 import { truncateWallet } from "@/lib/utils"
-import { useNotificationsStore } from "@/stores/notifications"
+import { useNotificationActions } from "@/stores/notifications"
 
 export function AccountOverview({ user }: { user: AppUser }) {
-    const toast = useNotificationsStore((s) => s.toast)
+    const { toast } = useNotificationActions()
     const [copied, setCopied] = React.useState(false)
 
     const {
@@ -101,27 +100,23 @@ export function AccountOverview({ user }: { user: AppUser }) {
 
             <div className="flex flex-wrap items-center gap-2 px-4 py-3">
                 {user.username ? (
-                    <Button
+                    <ButtonLink
+                        href={`/profile/${user.username}`}
                         variant="outline"
                         size="sm"
-                        render={<Link href={`/profile/${user.username}`} />}
                     >
                         <RiArrowRightUpLine />
                         Public profile
-                    </Button>
+                    </ButtonLink>
                 ) : (
                     <span className="text-xs text-muted-foreground">
                         Claim a username above to get a public profile.
                     </span>
                 )}
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    render={<Link href="/wallet" />}
-                >
+                <ButtonLink href="/wallet" variant="ghost" size="sm">
                     <RiWallet3Line />
                     Wallet
-                </Button>
+                </ButtonLink>
             </div>
         </div>
     )

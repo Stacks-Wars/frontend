@@ -1,8 +1,7 @@
-import Link from "next/link"
 import { RiUserSearchLine } from "@remixicon/react"
 
 import { PageContainer } from "@/components/common/page-container"
-import { Button, EmptyState } from "@/components/ui"
+import { ButtonLink, EmptyState } from "@/components/ui"
 
 export default function ProfileNotFound() {
     return (
@@ -12,13 +11,9 @@ export default function ProfileNotFound() {
                 title="No such player"
                 description="This username does not exist, or the player has not claimed a handle yet."
                 action={
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        render={<Link href="/lobbies" />}
-                    >
+                    <ButtonLink href="/lobbies" variant="outline" size="sm">
                         Browse lobbies
-                    </Button>
+                    </ButtonLink>
                 }
             />
         </PageContainer>

@@ -1,6 +1,6 @@
 export { Avatar, AvatarFallback, AvatarImage, avatarVariants } from "./avatar"
 export { Badge, LiveDot, badgeVariants } from "./badge"
-export { Button, buttonVariants } from "./button"
+export { Button, ButtonLink, buttonVariants } from "./button"
 export {
     Card,
     CardContent,

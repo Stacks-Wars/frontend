@@ -1,8 +1,7 @@
-import Link from "next/link"
 import { RiArrowLeftLine } from "@remixicon/react"
 
 import { Brand } from "@/components/shell/brand"
-import { Button } from "@/components/ui"
+import { ButtonLink } from "@/components/ui"
 
 const POINTS = [
     "Entry fees sit in an on-chain vault, not with us.",
@@ -18,15 +17,15 @@ export default function AuthLayout({
             <div className="flex flex-col">
                 <div className="flex items-center justify-between px-4 py-6 sm:px-8">
                     <Brand />
-                    <Button
+                    <ButtonLink
+                        href="/"
                         variant="ghost"
                         size="sm"
                         className="text-muted-foreground"
-                        render={<Link href="/" />}
                     >
                         <RiArrowLeftLine />
                         Home
-                    </Button>
+                    </ButtonLink>
                 </div>
                 <div className="flex flex-1 items-center justify-center px-4 pb-16 sm:px-8">
                     <div className="w-full max-w-sm">{children}</div>
@@ -34,7 +33,7 @@ export default function AuthLayout({
             </div>
 
             <aside className="relative hidden overflow-hidden border-l border-border/60 bg-grid lg:block">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-gold/10" />
+                <div className="absolute inset-0 bg-linear-to-br from-primary/15 via-transparent to-gold/10" />
                 <div className="relative flex h-full flex-col justify-end gap-8 p-12">
                     <p className="font-display text-4xl leading-tight">
                         Skill games,

@@ -7,26 +7,25 @@ import { RiAddLine } from "@remixicon/react"
 import { listGamesAction } from "@/actions/games"
 import { CreateLobbyDialog } from "@/components/lobbies/create-lobby-dialog"
 import { Button } from "@/components/ui"
+import {
+    useCreateLobby,
+    useCreateLobbyActions,
+    useCreateLobbyGameId,
+    useCreateLobbyOpen,
+    useCreateLobbySession,
+} from "@/stores/create-lobby"
 
-type CreateLobbyContext = {
-    open: (gameId?: string) => void
-}
-
-const Context = React.createContext<CreateLobbyContext | null>(null)
+export { useCreateLobby } from "@/stores/create-lobby"
 
 /**
- * Mounts the create-lobby dialog once for the whole app. Any button that wants
- * to host a lobby calls `open()`, so there is exactly one form.
+ * Mounts the create-lobby dialog once. Any button that wants to host a lobby
+ * calls `open()`, so there is exactly one form.
  */
-export function CreateLobbyProvider({
-    children,
-}: {
-    children: React.ReactNode
-}) {
-    const [open, setOpen] = React.useState(false)
-    const [gameId, setGameId] = React.useState<string | undefined>()
-    // Remounting on each open is what clears the form.
-    const [session, setSession] = React.useState(0)
+export function CreateLobbyHost() {
+    const open = useCreateLobbyOpen()
+    const gameId = useCreateLobbyGameId()
+    const session = useCreateLobbySession()
+    const { setOpen } = useCreateLobbyActions()
 
     const { data: games } = useQuery({
         queryKey: ["games"],
@@ -34,37 +33,15 @@ export function CreateLobbyProvider({
         staleTime: 10 * 60_000,
     })
 
-    const value = React.useMemo<CreateLobbyContext>(
-        () => ({
-            open: (nextGameId) => {
-                setGameId(nextGameId)
-                setSession((count) => count + 1)
-                setOpen(true)
-            },
-        }),
-        []
-    )
-
     return (
-        <Context.Provider value={value}>
-            {children}
-            <CreateLobbyDialog
-                key={session}
-                open={open}
-                onOpenChange={setOpen}
-                games={games ?? []}
-                gameId={gameId}
-            />
-        </Context.Provider>
+        <CreateLobbyDialog
+            key={session}
+            open={open}
+            onOpenChange={setOpen}
+            games={games ?? []}
+            gameId={gameId}
+        />
     )
-}
-
-export function useCreateLobby(): CreateLobbyContext {
-    const context = React.useContext(Context)
-    if (!context) {
-        throw new Error("useCreateLobby must be used inside CreateLobbyProvider")
-    }
-    return context
 }
 
 export function CreateLobbyButton({

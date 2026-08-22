@@ -1,10 +1,9 @@
 "use client"
 
-import Link from "next/link"
 import * as React from "react"
 import { RiAlertLine, RiRefreshLine } from "@remixicon/react"
 
-import { Button } from "@/components/ui"
+import { Button, ButtonLink } from "@/components/ui"
 
 export default function AppError({
     error,
@@ -37,9 +36,9 @@ export default function AppError({
                         <RiRefreshLine />
                         Try again
                     </Button>
-                    <Button variant="outline" render={<Link href="/" />}>
+                    <ButtonLink href="/" variant="outline">
                         Home
-                    </Button>
+                    </ButtonLink>
                 </div>
             </div>
         </main>

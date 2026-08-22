@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import * as React from "react"
 import {
     RiArrowLeftLine,
@@ -16,7 +15,7 @@ import { SectionHeader } from "@/components/common/section"
 import { UserChip } from "@/components/common/user-chip"
 import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
 import { LobbyCard } from "@/components/lobbies/lobby-card"
-import { Badge, Button, EmptyState, Stat } from "@/components/ui"
+import { Badge, ButtonLink, EmptyState, Stat } from "@/components/ui"
 import { isPlayable } from "@/games/playable"
 import type { DefaultGameSections, GamePageProps } from "@/games/types"
 import { useLobbyFeed, type LobbyFilters } from "@/hooks/use-lobby-feed"
@@ -58,15 +57,15 @@ export function useDefaultGameSections({
                 <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_380px]">
                     <div className="flex flex-col justify-between gap-6 p-6 sm:p-8">
                         <div className="space-y-4">
-                            <Button
+                            <ButtonLink
+                                href="/games"
                                 variant="ghost"
                                 size="sm"
                                 className="-ml-3 w-fit text-muted-foreground"
-                                render={<Link href="/games" />}
                             >
                                 <RiArrowLeftLine />
                                 Back to games
-                            </Button>
+                            </ButtonLink>
 
                             <div className="space-y-3">
                                 <div className="flex flex-wrap items-center gap-2">
@@ -99,15 +98,13 @@ export function useDefaultGameSections({
                             <CreateLobbyButton gameId={game.id} size="lg">
                                 Create lobby
                             </CreateLobbyButton>
-                            <Button
+                            <ButtonLink
+                                href={`/lobbies?game=${game.id}`}
                                 variant="outline"
                                 size="lg"
-                                render={
-                                    <Link href={`/lobbies?game=${game.id}`} />
-                                }
                             >
                                 Browse lobbies
-                            </Button>
+                            </ButtonLink>
                         </div>
                     </div>
 

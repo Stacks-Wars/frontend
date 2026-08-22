@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 import { RiMenuLine } from "@remixicon/react"
@@ -13,6 +12,7 @@ import { NotificationsMenu } from "@/components/shell/notifications-menu"
 import { UserMenu } from "@/components/shell/user-menu"
 import {
     Button,
+    ButtonLink,
     Sheet,
     SheetBody,
     SheetContent,
@@ -20,7 +20,7 @@ import {
     SheetTitle,
 } from "@/components/ui"
 import { cn } from "@/lib/utils"
-import { useSessionStore } from "@/stores/session"
+import { useSessionUser } from "@/stores/session"
 
 const NAV = [
     { href: "/games", label: "Games" },
@@ -35,7 +35,7 @@ function isActive(pathname: string, href: string): boolean {
 export function AppHeader() {
     const pathname = usePathname()
     const [menuOpen, setMenuOpen] = React.useState(false)
-    const user = useSessionStore((s) => s.user)
+    const user = useSessionUser()
 
     const closeMenu = () => setMenuOpen(false)
 
@@ -46,11 +46,11 @@ export function AppHeader() {
 
                 <nav className="hidden items-center gap-1 md:flex">
                     {NAV.map((item) => (
-                        <Button
+                        <ButtonLink
                             key={item.href}
+                            href={item.href}
                             variant="ghost"
                             size="sm"
-                            render={<Link href={item.href} />}
                             className={cn(
                                 "relative h-auto rounded-lg px-3 py-2 text-sm font-medium hover:bg-transparent",
                                 isActive(pathname, item.href)
@@ -62,7 +62,7 @@ export function AppHeader() {
                             {isActive(pathname, item.href) ? (
                                 <span className="absolute inset-x-3 -bottom-px h-px bg-primary" />
                             ) : null}
-                        </Button>
+                        </ButtonLink>
                     ))}
                 </nav>
 
@@ -95,11 +95,10 @@ export function AppHeader() {
                     </SheetHeader>
                     <SheetBody className="flex flex-col gap-1">
                         {NAV.map((item) => (
-                            <Button
+                            <ButtonLink
                                 key={item.href}
+                                href={item.href}
                                 variant="ghost"
-
-                                render={<Link href={item.href} />}
                                 onClick={closeMenu}
                                 className={cn(
                                     "h-auto justify-start rounded-lg px-3 py-2.5 text-sm font-medium",
@@ -109,26 +108,26 @@ export function AppHeader() {
                                 )}
                             >
                                 {item.label}
-                            </Button>
+                            </ButtonLink>
                         ))}
                         {user ? (
                             <>
-                                <Button
+                                <ButtonLink
+                                    href="/wallet"
                                     variant="ghost"
-                                    render={<Link href="/wallet" />}
                                     onClick={closeMenu}
                                     className="h-auto justify-start rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
                                 >
                                     Wallet
-                                </Button>
-                                <Button
+                                </ButtonLink>
+                                <ButtonLink
+                                    href="/settings"
                                     variant="ghost"
-                                    render={<Link href="/settings" />}
                                     onClick={closeMenu}
                                     className="h-auto justify-start rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
                                 >
                                     Settings
-                                </Button>
+                                </ButtonLink>
                             </>
                         ) : null}
                         <LiveTicker className="mt-4 self-start" />

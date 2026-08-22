@@ -33,8 +33,8 @@ import type { VaultDraft } from "@/lib/api/server"
 import type { GameMetadata } from "@/lib/api/types"
 import { formatUsdc, toMicro, toUsdc } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
+import { useSessionBalance, useSessionUser } from "@/stores/session"
 
 const ENTRY_PRESETS = [0, 1, 5, 25, 100]
 const MIN_PAID_ENTRY_USD = 1
@@ -58,9 +58,9 @@ export function CreateLobbyDialog({
     gameId,
 }: CreateLobbyDialogProps) {
     const router = useRouter()
-    const toast = useNotificationsStore((s) => s.toast)
-    const user = useSessionStore((s) => s.user)
-    const balance = useSessionStore((s) => s.balance)
+    const { toast } = useNotificationActions()
+    const user = useSessionUser()
+    const balance = useSessionBalance()
 
     const [picked, setPicked] = React.useState<string | null>(null)
     // Falls through to the catalogue default, which may arrive after mount.

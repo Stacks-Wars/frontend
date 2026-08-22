@@ -4,13 +4,16 @@ import * as React from "react"
 import { RiCloseLine, RiShareForwardLine } from "@remixicon/react"
 
 import { Button } from "@/components/ui"
-import { useInstallStore } from "@/stores/install"
+import {
+    useInstallActions,
+    useInstallDismissed,
+    useInstallEligible,
+} from "@/stores/install"
 
 export function InstallPrompt() {
-    const eligible = useInstallStore((s) => s.eligible)
-    const dismissed = useInstallStore((s) => s.dismissed)
-    const evaluate = useInstallStore((s) => s.evaluate)
-    const dismiss = useInstallStore((s) => s.dismiss)
+    const eligible = useInstallEligible()
+    const dismissed = useInstallDismissed()
+    const { evaluate, dismiss } = useInstallActions()
 
     React.useEffect(() => {
         evaluate()
