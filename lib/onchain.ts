@@ -9,7 +9,7 @@ import type { LobbyDetail, WalletBalance } from "@/lib/api/types"
 
 /**
  * Call the long-running `/api/onchain` function. Server actions inherit the
- * calling page's duration; this route is the only 300s override.
+ * calling page's duration; this route is the only 60s override.
  */
 async function postOnchain<T>(
     op: string,

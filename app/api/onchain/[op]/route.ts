@@ -16,7 +16,7 @@ import { actionResult } from "@/lib/action-result"
  * Other app routes keep the project default (10s).
  */
 export const runtime = "nodejs"
-export const maxDuration = 300
+export const maxDuration = 60
 
 const OPS = new Set([
     "create",
