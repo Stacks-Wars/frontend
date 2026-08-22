@@ -5,7 +5,7 @@ import * as React from "react"
 
 import { getLeaderboardAction } from "@/actions/games"
 import type { LeaderboardEntry, LeaderboardPage } from "@/lib/api/types"
-import { useLiveStore } from "@/stores/live"
+import { useLeaderboardVersion } from "@/stores/live"
 
 export type Scope = { seasonId?: number; gameId?: string }
 
@@ -40,7 +40,7 @@ function withMovement(key: string, items: LeaderboardEntry[]): RankedEntry[] {
 }
 
 export function useLeaderboard(scope: Scope, initial?: LeaderboardPage) {
-    const version = useLiveStore((state) => state.leaderboardVersion)
+    const version = useLeaderboardVersion()
     const key = scopeKey(scope)
 
     const [paging, setPaging] = React.useState({ key, page: 0 })

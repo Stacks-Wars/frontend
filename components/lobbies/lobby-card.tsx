@@ -5,7 +5,7 @@ import { RiLockLine, RiSparkling2Line } from "@remixicon/react"
 
 import { GameArt } from "@/components/common/game-art"
 import { LobbyStatusBadge } from "@/components/common/status-badge"
-import { Badge, Button, Progress } from "@/components/ui"
+import { Badge, ButtonLink, Progress } from "@/components/ui"
 import type { GameMetadata, Lobby } from "@/lib/api/types"
 import { formatUsdc, timeAgo } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -125,10 +125,10 @@ export function LobbyCard({
                         </p>
                     </div>
                 ) : null}
-                <Button
+                <ButtonLink
+                    href={`/room/${lobby.path}`}
                     size="sm"
                     variant={joinable ? "primary" : "outline"}
-                    render={<Link href={`/room/${lobby.path}`} />}
                 >
                     {joinable
                         ? lobby.isPrivate
@@ -137,7 +137,7 @@ export function LobbyCard({
                         : lobby.status === "inProgress"
                           ? "Watch"
                           : "Open"}
-                </Button>
+                </ButtonLink>
             </div>
         </article>
     )

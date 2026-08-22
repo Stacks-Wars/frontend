@@ -30,7 +30,7 @@ import { useUserCards } from "@/hooks/use-user-cards"
 import type { GameMetadata, Lobby, LobbyStatus } from "@/lib/api/types"
 import { displayNameFor } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { useSessionStore } from "@/stores/session"
+import { useSessionUser } from "@/stores/session"
 
 type StatusTab = "open" | "live" | "all"
 
@@ -60,7 +60,7 @@ export function LobbyBrowser({
     games: GameMetadata[]
 }) {
     const searchParams = useSearchParams()
-    const me = useSessionStore((s) => s.user)
+    const me = useSessionUser()
 
     const [tab, setTab] = React.useState<StatusTab>("open")
     const [gameId, setGameId] = React.useState<string>(

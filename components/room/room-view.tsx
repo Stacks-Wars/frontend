@@ -17,8 +17,8 @@ import { Button, EmptyState } from "@/components/ui"
 import { getGameModule } from "@/games/registry"
 import { useLobbyRoom } from "@/hooks/use-lobby-room"
 import type { GameMetadata } from "@/lib/api/types"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
+import { useSessionUser } from "@/stores/session"
 
 /**
  * The realtime hub.
@@ -37,8 +37,8 @@ export function RoomView({
 }) {
     const { room, connection, stale, sendChat, resync, channel } =
         useLobbyRoom(path)
-    const selfUserId = useSessionStore((s) => s.user?.id ?? null)
-    const toast = useNotificationsStore((s) => s.toast)
+    const selfUserId = useSessionUser()?.id ?? null
+    const { toast } = useNotificationActions()
     const [kicking, setKicking] = React.useState<string | null>(null)
 
     const gameId = room?.lobby.gameId

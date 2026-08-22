@@ -1,9 +1,7 @@
 "use client"
 
-import Link from "next/link"
-
 import { Brand } from "@/components/shell/brand"
-import { Button } from "@/components/ui"
+import { ButtonLink } from "@/components/ui"
 
 const LINKS = [
     { href: "/games", label: "Games" },
@@ -27,35 +25,20 @@ export function AppFooter() {
                     </p>
                 </div>
                 <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                    {LINKS.map((link) =>
-                        "external" in link && link.external ? (
-                            <Button
-                                key={link.href}
-                                variant="ghost"
-                                size="sm"
-                                render={
-                                    <a
-                                        href={link.href}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    />
-                                }
-                                className="h-auto px-0 py-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                            >
-                                {link.label}
-                            </Button>
-                        ) : (
-                            <Button
-                                key={link.href}
-                                variant="ghost"
-                                size="sm"
-                                render={<Link href={link.href} />}
-                                className="h-auto px-0 py-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                            >
-                                {link.label}
-                            </Button>
-                        )
-                    )}
+                    {LINKS.map((link) => (
+                        <ButtonLink
+                            key={link.href}
+                            href={link.href}
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto px-0 py-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                            {...("external" in link && link.external
+                                ? { target: "_blank", rel: "noreferrer" }
+                                : {})}
+                        >
+                            {link.label}
+                        </ButtonLink>
+                    ))}
                 </nav>
             </div>
         </footer>

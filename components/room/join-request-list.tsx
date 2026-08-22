@@ -10,7 +10,7 @@ import {
 import { UserChip } from "@/components/common/user-chip"
 import { Button } from "@/components/ui"
 import type { JoinRequest } from "@/lib/api/types"
-import { useNotificationsStore } from "@/stores/notifications"
+import { useNotificationActions } from "@/stores/notifications"
 
 export function JoinRequestList({
     lobbyId,
@@ -21,7 +21,7 @@ export function JoinRequestList({
     requests: JoinRequest[]
     disabled?: boolean
 }) {
-    const toast = useNotificationsStore((s) => s.toast)
+    const { toast } = useNotificationActions()
     const [pending, setPending] = React.useState<string | null>(null)
 
     const pendingRequests = requests.filter((jr) => jr.state === "pending")

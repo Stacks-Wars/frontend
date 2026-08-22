@@ -2,8 +2,9 @@
 
 import * as React from "react"
 
+import { listGameActivityAction } from "@/actions/games"
 import type { GameActivity } from "@/lib/api/types"
-import { useLiveStore } from "@/stores/live"
+import { useLiveActions, useLiveStore } from "@/stores/live"
 
 const EMPTY: GameActivity = {
     gameId: "",
@@ -13,20 +14,39 @@ const EMPTY: GameActivity = {
     openPotMicro: 0,
 }
 
+let seedInFlight: Promise<void> | null = null
+
+function seedActivityFromHttp() {
+    if (Object.keys(useLiveStore.getState().activity).length > 0) return
+    if (seedInFlight) return seedInFlight
+    seedInFlight = listGameActivityAction()
+        .then((items) => {
+            if (Object.keys(useLiveStore.getState().activity).length > 0) return
+            useLiveStore.getState().actions.setActivity(items)
+        })
+        .catch(() => undefined)
+        .finally(() => {
+            seedInFlight = null
+        })
+    return seedInFlight
+}
+
 /**
- * Per-game live counters, seeded from the server render and then updated by
- * `games.activity` broadcasts whenever a lobby is created, joined, or ends.
+ * Per-game live counters, seeded from the server render (or one HTTP call)
+ * then updated by `games.activity` broadcasts.
  */
 export function useGameActivity(initial: GameActivity[] = []) {
     const activity = useLiveStore((s) => s.activity)
-    const setActivity = useLiveStore((s) => s.setActivity)
-    const seededRef = React.useRef(false)
+    const { setActivity } = useLiveActions()
 
     React.useEffect(() => {
-        if (seededRef.current || initial.length === 0) return
-        seededRef.current = true
-        setActivity(initial)
-    }, [initial, setActivity])
+        if (Object.keys(useLiveStore.getState().activity).length > 0) return
+        if (initial.length > 0) {
+            setActivity(initial)
+            return
+        }
+        void seedActivityFromHttp()
+    }, [activity, initial, setActivity])
 
     const byGame = React.useMemo(
         () =>

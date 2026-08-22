@@ -3,7 +3,7 @@
 import * as React from "react"
 
 import { BG_TRACKS } from "@/lib/audio/sounds"
-import { useSoundStore } from "@/stores/sound"
+import { useMusicEnabled, useMusicVolume } from "@/stores/sound"
 
 function shuffle<T>(arr: readonly T[]): T[] {
     const out = [...arr]
@@ -19,8 +19,8 @@ function shuffle<T>(arr: readonly T[]): T[] {
  * Resumes on first user gesture to satisfy browser autoplay rules.
  */
 export function useBackgroundMusic() {
-    const musicEnabled = useSoundStore((s) => s.musicEnabled)
-    const musicVolume = useSoundStore((s) => s.musicVolume)
+    const musicEnabled = useMusicEnabled()
+    const musicVolume = useMusicVolume()
     const audioRef = React.useRef<HTMLAudioElement | null>(null)
     const tracksRef = React.useRef<string[]>(shuffle(BG_TRACKS))
     const indexRef = React.useRef(0)

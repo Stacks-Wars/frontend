@@ -1,24 +1,16 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
-
-import { listGameActivityAction } from "@/actions/games"
 import { LiveNumber } from "@/components/common/live-number"
 import { LiveDot } from "@/components/ui"
 import { useGameActivity } from "@/hooks/use-game-activity"
 import { cn } from "@/lib/utils"
 
 /**
- * Platform-wide player count in the header. Seeded once over HTTP, then driven
- * by `games.activity` broadcasts.
+ * Platform-wide player count in the header. Reads the live store (seeded on
+ * first paint, then `games.activity` broadcasts).
  */
 export function LiveTicker({ className }: { className?: string }) {
-    const { data } = useQuery({
-        queryKey: ["game-activity"],
-        queryFn: () => listGameActivityAction(),
-        staleTime: 5 * 60_000,
-    })
-    const { totals } = useGameActivity(data ?? [])
+    const { totals } = useGameActivity()
 
     return (
         <span

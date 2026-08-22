@@ -1,11 +1,11 @@
 "use client"
 
-import { useNotificationsStore } from "@/stores/notifications"
+import { useToasts, useNotificationActions } from "@/stores/notifications"
 import { cn } from "@/lib/utils"
 
 export function ToastHost() {
-    const toasts = useNotificationsStore((s) => s.toasts)
-    const dismiss = useNotificationsStore((s) => s.dismissToast)
+    const toasts = useToasts()
+    const { dismissToast: dismiss } = useNotificationActions()
 
     if (!toasts.length) return null
 

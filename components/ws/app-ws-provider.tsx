@@ -4,7 +4,7 @@ import * as React from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { playSfx } from "@/lib/audio/play-sound"
-import { appSocket, type ConnectionStatus } from "@/lib/ws/app-socket"
+import { appSocket } from "@/lib/ws/app-socket"
 import { emitGameEvent } from "@/lib/ws/game-bus"
 import {
     APP_TOPIC,
@@ -24,11 +24,10 @@ import {
     type WsEnvelope,
 } from "@/lib/ws/protocol"
 import type { Lobby, LobbyChatMessage } from "@/lib/api/types"
+import { useConnectionActions, useConnectionStatus } from "@/stores/connection"
 import { useLiveStore } from "@/stores/live"
 import { useNotificationsStore } from "@/stores/notifications"
 import { useSessionStore } from "@/stores/session"
-
-const WsStatusContext = React.createContext<ConnectionStatus>("idle")
 
 /**
  * Access tokens are minted by the auth provider, which rate limits. One mint
@@ -75,10 +74,8 @@ export function clearAccessTokenCache(): void {
  * parses WebSocket frames.
  */
 export function AppWsProvider({ children }: { children?: React.ReactNode }) {
-    const [status, setStatus] = React.useState<ConnectionStatus>(
-        appSocket.getStatus()
-    )
     const queryClient = useQueryClient()
+    const { setStatus } = useConnectionActions()
 
     React.useEffect(() => {
         appSocket.setTokenProvider(mintAccessToken)
@@ -86,12 +83,11 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
 
         const offStatus = appSocket.onStatus(setStatus)
         const offMessage = appSocket.onMessage((message: WsEnvelope) => {
-            const live = useLiveStore.getState()
-            const session = useSessionStore.getState()
-            const notify = useNotificationsStore.getState()
+            const live = useLiveStore.getState().actions
+            const session = useSessionStore.getState().actions
+            const notify = useNotificationsStore.getState().actions
 
             switch (message.kind) {
-                /* ---------------- room ---------------- */
                 case "lobby.snapshot": {
                     live.applySnapshot(payloadAs<LobbySnapshotPayload>(message))
                     break
@@ -118,7 +114,6 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     break
                 }
                 case "user.event": {
-                    // Private engine messages (rank, prize) route the same way.
                     const parsed = asGameEvent(message.payload)
                     if (parsed) emitGameEvent(parsed.lobbyId, parsed.event)
                     break
@@ -140,7 +135,6 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     break
                 }
 
-                /* ------------- global feed ------------ */
                 case "lobby.created": {
                     const { lobby } = payloadAs<{ lobby: Lobby }>(message)
                     live.upsertLobby(lobby)
@@ -157,14 +151,13 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     break
                 }
                 case "games.activity": {
-                    live.setActivity(payloadAs<GameActivityPayload>(message).games)
+                    live.setActivity(
+                        payloadAs<GameActivityPayload>(message).games
+                    )
                     break
                 }
                 case "leaderboard.updated": {
                     live.bumpLeaderboard()
-                    void queryClient.invalidateQueries({
-                        queryKey: ["leaderboard"],
-                    })
                     break
                 }
                 case "match.finished": {
@@ -172,7 +165,6 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     break
                 }
 
-                /* --------------- wallet --------------- */
                 case "wallet.balance.updated": {
                     const payload = payloadAs<WalletBalancePayload>(message)
                     if (typeof payload.availableMicro === "number") {
@@ -183,14 +175,13 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                                 : {}),
                         })
                     }
-                    void queryClient.invalidateQueries({ queryKey: ["balance"] })
                     void queryClient.invalidateQueries({
                         queryKey: ["activity"],
                     })
                     if (typeof payload.payoutMicro === "number") {
                         notify.toast({
                             title: "Winnings received",
-                            body: "Your balance has been updated.",
+                            body: "It's in your wallet.",
                             tone: "success",
                         })
                         notify.push({
@@ -205,7 +196,6 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     void queryClient.invalidateQueries({
                         queryKey: ["activity"],
                     })
-                    void queryClient.invalidateQueries({ queryKey: ["balance"] })
                     if (payload.status === "confirmed") {
                         notify.toast({
                             title: "Transaction confirmed",
@@ -225,8 +215,6 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
             }
         })
 
-        // The app topic carries the global feed (lobbies, activity, results)
-        // that the header and browser rely on everywhere.
         const releaseApp = appSocket.acquireTopic(APP_TOPIC)
 
         return () => {
@@ -235,18 +223,14 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
             offMessage()
             appSocket.disconnect()
         }
-    }, [queryClient])
+    }, [queryClient, setStatus])
 
-    return (
-        <WsStatusContext.Provider value={status}>
-            {children}
-        </WsStatusContext.Provider>
-    )
+    return children
 }
 
 function handleNotice(
     notice: LobbyNoticePayload,
-    notify: ReturnType<typeof useNotificationsStore.getState>
+    notify: ReturnType<typeof useNotificationsStore.getState>["actions"]
 ) {
     if (notice.type === "gameStarted") {
         playSfx("beep")
@@ -258,8 +242,8 @@ function handleNotice(
     }
 }
 
-export function useAppSocket(): ConnectionStatus {
-    return React.useContext(WsStatusContext)
+export function useAppSocket() {
+    return useConnectionStatus()
 }
 
 /**

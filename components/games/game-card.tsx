@@ -6,7 +6,7 @@ import { RiGroupLine, RiPlayCircleLine, RiTrophyLine } from "@remixicon/react"
 import { GameArt } from "@/components/common/game-art"
 import { LiveNumber } from "@/components/common/live-number"
 import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
-import { Badge, Button, LiveDot } from "@/components/ui"
+import { Badge, ButtonLink, LiveDot } from "@/components/ui"
 import { isPlayable } from "@/games/playable"
 import type { GameActivity, GameMetadata } from "@/lib/api/types"
 import { compact, formatUsdc, label } from "@/lib/format"
@@ -92,14 +92,14 @@ export function GameCard({
                 </dl>
 
                 <div className="mt-auto flex gap-2">
-                    <Button
+                    <ButtonLink
+                        href={`/games/${game.id}`}
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        render={<Link href={`/games/${game.id}`} />}
                     >
                         Open
-                    </Button>
+                    </ButtonLink>
                     <CreateLobbyButton
                         gameId={game.id}
                         size="sm"

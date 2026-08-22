@@ -17,13 +17,13 @@ import {
     withdrawSchema,
     type WithdrawFormValues,
 } from "@/lib/wallet/withdraw-schema"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
+import { useSessionActions, useSessionBalance } from "@/stores/session"
 
 export function WithdrawForm() {
-    const balance = useSessionStore((s) => s.balance)
-    const setBalance = useSessionStore((s) => s.setBalance)
-    const toast = useNotificationsStore((s) => s.toast)
+    const balance = useSessionBalance()
+    const { setBalance } = useSessionActions()
+    const { toast } = useNotificationActions()
     const queryClient = useQueryClient()
 
     const [error, setError] = React.useState<string | null>(null)

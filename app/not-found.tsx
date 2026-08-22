@@ -1,7 +1,6 @@
-import Link from "next/link"
 import { RiCompass3Line } from "@remixicon/react"
 
-import { Button } from "@/components/ui"
+import { ButtonLink } from "@/components/ui"
 
 export default function NotFound() {
     return (
@@ -16,12 +15,12 @@ export default function NotFound() {
                     link is wrong.
                 </p>
                 <div className="flex justify-center gap-2">
-                    <Button variant="primary" render={<Link href="/games" />}>
+                    <ButtonLink href="/games" variant="primary">
                         Browse games
-                    </Button>
-                    <Button variant="outline" render={<Link href="/" />}>
+                    </ButtonLink>
+                    <ButtonLink href="/" variant="outline">
                         Home
-                    </Button>
+                    </ButtonLink>
                 </div>
             </div>
         </main>

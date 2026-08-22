@@ -10,10 +10,12 @@ type SoundState = {
     musicVolume: number
     /** 0–1 */
     sfxVolume: number
-    setMusicEnabled: (enabled: boolean) => void
-    setSfxEnabled: (enabled: boolean) => void
-    setMusicVolume: (volume: number) => void
-    setSfxVolume: (volume: number) => void
+    actions: {
+        setMusicEnabled: (enabled: boolean) => void
+        setSfxEnabled: (enabled: boolean) => void
+        setMusicVolume: (volume: number) => void
+        setSfxVolume: (volume: number) => void
+    }
 }
 
 function clamp01(n: number) {
@@ -28,15 +30,32 @@ export const useSoundStore = create<SoundState>()(
             sfxEnabled: true,
             musicVolume: 0.02,
             sfxVolume: 0.4,
-            setMusicEnabled: (musicEnabled) => set({ musicEnabled }),
-            setSfxEnabled: (sfxEnabled) => set({ sfxEnabled }),
-            setMusicVolume: (musicVolume) =>
-                set({ musicVolume: clamp01(musicVolume) }),
-            setSfxVolume: (sfxVolume) => set({ sfxVolume: clamp01(sfxVolume) }),
+            actions: {
+                setMusicEnabled: (musicEnabled) => set({ musicEnabled }),
+                setSfxEnabled: (sfxEnabled) => set({ sfxEnabled }),
+                setMusicVolume: (musicVolume) =>
+                    set({ musicVolume: clamp01(musicVolume) }),
+                setSfxVolume: (sfxVolume) =>
+                    set({ sfxVolume: clamp01(sfxVolume) }),
+            },
         }),
-        { name: "sw-sound" }
+        {
+            name: "sw-sound",
+            partialize: (state) => ({
+                musicEnabled: state.musicEnabled,
+                sfxEnabled: state.sfxEnabled,
+                musicVolume: state.musicVolume,
+                sfxVolume: state.sfxVolume,
+            }),
+        }
     )
 )
+
+export const useMusicEnabled = () => useSoundStore((s) => s.musicEnabled)
+export const useSfxEnabled = () => useSoundStore((s) => s.sfxEnabled)
+export const useMusicVolume = () => useSoundStore((s) => s.musicVolume)
+export const useSfxVolume = () => useSoundStore((s) => s.sfxVolume)
+export const useSoundActions = () => useSoundStore((s) => s.actions)
 
 /** Non-React reader for one-shot SFX helpers. */
 export function getSfxState() {

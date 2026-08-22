@@ -1,15 +1,19 @@
 "use client"
 
 import * as React from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { RiLoader4Line, RiRefreshLine } from "@remixicon/react"
 
-import { getMyActivity, getMyBalance, refreshMyBalance } from "@/actions/wallet"
+import { getMyActivity, refreshMyBalance } from "@/actions/wallet"
 import { Badge, Button, Skeleton } from "@/components/ui"
 import { formatUsdc, timeAgo } from "@/lib/format"
 import { truncateWallet } from "@/lib/utils"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
+import {
+    useSessionActions,
+    useSessionBalance,
+    useSessionLoading,
+} from "@/stores/session"
 
 /** Hiro reports `success` on confirm; everything unsettled is still in flight. */
 function isPending(status: string): boolean {
@@ -23,38 +27,32 @@ function isPending(status: string): boolean {
 }
 
 export function BalanceCard() {
-    const balance = useSessionStore((s) => s.balance)
-    const setBalance = useSessionStore((s) => s.setBalance)
-    const toast = useNotificationsStore((s) => s.toast)
-    const queryClient = useQueryClient()
+    const balance = useSessionBalance()
+    const loading = useSessionLoading()
+    const { setBalance } = useSessionActions()
+    const { toast } = useNotificationActions()
     const [refreshing, setRefreshing] = React.useState(false)
-
-    const { data, isLoading, error } = useQuery({
-        queryKey: ["balance"],
-        queryFn: getMyBalance,
-    })
+    const [error, setError] = React.useState<string | null>(null)
 
     const { data: activity } = useQuery({
         queryKey: ["activity"],
         queryFn: getMyActivity,
     })
 
-    React.useEffect(() => {
-        if (data) setBalance(data)
-    }, [data, setBalance])
-
-    const current = balance ?? data ?? null
     const pending = (activity ?? []).filter((item) =>
         isPending(item.status)
     ).length
 
     async function refresh() {
         setRefreshing(true)
+        setError(null)
         try {
             const next = await refreshMyBalance()
             setBalance(next)
-            queryClient.setQueryData(["balance"], next)
         } catch (err) {
+            const message =
+                err instanceof Error ? err.message : "Could not refresh balance"
+            setError(message)
             toast({
                 title: "Could not refresh balance",
                 body: err instanceof Error ? err.message : undefined,
@@ -72,13 +70,13 @@ export function BalanceCard() {
                     <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
                         Available
                     </p>
-                    {current ? (
+                    {balance ? (
                         <p className="tnum font-display text-4xl sm:text-5xl">
-                            {formatUsdc(current.availableMicro, {
+                            {formatUsdc(balance.availableMicro, {
                                 zero: "$0.00",
                             })}
                         </p>
-                    ) : isLoading ? (
+                    ) : loading ? (
                         <Skeleton className="h-12 w-40" />
                     ) : (
                         <p className="tnum font-display text-4xl sm:text-5xl">
@@ -89,7 +87,7 @@ export function BalanceCard() {
                 <Button
                     variant="outline"
                     size="sm"
-                    onClick={refresh}
+                    onClick={() => void refresh()}
                     disabled={refreshing}
                 >
                     {refreshing ? (
@@ -102,14 +100,14 @@ export function BalanceCard() {
             </div>
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                {current ? (
+                {balance ? (
                     <span className="font-mono text-xs text-muted-foreground">
-                        {truncateWallet(current.stxAddress)}
+                        {truncateWallet(balance.stxAddress)}
                     </span>
                 ) : null}
-                {current ? (
+                {balance ? (
                     <span className="text-xs text-muted-foreground">
-                        Updated {timeAgo(current.updatedAt)}
+                        Updated {timeAgo(balance.updatedAt)}
                     </span>
                 ) : null}
                 {pending > 0 ? (
@@ -121,9 +119,7 @@ export function BalanceCard() {
 
             {error ? (
                 <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                    {error instanceof Error
-                        ? error.message
-                        : "Could not load your balance."}
+                    {error}
                 </p>
             ) : null}
         </div>

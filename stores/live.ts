@@ -39,6 +39,24 @@ export type RoomSlice = {
     hydratedAt: number
 }
 
+type LiveActions = {
+    applySnapshot: (payload: LobbySnapshotPayload) => void
+    applyRoomState: (payload: LobbyStatePayload) => void
+    applyPresence: (payload: LobbyPresencePayload) => void
+    appendChat: (message: LobbyChatMessage) => void
+    applyGameState: (lobbyId: string, game: GameSnapshot) => void
+    applyFinished: (payload: LobbyFinishedPayload) => void
+    clearRoom: (lobbyId: string) => void
+
+    seedLobbies: (lobbies: Lobby[], replace?: boolean) => void
+    upsertLobby: (lobby: Lobby) => void
+    removeLobby: (lobbyId: string) => void
+
+    setActivity: (items: GameActivity[]) => void
+    bumpLeaderboard: () => void
+    pushResult: (result: MatchFinishedPayload) => void
+}
+
 type LiveState = {
     /** Rooms keyed by lobby id, plus a path → id index for routing. */
     rooms: Record<string, RoomSlice>
@@ -60,21 +78,7 @@ type LiveState = {
 
     recentResults: MatchFinishedPayload[]
 
-    applySnapshot: (payload: LobbySnapshotPayload) => void
-    applyRoomState: (payload: LobbyStatePayload) => void
-    applyPresence: (payload: LobbyPresencePayload) => void
-    appendChat: (message: LobbyChatMessage) => void
-    applyGameState: (lobbyId: string, game: GameSnapshot) => void
-    applyFinished: (payload: LobbyFinishedPayload) => void
-    clearRoom: (lobbyId: string) => void
-
-    seedLobbies: (lobbies: Lobby[], replace?: boolean) => void
-    upsertLobby: (lobby: Lobby) => void
-    removeLobby: (lobbyId: string) => void
-
-    setActivity: (items: GameActivity[]) => void
-    bumpLeaderboard: () => void
-    pushResult: (result: MatchFinishedPayload) => void
+    actions: LiveActions
 }
 
 function sortPlayers(players: PlayerState[]): PlayerState[] {
@@ -124,192 +128,206 @@ export const useLiveStore = create<LiveState>((set) => ({
     leaderboardVersion: 0,
     recentResults: [],
 
-    applySnapshot: (payload) =>
-        set((current) => {
-            const lobbyId = payload.lobby.id
-            const previous = current.rooms[lobbyId]
-            return {
-                rooms: {
-                    ...current.rooms,
-                    [lobbyId]: {
-                        lobbyId,
-                        lobby: payload.lobby,
-                        state: payload.state,
-                        players: sortPlayers(payload.players),
-                        joinRequests: payload.joinRequests ?? [],
-                        presence: payload.presence,
-                        chat: payload.chat.slice(-CHAT_LIMIT),
-                        game: payload.game,
-                        finished:
-                            payload.finished ?? previous?.finished ?? null,
-                        hydratedAt: Date.now(),
+    actions: {
+        applySnapshot: (payload) =>
+            set((current) => {
+                const lobbyId = payload.lobby.id
+                const previous = current.rooms[lobbyId]
+                return {
+                    rooms: {
+                        ...current.rooms,
+                        [lobbyId]: {
+                            lobbyId,
+                            lobby: payload.lobby,
+                            state: payload.state,
+                            players: sortPlayers(payload.players),
+                            joinRequests: payload.joinRequests ?? [],
+                            presence: payload.presence,
+                            chat: payload.chat.slice(-CHAT_LIMIT),
+                            game: payload.game,
+                            finished:
+                                payload.finished ?? previous?.finished ?? null,
+                            hydratedAt: Date.now(),
+                        },
                     },
-                },
-                roomIdByPath: {
-                    ...current.roomIdByPath,
-                    [payload.lobby.path]: lobbyId,
-                },
-                lobbies: { ...current.lobbies, [lobbyId]: payload.lobby },
-            }
-        }),
-
-    applyRoomState: (payload) =>
-        set((current) => {
-            const lobbyId = payload.lobby.id
-            const previous = current.rooms[lobbyId]
-            if (!previous) return current
-            return {
-                rooms: {
-                    ...current.rooms,
-                    [lobbyId]: {
-                        ...previous,
-                        lobby: payload.lobby,
-                        state: payload.state,
-                        players: sortPlayers(payload.players),
-                        joinRequests:
-                            payload.joinRequests ?? previous.joinRequests,
+                    roomIdByPath: {
+                        ...current.roomIdByPath,
+                        [payload.lobby.path]: lobbyId,
                     },
-                },
-            }
-        }),
+                    lobbies: { ...current.lobbies, [lobbyId]: payload.lobby },
+                }
+            }),
 
-    applyPresence: (payload) =>
-        set((current) => {
-            const previous = current.rooms[payload.lobbyId]
-            if (!previous) return current
-            return {
-                rooms: {
-                    ...current.rooms,
-                    [payload.lobbyId]: {
-                        ...previous,
-                        presence: payload.online,
+        applyRoomState: (payload) =>
+            set((current) => {
+                const lobbyId = payload.lobby.id
+                const previous = current.rooms[lobbyId]
+                if (!previous) return current
+                return {
+                    rooms: {
+                        ...current.rooms,
+                        [lobbyId]: {
+                            ...previous,
+                            lobby: payload.lobby,
+                            state: payload.state,
+                            players: sortPlayers(payload.players),
+                            joinRequests:
+                                payload.joinRequests ?? previous.joinRequests,
+                        },
                     },
-                },
-            }
-        }),
+                }
+            }),
 
-    appendChat: (message) =>
-        set((current) => {
-            const previous = current.rooms[message.lobbyId]
-            if (!previous) return current
-            if (previous.chat.some((line) => line.id === message.id)) {
-                return current
-            }
-            return {
-                rooms: {
-                    ...current.rooms,
-                    [message.lobbyId]: {
-                        ...previous,
-                        chat: [...previous.chat, message].slice(-CHAT_LIMIT),
+        applyPresence: (payload) =>
+            set((current) => {
+                const previous = current.rooms[payload.lobbyId]
+                if (!previous) return current
+                return {
+                    rooms: {
+                        ...current.rooms,
+                        [payload.lobbyId]: {
+                            ...previous,
+                            presence: payload.online,
+                        },
                     },
-                },
-            }
-        }),
+                }
+            }),
 
-    applyGameState: (lobbyId, game) =>
-        set((current) => {
-            const previous = current.rooms[lobbyId]
-            if (!previous) return current
-            return {
-                rooms: {
-                    ...current.rooms,
-                    [lobbyId]: { ...previous, game },
-                },
-            }
-        }),
-
-    applyFinished: (payload) =>
-        set((current) => {
-            const previous = current.rooms[payload.lobbyId]
-            if (!previous) return current
-            const finishedStatus: LobbyStatus = "finished"
-            return {
-                rooms: {
-                    ...current.rooms,
-                    [payload.lobbyId]: {
-                        ...previous,
-                        finished: payload,
-                        players: mergeFinishedStandings(
-                            previous.players,
-                            payload
-                        ),
-                        lobby: { ...previous.lobby, status: finishedStatus },
-                        state: previous.state
-                            ? { ...previous.state, status: finishedStatus }
-                            : previous.state,
+        appendChat: (message) =>
+            set((current) => {
+                const previous = current.rooms[message.lobbyId]
+                if (!previous) return current
+                if (previous.chat.some((line) => line.id === message.id)) {
+                    return current
+                }
+                return {
+                    rooms: {
+                        ...current.rooms,
+                        [message.lobbyId]: {
+                            ...previous,
+                            chat: [...previous.chat, message].slice(
+                                -CHAT_LIMIT
+                            ),
+                        },
                     },
-                },
-            }
-        }),
+                }
+            }),
 
-    clearRoom: (lobbyId) =>
-        set((current) => {
-            if (!current.rooms[lobbyId]) return current
-            const rooms = { ...current.rooms }
-            const path = rooms[lobbyId]?.lobby.path
-            delete rooms[lobbyId]
-            const roomIdByPath = { ...current.roomIdByPath }
-            if (path) delete roomIdByPath[path]
-            return { rooms, roomIdByPath }
-        }),
+        applyGameState: (lobbyId, game) =>
+            set((current) => {
+                const previous = current.rooms[lobbyId]
+                if (!previous) return current
+                return {
+                    rooms: {
+                        ...current.rooms,
+                        [lobbyId]: { ...previous, game },
+                    },
+                }
+            }),
 
-    /**
-     * Merge a server-rendered list into the feed. Pages that only know about a
-     * slice of lobbies (a single game, say) merge; the browser, which fetches
-     * everything, replaces so stale rows are dropped.
-     */
-    seedLobbies: (lobbies, replace = false) =>
-        set((current) => {
-            const seeded = Object.fromEntries(
-                lobbies
-                    .filter((lobby) => !current.removedLobbies[lobby.id])
-                    .map((lobby) => [lobby.id, lobby])
-            )
-            return {
-                lobbies: replace ? seeded : { ...current.lobbies, ...seeded },
-            }
-        }),
+        applyFinished: (payload) =>
+            set((current) => {
+                const previous = current.rooms[payload.lobbyId]
+                if (!previous) return current
+                const finishedStatus: LobbyStatus = "finished"
+                return {
+                    rooms: {
+                        ...current.rooms,
+                        [payload.lobbyId]: {
+                            ...previous,
+                            finished: payload,
+                            players: mergeFinishedStandings(
+                                previous.players,
+                                payload
+                            ),
+                            lobby: {
+                                ...previous.lobby,
+                                status: finishedStatus,
+                            },
+                            state: previous.state
+                                ? { ...previous.state, status: finishedStatus }
+                                : previous.state,
+                        },
+                    },
+                }
+            }),
 
-    upsertLobby: (lobby) =>
-        set((current) => {
-            const removedLobbies = { ...current.removedLobbies }
-            delete removedLobbies[lobby.id]
-            return {
-                lobbies: { ...current.lobbies, [lobby.id]: lobby },
-                removedLobbies,
-            }
-        }),
+        clearRoom: (lobbyId) =>
+            set((current) => {
+                if (!current.rooms[lobbyId]) return current
+                const rooms = { ...current.rooms }
+                const path = rooms[lobbyId]?.lobby.path
+                delete rooms[lobbyId]
+                const roomIdByPath = { ...current.roomIdByPath }
+                if (path) delete roomIdByPath[path]
+                return { rooms, roomIdByPath }
+            }),
 
-    removeLobby: (lobbyId) =>
-        set((current) => {
-            const lobbies = { ...current.lobbies }
-            delete lobbies[lobbyId]
-            return {
-                lobbies,
-                removedLobbies: {
-                    ...current.removedLobbies,
-                    [lobbyId]: true as const,
-                },
-            }
-        }),
+        /**
+         * Merge a server-rendered list into the feed. Pages that only know about a
+         * slice of lobbies (a single game, say) merge; the browser, which fetches
+         * everything, replaces so stale rows are dropped.
+         */
+        seedLobbies: (lobbies, replace = false) =>
+            set((current) => {
+                const seeded = Object.fromEntries(
+                    lobbies
+                        .filter((lobby) => !current.removedLobbies[lobby.id])
+                        .map((lobby) => [lobby.id, lobby])
+                )
+                return {
+                    lobbies: replace
+                        ? seeded
+                        : { ...current.lobbies, ...seeded },
+                }
+            }),
 
-    setActivity: (items) =>
-        set(() => ({
-            activity: Object.fromEntries(
-                items.map((item) => [item.gameId, item])
-            ),
-        })),
+        upsertLobby: (lobby) =>
+            set((current) => {
+                const removedLobbies = { ...current.removedLobbies }
+                delete removedLobbies[lobby.id]
+                return {
+                    lobbies: { ...current.lobbies, [lobby.id]: lobby },
+                    removedLobbies,
+                }
+            }),
 
-    bumpLeaderboard: () =>
-        set((current) => ({
-            leaderboardVersion: current.leaderboardVersion + 1,
-        })),
+        removeLobby: (lobbyId) =>
+            set((current) => {
+                const lobbies = { ...current.lobbies }
+                delete lobbies[lobbyId]
+                return {
+                    lobbies,
+                    removedLobbies: {
+                        ...current.removedLobbies,
+                        [lobbyId]: true as const,
+                    },
+                }
+            }),
 
-    pushResult: (result) =>
-        set((current) => ({
-            recentResults: [result, ...current.recentResults].slice(
-                0,
-                RESULTS_LIMIT
-            ),
-        })),
+        setActivity: (items) =>
+            set(() => ({
+                activity: Object.fromEntries(
+                    items.map((item) => [item.gameId, item])
+                ),
+            })),
+
+        bumpLeaderboard: () =>
+            set((current) => ({
+                leaderboardVersion: current.leaderboardVersion + 1,
+            })),
+
+        pushResult: (result) =>
+            set((current) => ({
+                recentResults: [result, ...current.recentResults].slice(
+                    0,
+                    RESULTS_LIMIT
+                ),
+            })),
+    },
 }))
+
+export const useLiveActions = () => useLiveStore((s) => s.actions)
+export const useLeaderboardVersion = () =>
+    useLiveStore((s) => s.leaderboardVersion)
+export const useRecentResults = () => useLiveStore((s) => s.recentResults)

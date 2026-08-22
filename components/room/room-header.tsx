@@ -6,7 +6,7 @@ import * as React from "react"
 
 import { LobbyStatusBadge } from "@/components/common/status-badge"
 import { UserChip } from "@/components/common/user-chip"
-import { Badge, Button } from "@/components/ui"
+import { Badge, Button, ButtonLink } from "@/components/ui"
 import { useUserCards } from "@/hooks/use-user-cards"
 import type { GameMetadata, Lobby } from "@/lib/api/types"
 import { formatUsdc, timeAgo } from "@/lib/format"
@@ -33,15 +33,15 @@ export function RoomHeader({
         <header className="space-y-4 rounded-2xl border border-border/70 p-5 surface-raised sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 space-y-2">
-                    <Button
+                    <ButtonLink
+                        href="/lobbies"
                         variant="ghost"
                         size="sm"
                         className="-ml-3 text-muted-foreground"
-                        render={<Link href="/lobbies" />}
                     >
                         <RiArrowLeftLine />
                         All lobbies
-                    </Button>
+                    </ButtonLink>
 
                     <div className="flex flex-wrap items-center gap-2">
                         <h1 className="font-display text-2xl sm:text-3xl">

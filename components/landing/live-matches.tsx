@@ -1,11 +1,9 @@
 "use client"
 
-import Link from "next/link"
-
 import { SectionHeader } from "@/components/common/section"
 import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
 import { LobbyCard } from "@/components/lobbies/lobby-card"
-import { Button, EmptyState } from "@/components/ui"
+import { ButtonLink, EmptyState } from "@/components/ui"
 import { useLobbyFeed } from "@/hooks/use-lobby-feed"
 import type { GameMetadata, Lobby } from "@/lib/api/types"
 
@@ -31,13 +29,9 @@ export function LiveMatches({
                 title="Happening now"
                 description="Jump into a lobby that already has players in it."
                 action={
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        render={<Link href="/lobbies" />}
-                    >
+                    <ButtonLink href="/lobbies" variant="ghost" size="sm">
                         All lobbies
-                    </Button>
+                    </ButtonLink>
                 }
             />
 

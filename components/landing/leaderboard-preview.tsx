@@ -1,11 +1,9 @@
 "use client"
 
-import Link from "next/link"
-
 import { UserChip } from "@/components/common/user-chip"
 import { RankBadge } from "@/components/leaderboard/rank-badge"
 import { SectionHeader } from "@/components/common/section"
-import { Button, EmptyState } from "@/components/ui"
+import { ButtonLink, EmptyState } from "@/components/ui"
 import { useLeaderboard } from "@/hooks/use-leaderboard"
 import type { LeaderboardPage } from "@/lib/api/types"
 import { compact } from "@/lib/format"
@@ -35,13 +33,9 @@ export function LeaderboardPreview({
                         : "Updated the moment a match settles."
                 }
                 action={
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        render={<Link href="/leaderboard" />}
-                    >
+                    <ButtonLink href="/leaderboard" variant="ghost" size="sm">
                         Full board
-                    </Button>
+                    </ButtonLink>
                 }
             />
 

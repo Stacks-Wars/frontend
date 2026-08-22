@@ -9,13 +9,13 @@ import {
 } from "@/actions/profile-settings"
 import { Button, Input, Label } from "@/components/ui"
 import type { AppUser } from "@/lib/api/types"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
+import { useSessionActions } from "@/stores/session"
 
 /** Mirrors the API's `validate_username`. */
 const USERNAME_PATTERN = /^[a-z][a-z0-9_-]{2,23}$/
 const USERNAME_RULES =
-    "3–24 characters. Lowercase letters, numbers, _ and -, starting with a letter."
+    "3-24 characters. Lowercase letters, numbers, _ and -, starting with a letter."
 const CHECK_DEBOUNCE_MS = 400
 
 /** Both outcomes carry their username so a stale reply is simply ignored. */
@@ -23,8 +23,8 @@ type CheckResult = { username: string; available: boolean; reason?: string }
 type CheckFailure = { username: string; message: string }
 
 export function ProfileForm({ user }: { user: AppUser }) {
-    const setUser = useSessionStore((s) => s.setUser)
-    const toast = useNotificationsStore((s) => s.toast)
+    const { setUser } = useSessionActions()
+    const { toast } = useNotificationActions()
 
     const [username, setUsername] = React.useState(user.username ?? "")
     const [displayName, setDisplayName] = React.useState(user.displayName ?? "")

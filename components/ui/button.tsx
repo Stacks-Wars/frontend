@@ -1,7 +1,9 @@
 "use client"
 
+import Link from "next/link"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
+import type { ComponentProps } from "react"
 
 import { SFX } from "@/lib/audio/sounds"
 import { playSound } from "@/lib/audio/play-sound"
@@ -71,4 +73,35 @@ function Button({
     )
 }
 
-export { Button, buttonVariants }
+/**
+ * A real link that looks like a button. Base UI `Button` always sets
+ * `role="button"`, which would clobber the link semantics — so links never
+ * go through `render`.
+ */
+function ButtonLink({
+    className,
+    variant = "default",
+    size = "default",
+    pill = false,
+    sound = SFX.click,
+    onClick,
+    ...props
+}: Omit<ComponentProps<typeof Link>, "className"> &
+    VariantProps<typeof buttonVariants> & {
+        className?: string
+        sound?: string | null
+    }) {
+    return (
+        <Link
+            data-slot="button"
+            className={cn(buttonVariants({ variant, size, pill, className }))}
+            {...props}
+            onClick={(event) => {
+                if (sound) playSound(sound)
+                onClick?.(event)
+            }}
+        />
+    )
+}
+
+export { Button, ButtonLink, buttonVariants }

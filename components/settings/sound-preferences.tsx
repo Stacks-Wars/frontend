@@ -4,7 +4,7 @@ import { RiMusic2Line, RiVolumeDownLine, RiVolumeMuteLine, RiVolumeUpLine } from
 
 import { Label, Slider, Switch } from "@/components/ui"
 import { playSfx } from "@/lib/audio/play-sound"
-import { useSoundStore } from "@/stores/sound"
+import { useSoundActions, useMusicEnabled, useMusicVolume, useSfxEnabled, useSfxVolume } from "@/stores/sound"
 
 function VolumeRow({
     value,
@@ -42,14 +42,16 @@ function VolumeRow({
 }
 
 export function SoundPreferences() {
-    const musicEnabled = useSoundStore((s) => s.musicEnabled)
-    const sfxEnabled = useSoundStore((s) => s.sfxEnabled)
-    const musicVolume = useSoundStore((s) => s.musicVolume)
-    const sfxVolume = useSoundStore((s) => s.sfxVolume)
-    const setMusicEnabled = useSoundStore((s) => s.setMusicEnabled)
-    const setSfxEnabled = useSoundStore((s) => s.setSfxEnabled)
-    const setMusicVolume = useSoundStore((s) => s.setMusicVolume)
-    const setSfxVolume = useSoundStore((s) => s.setSfxVolume)
+    const musicEnabled = useMusicEnabled()
+    const sfxEnabled = useSfxEnabled()
+    const musicVolume = useMusicVolume()
+    const sfxVolume = useSfxVolume()
+    const {
+        setMusicEnabled,
+        setSfxEnabled,
+        setMusicVolume,
+        setSfxVolume,
+    } = useSoundActions()
 
     return (
         <div className="space-y-5 rounded-2xl border border-border/70 p-5 surface-raised">

@@ -3,7 +3,7 @@
 import * as React from "react"
 
 import type { Lobby, LobbyStatus } from "@/lib/api/types"
-import { useLiveStore } from "@/stores/live"
+import { useLiveActions, useLiveStore } from "@/stores/live"
 
 export type LobbyFilters = {
     gameId?: string | null
@@ -77,7 +77,7 @@ export function useLobbyFeed(
 ) {
     const lobbies = useLiveStore((s) => s.lobbies)
     const removed = useLiveStore((s) => s.removedLobbies)
-    const seedLobbies = useLiveStore((s) => s.seedLobbies)
+    const { seedLobbies } = useLiveActions()
 
     // The server render is the starting point; WS deltas take it from there.
     React.useEffect(() => {

@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { RiWallet3Line } from "@remixicon/react"
 
 import { PageContainer } from "@/components/common/page-container"
@@ -10,12 +9,12 @@ import { DepositPanel } from "@/components/wallet/deposit-panel"
 import { PendingWins } from "@/components/wallet/pending-wins"
 import { TransactionList } from "@/components/wallet/transaction-list"
 import { WithdrawForm } from "@/components/wallet/withdraw-form"
-import { Button, EmptyState, Skeleton } from "@/components/ui"
-import { useSessionStore } from "@/stores/session"
+import { ButtonLink, EmptyState, Skeleton } from "@/components/ui"
+import { useSessionLoading, useSessionUser } from "@/stores/session"
 
 export default function WalletPage() {
-    const user = useSessionStore((s) => s.user)
-    const loading = useSessionStore((s) => s.loading)
+    const user = useSessionUser()
+    const loading = useSessionLoading()
 
     return (
         <PageContainer size="default" className="space-y-8">
@@ -36,12 +35,9 @@ export default function WalletPage() {
                         title="Sign in to see your wallet"
                         description="Balances, deposits, and withdrawals belong to your player account."
                         action={
-                            <Button
-                                variant="primary"
-                                render={<Link href="/auth/login" />}
-                            >
+                            <ButtonLink href="/auth/login" variant="primary">
                                 Sign in
-                            </Button>
+                            </ButtonLink>
                         }
                     />
                 )

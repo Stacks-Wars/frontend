@@ -7,8 +7,10 @@ type InstallState = {
     /** iOS Safari, not already on the Home Screen. */
     eligible: boolean
     dismissed: boolean
-    evaluate: () => void
-    dismiss: () => void
+    actions: {
+        evaluate: () => void
+        dismiss: () => void
+    }
 }
 
 function isIos() {
@@ -31,12 +33,14 @@ export const useInstallStore = create<InstallState>()(
         (set) => ({
             eligible: false,
             dismissed: false,
-            evaluate: () =>
-                set((state) => ({
-                    eligible: isIos() && !isStandalone(),
-                    dismissed: state.dismissed,
-                })),
-            dismiss: () => set({ dismissed: true }),
+            actions: {
+                evaluate: () =>
+                    set((state) => ({
+                        eligible: isIos() && !isStandalone(),
+                        dismissed: state.dismissed,
+                    })),
+                dismiss: () => set({ dismissed: true }),
+            },
         }),
         {
             name: "sw-install",
@@ -44,3 +48,7 @@ export const useInstallStore = create<InstallState>()(
         }
     )
 )
+
+export const useInstallEligible = () => useInstallStore((s) => s.eligible)
+export const useInstallDismissed = () => useInstallStore((s) => s.dismissed)
+export const useInstallActions = () => useInstallStore((s) => s.actions)

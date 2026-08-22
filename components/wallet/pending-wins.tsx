@@ -8,16 +8,14 @@ import { claimPendingWinAction } from "@/actions/lobbies"
 import { listVaultDraftsAction } from "@/actions/vault-drafts"
 import { Badge, Button } from "@/components/ui"
 import { formatUsdc } from "@/lib/format"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
 
 /**
  * Unclaimed / retryable vault wins. Saved as soon as a paid match finishes so
  * the player can claim from the wallet tab even if the room claim failed mid-flight.
  */
 export function PendingWins() {
-    const toast = useNotificationsStore((s) => s.toast)
-    const setBalance = useSessionStore((s) => s.setBalance)
+    const { toast } = useNotificationActions()
     const queryClient = useQueryClient()
     const [claimingPath, setClaimingPath] = React.useState<string | null>(null)
 
@@ -36,7 +34,6 @@ export function PendingWins() {
                 toast({ title: result.error, tone: "danger" })
                 return
             }
-            setBalance(null)
             toast({ title: "Winnings claimed", tone: "success" })
             await queryClient.invalidateQueries({
                 queryKey: ["vault-drafts", "claim"],

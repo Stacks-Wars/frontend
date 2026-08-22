@@ -1,10 +1,8 @@
 "use client"
 
-import Link from "next/link"
-
 import { SectionHeader } from "@/components/common/section"
 import { GameCard } from "@/components/games/game-card"
-import { Button } from "@/components/ui"
+import { ButtonLink } from "@/components/ui"
 import { useGameActivity } from "@/hooks/use-game-activity"
 import type { GameActivity, GameMetadata } from "@/lib/api/types"
 
@@ -35,13 +33,9 @@ export function FeaturedGames({
                 title="Featured games"
                 description="Every title settles through the same vault and season system."
                 action={
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        render={<Link href="/games" />}
-                    >
+                    <ButtonLink href="/games" variant="ghost" size="sm">
                         All games
-                    </Button>
+                    </ButtonLink>
                 }
             />
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

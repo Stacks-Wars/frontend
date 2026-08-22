@@ -12,11 +12,11 @@ import {
     startLobbyAction,
 } from "@/actions/lobbies"
 import { Button } from "@/components/ui"
-import { useAddFunds } from "@/components/wallet/add-funds-provider"
+import { useAddFunds } from "@/stores/funds"
 import type { GameMetadata, JoinRequest, Lobby, PlayerState } from "@/lib/api/types"
 import { formatUsdc } from "@/lib/format"
-import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useNotificationActions } from "@/stores/notifications"
+import { useSessionBalance } from "@/stores/session"
 
 type Pending = "join" | "request" | "leave" | "ready" | "start" | null
 
@@ -36,8 +36,8 @@ export function RoomControls({
     onForfeit?: () => void
 }) {
     const router = useRouter()
-    const toast = useNotificationsStore((s) => s.toast)
-    const balance = useSessionStore((s) => s.balance)
+    const { toast } = useNotificationActions()
+    const balance = useSessionBalance()
     const { open: openAddFunds } = useAddFunds()
     const [pending, setPending] = React.useState<Pending>(null)
 

@@ -6,7 +6,7 @@ import { RiArrowRightLine } from "@remixicon/react"
 import { LiveNumber } from "@/components/common/live-number"
 import { LobbyStatusBadge } from "@/components/common/status-badge"
 import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
-import { Button, LiveDot } from "@/components/ui"
+import { ButtonLink, LiveDot } from "@/components/ui"
 import { useGameActivity } from "@/hooks/use-game-activity"
 import { useLobbyFeed } from "@/hooks/use-lobby-feed"
 import type { GameActivity, GameMetadata, Lobby } from "@/lib/api/types"
@@ -25,7 +25,7 @@ export function Hero({
 
     return (
         <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-grid">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/12 via-transparent to-gold/8" />
+            <div className="absolute inset-0 bg-linear-to-br from-primary/12 via-transparent to-gold/8" />
 
             <div className="relative grid gap-10 px-6 py-14 sm:px-10 sm:py-16 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center lg:gap-14 lg:py-20">
                 <div className="flex flex-col gap-7">
@@ -48,21 +48,17 @@ export function Hero({
                         </h1>
                         <p className="max-w-lg text-base text-muted-foreground sm:text-lg">
                             {games.length} skill games, real lobbies, real
-                            stakes. Entry fees sit in an on-chain vault until the
-                            match ends, then the winner gets paid in the same
-                            transaction.
+                            stakes. Entry fees sit in an on-chain vault until
+                            the match ends, then the winner gets paid in the
+                            same transaction.
                         </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <Button
-                            size="lg"
-                            variant="primary"
-                            render={<Link href="/games" />}
-                        >
+                        <ButtonLink href="/games" size="lg" variant="primary">
                             Browse games
                             <RiArrowRightLine />
-                        </Button>
+                        </ButtonLink>
                         <CreateLobbyButton
                             variant="outline"
                             size="lg"
@@ -142,7 +138,7 @@ function OpenTables({
                     {visible.map((lobby, index) => (
                         <li
                             key={lobby.id}
-                            className="stagger animate-rise-in py-2.5"
+                            className="animate-rise-in py-2.5 stagger"
                             style={{ "--index": index } as React.CSSProperties}
                         >
                             <Link
