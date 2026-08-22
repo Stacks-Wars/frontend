@@ -15,8 +15,7 @@ import {
 import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network"
 
 import { getSigningMaterial } from "@/lib/api/server"
-import { decryptWithKms } from "@/lib/kms/envelope"
-import { deriveCustodialAccountFromMnemonic } from "@/lib/stacks/wallet-from-mnemonic"
+import { unlockCustodialAccount } from "@/lib/custodial/unlock"
 import { getStacksNetworkName } from "@/lib/stacks/network"
 import { waitForTx } from "@/lib/tx/wait-for-tx"
 import { getSponsorPrivateKey } from "@/lib/vault/sign"
@@ -32,9 +31,9 @@ export async function broadcastUsdcxTransfer(input: {
     toAddress: string
     usdcxContract: string
 }): Promise<string> {
-    const material = await getSigningMaterial(input.userId)
-    const mnemonic = await decryptWithKms(material.encryptedMnemonic)
-    const account = await deriveCustodialAccountFromMnemonic(mnemonic)
+    const account = await unlockCustodialAccount(
+        await getSigningMaterial(input.userId)
+    )
     const tokenName = USDCX_ASSET_NAME
     const contractId = USDCX_CONTRACT
     const [contractAddress, contractName] = USDCX_CONTRACT.split(".")
@@ -53,7 +52,7 @@ export async function broadcastUsdcxTransfer(input: {
             Cl.principal(input.toAddress),
             Cl.none(),
         ],
-        senderKey: account.stxPrivateKey,
+        senderKey: account.senderKey,
         network,
         sponsored: true,
         fee: 0,
@@ -80,6 +79,7 @@ export async function broadcastUsdcxTransfer(input: {
             rejected.reason || rejected.error || "broadcast failed"
         )
     }
+    await account.persistV2IfNeeded()
     const txid = String(result.txid)
     const wait = await waitForTx(txid)
     if (wait.status === "failed") {

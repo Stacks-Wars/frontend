@@ -56,7 +56,7 @@ export async function syncAuthUser(sessionUser: SessionUser): Promise<AppUser> {
 
     const existingWallet = await getCustodialWallet(user.id)
     if (!existingWallet) {
-        const material = await createCustodialWalletMaterial()
+        const material = await createCustodialWalletMaterial(user.id)
         await createCustodialWallet(user.id, material)
     }
 

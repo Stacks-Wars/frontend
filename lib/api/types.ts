@@ -53,6 +53,32 @@ export type CreateCustodialWalletPayload = {
     network: string
 }
 
+export type VaultDraftPayload = {
+    kind: string
+    lobbyPath: string
+    lobbyId?: string
+    /** Empty string for pending claim intents before broadcast. */
+    txid: string
+    entryAmountMicro: number
+    transferMicro?: number
+    sponsored?: boolean
+    name?: string
+    description?: string | null
+    gameId?: string
+    isPrivate?: boolean
+    isSponsored?: boolean
+    amountMicro?: number
+    nonce?: number
+    paidMicro?: number
+    devWallet?: string
+    devFee?: number
+}
+
+export type VaultDraft = VaultDraftPayload & {
+    userId: string
+    createdAt: number
+}
+
 export type GameMetadata = {
     id: string
     name: string

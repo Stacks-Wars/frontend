@@ -29,8 +29,7 @@ import {
     Switch,
     Textarea,
 } from "@/components/ui"
-import type { VaultDraft } from "@/lib/api/server"
-import type { GameMetadata } from "@/lib/api/types"
+import type { GameMetadata, VaultDraft } from "@/lib/api/types"
 import { formatUsdc, toMicro, toUsdc } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useNotificationActions } from "@/stores/notifications"

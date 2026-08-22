@@ -1,3 +1,5 @@
+import "server-only"
+
 import type {
     AppUser,
     ChainActivityItem,
@@ -19,6 +21,8 @@ import type {
     UpsertUserPayload,
     UserCard,
     UserProfile,
+    VaultDraft,
+    VaultDraftPayload,
     WalletBalance,
 } from "@/lib/api/types"
 import { AccountDeleteError } from "@/lib/api/account-delete"
@@ -34,6 +38,17 @@ async function authHeaders(): Promise<HeadersInit> {
     return {
         "content-type": "application/json",
         Authorization: `Bearer ${token}`,
+    }
+}
+
+function internalHeaders(): HeadersInit {
+    const secret = process.env.INTERNAL_API_SECRET?.trim()
+    if (!secret) {
+        throw new Error("INTERNAL_API_SECRET is not configured")
+    }
+    return {
+        "content-type": "application/json",
+        "x-internal-secret": secret,
     }
 }
 
@@ -791,6 +806,7 @@ export async function createCustodialWallet(
 }
 
 export type SigningMaterial = {
+    id: string
     userId: string
     stxAddress: string
     publicKey: string
@@ -807,23 +823,38 @@ export async function getSigningMaterial(
         `${getApiBaseUrl()}/wallet/custodial/${userId}/signing-material`,
         {
             method: "GET",
-            headers: await authHeaders(),
+            headers: internalHeaders(),
             cache: "no-store",
         }
     )
     if (!response.ok) {
         throw new Error(`Failed to load signing material (${response.status})`)
     }
-    const data = (await response.json()) as {
-        userId: string
-        stxAddress: string
-        publicKey: string
-        network: string
+    const data = (await response.json()) as SigningMaterial
+    return data
+}
+
+export async function updateCustodialEncryption(
+    userId: string,
+    payload: {
         encryptedMnemonic: string
         kmsKeyVersion: string
-        usdcxContract: string
     }
-    return data
+): Promise<void> {
+    const response = await fetch(
+        `${getApiBaseUrl()}/wallet/custodial/${userId}/encryption`,
+        {
+            method: "PATCH",
+            headers: internalHeaders(),
+            body: JSON.stringify(payload),
+            cache: "no-store",
+        }
+    )
+    if (!response.ok) {
+        throw new Error(
+            `Failed to update custodial encryption (${response.status})`
+        )
+    }
 }
 
 export async function allocateLobbyPath(): Promise<string> {
@@ -864,32 +895,6 @@ export async function confirmVaultClaim(payload: {
         } | null
         throw new Error(body?.error ?? `Failed to confirm claim (${response.status})`)
     }
-}
-
-export type VaultDraftPayload = {
-    kind: string
-    lobbyPath: string
-    lobbyId?: string
-    /** Empty string for pending claim intents before broadcast. */
-    txid: string
-    entryAmountMicro: number
-    transferMicro?: number
-    sponsored?: boolean
-    name?: string
-    description?: string | null
-    gameId?: string
-    isPrivate?: boolean
-    isSponsored?: boolean
-    amountMicro?: number
-    nonce?: number
-    paidMicro?: number
-    devWallet?: string
-    devFee?: number
-}
-
-export type VaultDraft = VaultDraftPayload & {
-    userId: string
-    createdAt: number
 }
 
 export async function saveVaultDraft(
