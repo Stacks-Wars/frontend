@@ -4,10 +4,10 @@ import * as React from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { RiLoader4Line, RiTrophyLine } from "@remixicon/react"
 
-import { claimPendingWinAction } from "@/actions/lobbies"
 import { listVaultDraftsAction } from "@/actions/vault-drafts"
 import { Badge, Button } from "@/components/ui"
 import { formatUsdc } from "@/lib/format"
+import { claimPendingWinOnchain } from "@/lib/onchain"
 import { useNotificationActions } from "@/stores/notifications"
 
 /**
@@ -29,7 +29,7 @@ export function PendingWins() {
     async function claim(lobbyPath: string) {
         setClaimingPath(lobbyPath)
         try {
-            const result = await claimPendingWinAction(lobbyPath)
+            const result = await claimPendingWinOnchain(lobbyPath)
             if (!result.ok) {
                 toast({ title: result.error, tone: "danger" })
                 return

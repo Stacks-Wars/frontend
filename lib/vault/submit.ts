@@ -26,6 +26,7 @@ import {
     humanizeVaultTxError,
     isIdempotentVaultSuccess,
     shouldDiscardVaultDraftOnFailure,
+    VaultTxPendingError,
 } from "@/lib/vault/tx-errors"
 import {
     getPlatformAccount,
@@ -110,9 +111,15 @@ async function broadcastSponsored(params: {
 /** Wait for a previously broadcast vault tx to confirm. */
 export async function waitForVaultTx(
     txid: string,
-    options?: { discardDraftsOnFailure?: VaultDraftRef[] }
+    options?: {
+        discardDraftsOnFailure?: VaultDraftRef[]
+        maxWaitMs?: number
+    }
 ): Promise<string> {
-    const wait = await waitForTx(txid)
+    const wait = await waitForTx(txid, { maxWaitMs: options?.maxWaitMs })
+    if (wait.status === "pending") {
+        throw new VaultTxPendingError(txid)
+    }
     if (wait.status === "failed") {
         if (isIdempotentVaultSuccess(wait.reason)) {
             return txid
@@ -234,6 +241,8 @@ export async function vaultLeaveOnChain(input: {
     nonce: number
     resumeTxid?: string
     lobbyId?: string
+    /** When false, return after broadcast + draft persist. Default true. */
+    wait?: boolean
 }): Promise<string> {
     if (input.resumeTxid) {
         return waitForVaultTx(input.resumeTxid, {
@@ -286,6 +295,7 @@ export async function vaultLeaveOnChain(input: {
     } catch (error) {
         console.error("[vault] failed to persist leave draft", error)
     }
+    if (input.wait === false) return txid
     return waitForVaultTx(txid, {
         discardDraftsOnFailure: [
             { kind: "leave", lobbyPath: input.lobbyPath },
@@ -309,7 +319,7 @@ export async function vaultKickOnChain(input: {
         nonce: input.nonce,
     })
     await player.persistV2IfNeeded()
-    return txid
+    return waitForVaultTx(txid)
 }
 
 /** Platform-sponsored kick for the 24h lobby TTL janitor (any sender works). */

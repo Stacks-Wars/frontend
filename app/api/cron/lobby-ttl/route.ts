@@ -5,6 +5,7 @@ import { vaultConfigured } from "@/lib/vault/config"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 300
 
 type StaleSeat = {
     userId: string

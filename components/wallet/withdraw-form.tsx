@@ -6,9 +6,9 @@ import { useQueryClient } from "@tanstack/react-query"
 import { RiCheckLine, RiLoader4Line } from "@remixicon/react"
 import { useForm, useWatch } from "react-hook-form"
 
-import { withdrawAction } from "@/actions/wallet"
 import { Button, Input, Label } from "@/components/ui"
 import { formatUsdc, toMicro, toUsdc } from "@/lib/format"
+import { withdrawOnchain } from "@/lib/onchain"
 import { hiroExplorerTxUrl } from "@/lib/stacks/explorer"
 import { truncateWallet } from "@/lib/utils"
 import {
@@ -54,27 +54,29 @@ export function WithdrawForm() {
         setError(null)
         setTxid(null)
         const usd = Number.parseFloat(values.amount)
-        try {
-            const result = await withdrawAction({
-                amountUsd: usd,
-                toAddress: values.address.trim() || undefined,
-            })
-            setBalance(result.balance)
-            queryClient.setQueryData(["balance"], result.balance)
-            void queryClient.invalidateQueries({ queryKey: ["activity"] })
-            setTxid(result.txid)
-            setValue("amount", "")
+        const result = await withdrawOnchain({
+            amountUsd: usd,
+            toAddress: values.address.trim() || undefined,
+        })
+        if (!result.ok) {
+            setError(result.error)
             toast({
-                title: "Withdrawal broadcast",
-                body: `${formatUsdc(toMicro(usd))} is on its way.`,
-                tone: "success",
+                title: "Withdrawal failed",
+                body: result.error,
+                tone: "danger",
             })
-        } catch (err) {
-            const message =
-                err instanceof Error ? err.message : "The withdrawal failed."
-            setError(message)
-            toast({ title: "Withdrawal failed", body: message, tone: "danger" })
+            return
         }
+        setBalance(result.data.balance)
+        queryClient.setQueryData(["balance"], result.data.balance)
+        void queryClient.invalidateQueries({ queryKey: ["activity"] })
+        setTxid(result.data.txid)
+        setValue("amount", "")
+        toast({
+            title: "Withdrawal broadcast",
+            body: `${formatUsdc(toMicro(usd))} is on its way.`,
+            tone: "success",
+        })
     }
 
     return (

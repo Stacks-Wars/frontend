@@ -18,6 +18,7 @@ import { getSigningMaterial } from "@/lib/api/server"
 import { unlockCustodialAccount } from "@/lib/custodial/unlock"
 import { getStacksNetworkName } from "@/lib/stacks/network"
 import { waitForTx } from "@/lib/tx/wait-for-tx"
+import { TX_PROCESSING_MESSAGE } from "@/lib/vault/tx-errors"
 import { getSponsorPrivateKey } from "@/lib/vault/sign"
 import { USDCX_ASSET_NAME, USDCX_CONTRACT } from "@/lib/vault/config"
 
@@ -84,6 +85,11 @@ export async function broadcastUsdcxTransfer(input: {
     const wait = await waitForTx(txid)
     if (wait.status === "failed") {
         throw new Error(wait.reason ?? "withdrawal transaction failed")
+    }
+    if (wait.status === "pending") {
+        throw new Error(
+            TX_PROCESSING_MESSAGE
+        )
     }
     return txid
 }

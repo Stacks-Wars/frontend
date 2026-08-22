@@ -9,7 +9,6 @@ import {
     RiTrophyLine,
 } from "@remixicon/react"
 
-import { createLobbyAction } from "@/actions/lobbies"
 import { getIncompletePaidCreateDraftAction } from "@/actions/vault-drafts"
 import {
     Button,
@@ -29,8 +28,10 @@ import {
     Switch,
     Textarea,
 } from "@/components/ui"
-import type { GameMetadata, VaultDraft } from "@/lib/api/types"
+import type { ActionResult } from "@/lib/action-result"
+import type { GameMetadata, LobbyDetail, VaultDraft } from "@/lib/api/types"
 import { formatUsdc, toMicro, toUsdc } from "@/lib/format"
+import { createLobbyOnchain } from "@/lib/onchain"
 import { cn } from "@/lib/utils"
 import { useNotificationActions } from "@/stores/notifications"
 import { useSessionBalance, useSessionUser } from "@/stores/session"
@@ -133,7 +134,7 @@ export function CreateLobbyDialog({
         }
     }, [open, user])
 
-    async function finishCreate(result: Awaited<ReturnType<typeof createLobbyAction>>) {
+    async function finishCreate(result: ActionResult<LobbyDetail>) {
         if (!result.ok) {
             setError(
                 `${result.error} Your on-chain entry is saved — tap Continue to finish without paying again.`
@@ -161,7 +162,7 @@ export function CreateLobbyDialog({
         setSubmitting(true)
         setError(null)
         try {
-            const result = await createLobbyAction({
+            const result = await createLobbyOnchain({
                 name:
                     incompleteDraft.name?.trim() ||
                     name.trim() ||
@@ -197,7 +198,7 @@ export function CreateLobbyDialog({
         setSubmitting(true)
         setError(null)
         try {
-            const result = await createLobbyAction({
+            const result = await createLobbyOnchain({
                 name: name.trim(),
                 description: description.trim() || undefined,
                 gameId: selectedGame,
