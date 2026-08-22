@@ -30,12 +30,18 @@ function apiBase() {
 }
 
 function cronAuthorized(request: Request): boolean {
-    const secret = process.env.INTERNAL_API_SECRET?.trim()
-    if (!secret) return false
+    const secrets = [
+        process.env.CRON_SECRET?.trim(),
+        process.env.INTERNAL_API_SECRET?.trim(),
+    ].filter((value): value is string => Boolean(value))
+    if (secrets.length === 0) return false
     const header = request.headers.get("authorization")
     const bearer = header?.startsWith("Bearer ") ? header.slice(7) : null
     const internal = request.headers.get("x-internal-secret")
-    return bearer === secret || internal === secret
+    return Boolean(
+        (bearer && secrets.includes(bearer)) ||
+            (internal && secrets.includes(internal))
+    )
 }
 
 async function internalFetch(path: string, init?: RequestInit) {
