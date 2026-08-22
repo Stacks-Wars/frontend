@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation"
 import { RiFlagLine, RiLoader4Line, RiLogoutBoxRLine, RiPlayFill } from "@remixicon/react"
 
 import {
-    joinLobbyAction,
-    leaveLobbyAction,
     readyLobbyAction,
     requestJoinLobbyAction,
     startLobbyAction,
@@ -15,6 +13,7 @@ import { Button } from "@/components/ui"
 import { useAddFunds } from "@/stores/funds"
 import type { GameMetadata, JoinRequest, Lobby, PlayerState } from "@/lib/api/types"
 import { formatUsdc } from "@/lib/format"
+import { joinLobbyOnchain, leaveLobbyOnchain } from "@/lib/onchain"
 import { useNotificationActions } from "@/stores/notifications"
 import { useSessionBalance } from "@/stores/session"
 
@@ -148,7 +147,7 @@ export function RoomControls({
                         disabled={full || pending !== null}
                         onClick={() => {
                             if (!ensureFundsForJoin()) return
-                            run("join", () => joinLobbyAction(lobby.id))
+                            run("join", () => joinLobbyOnchain(lobby.id))
                         }}
                     >
                         {pending === "join" ? (
@@ -212,7 +211,7 @@ export function RoomControls({
                             void (async () => {
                                 setPending("leave")
                                 try {
-                                    const result = await leaveLobbyAction(
+                                    const result = await leaveLobbyOnchain(
                                         lobby.id
                                     )
                                     if (!result.ok) {

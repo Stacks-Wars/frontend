@@ -3,15 +3,13 @@
 import * as React from "react"
 import { RiTrophyLine } from "@remixicon/react"
 
-import {
-    savePendingClaimAction,
-    settleVaultClaimsAction,
-} from "@/actions/lobbies"
+import { savePendingClaimAction } from "@/actions/lobbies"
 import { UserChip } from "@/components/common/user-chip"
 import { ButtonLink } from "@/components/ui"
 import type { PlayerState } from "@/lib/api/types"
 import type { LobbyFinishedPayload } from "@/lib/ws/protocol"
 import { formatUsdc, ordinal } from "@/lib/format"
+import { settleVaultClaimsOnchain } from "@/lib/onchain"
 import { cn } from "@/lib/utils"
 import { useNotificationActions } from "@/stores/notifications"
 
@@ -93,7 +91,7 @@ export function MatchResult({
                 devFee: myClaim.devFee,
             }).catch(() => undefined)
 
-            const result = await settleVaultClaimsAction({
+            const result = await settleVaultClaimsOnchain({
                 lobbyId: finished.lobbyId,
                 lobbyPath: finished.lobbyPath,
                 claims: [myClaim],

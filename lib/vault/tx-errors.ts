@@ -20,6 +20,19 @@ const IDEMPOTENT_SUCCESS = [
     /\bu212\b/i,
 ]
 
+export const TX_PROCESSING_MESSAGE =
+    "Transaction is processing on chain. Please wait."
+
+/** Broadcast succeeded; Hiro has not confirmed yet. */
+export class VaultTxPendingError extends Error {
+    readonly txid: string
+    constructor(txid: string) {
+        super(TX_PROCESSING_MESSAGE)
+        this.name = "VaultTxPendingError"
+        this.txid = txid
+    }
+}
+
 export function isIdempotentVaultSuccess(reason?: string): boolean {
     if (!reason) return false
     return IDEMPOTENT_SUCCESS.some((pattern) => pattern.test(reason))

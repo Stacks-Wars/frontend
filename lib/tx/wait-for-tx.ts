@@ -1,12 +1,8 @@
 export type TxUiStatus =
-    | "idle"
-    | "initiating"
-    | "pending"
-    | "confirmed"
-    | "failed"
+    "idle" | "initiating" | "pending" | "confirmed" | "failed"
 
 export type WaitForTxResult = {
-    status: "confirmed" | "failed"
+    status: "confirmed" | "failed" | "pending"
     reason?: string
 }
 
@@ -21,6 +17,11 @@ type WaitOptions = {
     /** Optional reason substrings treated as success (SIP-010 races). */
     expectedReasonAllowlist?: string[]
     pollIntervalMs?: number
+    /**
+     * Stop polling and return `pending`. Default sits under the 300s
+     * `/api/onchain` and lobby-ttl functions.
+     */
+    maxWaitMs?: number
 }
 
 function hiroBaseUrl(): string {
@@ -74,10 +75,7 @@ export async function peekTx(txId: string): Promise<PeekTxResult> {
                 reason: data.tx_result?.repr ?? txStatus,
             }
         }
-        if (
-            txStatus.startsWith("dropped_") ||
-            txStatus === "rejected"
-        ) {
+        if (txStatus.startsWith("dropped_") || txStatus === "rejected") {
             return {
                 status: "failed",
                 reason: data.tx_result?.repr ?? txStatus,
@@ -100,6 +98,7 @@ export async function waitForTx(
         signal,
         expectedReasonAllowlist,
         pollIntervalMs = 5_000,
+        maxWaitMs = 270_000,
     } = options
 
     let settled = false
@@ -125,6 +124,11 @@ export async function waitForTx(
 
     const onAbort = () => fail(new DOMException("Aborted", "AbortError"))
     signal?.addEventListener("abort", onAbort)
+
+    const deadline =
+        maxWaitMs > 0
+            ? setTimeout(() => finish({ status: "pending" }), maxWaitMs)
+            : undefined
 
     const evaluate = (txStatus: string, reason?: string): boolean => {
         if (txStatus === "success") {
@@ -162,12 +166,14 @@ export async function waitForTx(
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(String(event.data)) as {
-                    params?: { tx_status?: string; tx_result?: { repr?: string } }
+                    params?: {
+                        tx_status?: string
+                        tx_result?: { repr?: string }
+                    }
                     tx_status?: string
                     tx_result?: { repr?: string }
                 }
-                const status =
-                    data.params?.tx_status ?? data.tx_status ?? ""
+                const status = data.params?.tx_status ?? data.tx_status ?? ""
                 const reason =
                     data.params?.tx_result?.repr ?? data.tx_result?.repr
                 if (status) evaluate(status, reason)
@@ -213,6 +219,7 @@ export async function waitForTx(
     try {
         return await result
     } finally {
+        if (deadline !== undefined) clearTimeout(deadline)
         signal?.removeEventListener("abort", onAbort)
         try {
             ws?.close()

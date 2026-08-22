@@ -374,6 +374,12 @@ export async function leaveLobbyAction(
                     lobbyPath: path,
                     paidMicro: paid,
                     nonce: Date.now(),
+                    wait: false,
+                })
+                vaultTxid = await waitForVaultTx(vaultTxid, {
+                    discardDraftsOnFailure: [
+                        { kind: "leave", lobbyPath: path },
+                    ],
                 })
             }
         }

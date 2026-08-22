@@ -3,7 +3,6 @@
 import * as React from "react"
 import { RiRefreshLine, RiWifiOffLine } from "@remixicon/react"
 
-import { kickLobbyPlayerAction } from "@/actions/lobbies"
 import { SectionHeader } from "@/components/common/section"
 import { GameStage } from "@/components/room/game-stage"
 import { JoinRequestList } from "@/components/room/join-request-list"
@@ -17,6 +16,7 @@ import { Button, EmptyState } from "@/components/ui"
 import { getGameModule } from "@/games/registry"
 import { useLobbyRoom } from "@/hooks/use-lobby-room"
 import type { GameMetadata } from "@/lib/api/types"
+import { kickLobbyPlayerOnchain } from "@/lib/onchain"
 import { useNotificationActions } from "@/stores/notifications"
 import { useSessionUser } from "@/stores/session"
 
@@ -59,7 +59,7 @@ export function RoomView({
         if (!room) return
         setKicking(userId)
         try {
-            const result = await kickLobbyPlayerAction(room.lobby.id, userId)
+            const result = await kickLobbyPlayerOnchain(room.lobby.id, userId)
             if (!result.ok) {
                 toast({ title: result.error, tone: "danger" })
             }
