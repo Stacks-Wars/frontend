@@ -1,3 +1,5 @@
+import "server-only"
+
 import {
     createCipheriv,
     createDecipheriv,
@@ -11,9 +13,37 @@ import { getKmsConfig } from "@/lib/kms/config"
 
 /** Prefix marks AES-GCM blobs sealed with `CUSTODIAL_DEV_SECRET` (local only). */
 const DEV_CIPHER_PREFIX = "dev1:"
-const DEV_KEY_VERSION = "local:dev1"
+/** Local wrap with AAD (mirrors Cloud KMS version 2). */
+const DEV_KEY_V2 = "local:dev2"
 
 let kmsClient: KeyManagementServiceClient | null = null
+
+export type SealedMnemonic = {
+    ciphertext: string
+    kmsKeyVersion: string
+}
+
+/**
+ * Cloud KMS version 1 (and `local:dev1`) has no AAD.
+ * Version 2+ (and `local:dev2`) is bound to `wallet:{id}:stacks:{network}`.
+ */
+export function kmsWrapVersion(kmsKeyVersion: string): number {
+    const gcp = kmsKeyVersion.match(/\/cryptoKeyVersions\/(\d+)$/)
+    if (gcp) return Number(gcp[1])
+    const local = kmsKeyVersion.match(/^local:dev(\d+)$/)
+    if (local) return Number(local[1])
+    return 1
+}
+
+export function usesMnemonicAad(kmsKeyVersion: string): boolean {
+    return kmsWrapVersion(kmsKeyVersion) >= 2
+}
+
+export type DecryptOptions = {
+    kmsKeyVersion: string
+    /** Required for v2. Bind ciphertext to the wallet row. */
+    aad?: string
+}
 
 function getDevSecret(): string | null {
     const secret = process.env.CUSTODIAL_DEV_SECRET?.trim()
@@ -35,10 +65,25 @@ function deriveDevKey(secret: string): Buffer {
     return createHash("sha256").update(secret, "utf8").digest()
 }
 
-function encryptWithDevSecret(plaintext: string, secret: string) {
+function aadBytes(aad: string | undefined): Buffer | undefined {
+    if (!aad) return undefined
+    return Buffer.from(aad, "utf8")
+}
+
+/** `wallet:{userId}:stacks:{network}` — a swapped ciphertext fails GCM. */
+export function mnemonicAad(userId: string, network: string): string {
+    return `wallet:${userId}:stacks:${network}`
+}
+
+function encryptWithDevSecret(
+    plaintext: string,
+    secret: string,
+    aad: string
+): SealedMnemonic {
     const key = deriveDevKey(secret)
     const iv = randomBytes(12)
     const cipher = createCipheriv("aes-256-gcm", key, iv)
+    cipher.setAAD(aadBytes(aad)!)
     const encrypted = Buffer.concat([
         cipher.update(plaintext, "utf8"),
         cipher.final(),
@@ -47,11 +92,15 @@ function encryptWithDevSecret(plaintext: string, secret: string) {
     const payload = Buffer.concat([iv, tag, encrypted]).toString("base64")
     return {
         ciphertext: `${DEV_CIPHER_PREFIX}${payload}`,
-        kmsKeyVersion: DEV_KEY_VERSION,
+        kmsKeyVersion: DEV_KEY_V2,
     }
 }
 
-function decryptWithDevSecret(ciphertextBase64: string, secret: string) {
+function decryptWithDevSecret(
+    ciphertextBase64: string,
+    secret: string,
+    aad?: string
+) {
     const raw = ciphertextBase64.startsWith(DEV_CIPHER_PREFIX)
         ? ciphertextBase64.slice(DEV_CIPHER_PREFIX.length)
         : ciphertextBase64
@@ -63,6 +112,8 @@ function decryptWithDevSecret(ciphertextBase64: string, secret: string) {
     const tag = buf.subarray(12, 28)
     const encrypted = buf.subarray(28)
     const decipher = createDecipheriv("aes-256-gcm", deriveDevKey(secret), iv)
+    const extra = aadBytes(aad)
+    if (extra) decipher.setAAD(extra)
     decipher.setAuthTag(tag)
     return Buffer.concat([
         decipher.update(encrypted),
@@ -113,10 +164,44 @@ function getKmsClient() {
     return kmsClient
 }
 
-export async function encryptWithKms(plaintext: string) {
+function isLocalKeyVersion(kmsKeyVersion: string | undefined) {
+    const raw = kmsKeyVersion ?? ""
+    return !raw || raw.startsWith("local:")
+}
+
+function isGcpResourceName(name: string) {
+    return name.startsWith("projects/")
+}
+
+/**
+ * Cloud KMS Decrypt wants the CryptoKey, not a version. The stored
+ * `kms_key_version` is usually `…/cryptoKeys/{key}/cryptoKeyVersions/N`
+ * from Encrypt. Strip the version so rotation inside the same key still
+ * works, and so pointing env at a *new* key still opens old rows.
+ */
+function decryptResourceName(kmsKeyVersion: string): string {
+    if (isGcpResourceName(kmsKeyVersion)) {
+        return kmsKeyVersion.replace(/\/cryptoKeyVersions\/[^/]+$/, "")
+    }
+    const { cryptoKeyName } = getKmsConfig()
+    return cryptoKeyName
+}
+
+export async function encryptWithKms(
+    plaintext: string,
+    aad: string
+): Promise<SealedMnemonic> {
+    if (!aad.trim()) {
+        throw new Error("AAD is required to seal a custodial mnemonic.")
+    }
+    const extra = aadBytes(aad)
+    if (!extra) {
+        throw new Error("AAD is required to seal a custodial mnemonic.")
+    }
+
     const devSecret = getDevSecret()
     if (devSecret) {
-        return encryptWithDevSecret(plaintext, devSecret)
+        return encryptWithDevSecret(plaintext, devSecret, aad)
     }
 
     requireKmsConfig()
@@ -124,6 +209,7 @@ export async function encryptWithKms(plaintext: string) {
     const [result] = await getKmsClient().encrypt({
         name: cryptoKeyName,
         plaintext: Buffer.from(plaintext, "utf8"),
+        additionalAuthenticatedData: extra,
     })
 
     if (!result.ciphertext) {
@@ -136,9 +222,13 @@ export async function encryptWithKms(plaintext: string) {
     }
 }
 
-/** Symmetric Cloud KMS ciphertext carries its own key version. Local blobs use `dev1:`. */
-export async function decryptWithKms(ciphertextBase64: string) {
-    if (ciphertextBase64.startsWith(DEV_CIPHER_PREFIX)) {
+/** v1 omits AAD. v2 must pass the same AAD used at seal time. */
+export async function decryptWithKms(
+    ciphertextBase64: string,
+    options: DecryptOptions
+) {
+    const localBlob = ciphertextBase64.startsWith(DEV_CIPHER_PREFIX)
+    if (localBlob || isLocalKeyVersion(options.kmsKeyVersion)) {
         const secret = process.env.CUSTODIAL_DEV_SECRET?.trim()
         if (!secret) {
             throw new Error(
@@ -155,14 +245,15 @@ export async function decryptWithKms(ciphertextBase64: string) {
                 "CUSTODIAL_DEV_SECRET must be at least 16 characters."
             )
         }
-        return decryptWithDevSecret(ciphertextBase64, secret)
+        return decryptWithDevSecret(ciphertextBase64, secret, options.aad)
     }
 
     requireKmsConfig()
-    const { cryptoKeyName } = getKmsConfig()
+    const extra = aadBytes(options.aad)
     const [result] = await getKmsClient().decrypt({
-        name: cryptoKeyName,
+        name: decryptResourceName(options.kmsKeyVersion),
         ciphertext: Buffer.from(ciphertextBase64, "base64"),
+        ...(extra ? { additionalAuthenticatedData: extra } : {}),
     })
 
     if (!result.plaintext) {

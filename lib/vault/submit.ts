@@ -18,8 +18,7 @@ import {
 import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network"
 
 import { getSigningMaterial } from "@/lib/api/server"
-import { decryptWithKms } from "@/lib/kms/envelope"
-import { deriveCustodialAccountFromMnemonic } from "@/lib/stacks/wallet-from-mnemonic"
+import { unlockCustodialAccount } from "@/lib/custodial/unlock"
 import { getStacksNetworkName } from "@/lib/stacks/network"
 import { peekTx, waitForTx } from "@/lib/tx/wait-for-tx"
 import { parseVaultContract, usdcxAsset } from "@/lib/vault/config"
@@ -59,13 +58,7 @@ function stacksNetwork() {
 }
 
 async function loadPlayerKey(userId: string) {
-    const material = await getSigningMaterial(userId)
-    const mnemonic = await decryptWithKms(material.encryptedMnemonic)
-    const account = await deriveCustodialAccountFromMnemonic(mnemonic)
-    return {
-        stxAddress: account.stxAddress,
-        senderKey: account.stxPrivateKey,
-    }
+    return unlockCustodialAccount(await getSigningMaterial(userId))
 }
 
 async function broadcastSponsored(params: {
@@ -207,6 +200,7 @@ export async function vaultJoinOnChain(input: {
         ],
         postConditions,
     })
+    await player.persistV2IfNeeded()
     // Persist before waiting so a crash / verify failure can resume.
     // Terminal aborts (u1, etc.) discard this draft in waitForVaultTx.
     try {
@@ -277,6 +271,7 @@ export async function vaultLeaveOnChain(input: {
         ],
         postConditions,
     })
+    await player.persistV2IfNeeded()
     try {
         const { saveVaultDraft } = await import("@/lib/api/server")
         await saveVaultDraft({
@@ -306,13 +301,15 @@ export async function vaultKickOnChain(input: {
     nonce: number
 }): Promise<string> {
     const player = await loadPlayerKey(input.actorUserId)
-    return broadcastKick({
+    const txid = await broadcastKick({
         senderKey: player.senderKey,
         targetAddress: input.targetAddress,
         lobbyPath: input.lobbyPath,
         paidMicro: input.paidMicro,
         nonce: input.nonce,
     })
+    await player.persistV2IfNeeded()
+    return txid
 }
 
 /** Platform-sponsored kick for the 24h lobby TTL janitor (any sender works). */
@@ -414,6 +411,7 @@ export async function vaultClaimOnChain(input: {
         postConditions: [],
         postConditionMode: PostConditionMode.Allow,
     })
+    await player.persistV2IfNeeded()
     try {
         const { saveVaultDraft } = await import("@/lib/api/server")
         await saveVaultDraft({

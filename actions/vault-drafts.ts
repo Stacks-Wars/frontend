@@ -1,10 +1,7 @@
 "use server"
 
-import {
-    clearVaultDraft,
-    listVaultDrafts,
-    type VaultDraft,
-} from "@/lib/api/server"
+import { clearVaultDraft, listVaultDrafts } from "@/lib/api/server"
+import type { VaultDraft } from "@/lib/api/types"
 import { auth } from "@/lib/auth/server"
 import { peekTx } from "@/lib/tx/wait-for-tx"
 import { isIdempotentVaultSuccess } from "@/lib/vault/tx-errors"
