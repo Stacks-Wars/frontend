@@ -2,10 +2,10 @@
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "functions": {
         "app/api/onchain/[op]/route.ts": {
-            "maxDuration": 300
+            "maxDuration": 60
         },
         "app/api/cron/lobby-ttl/route.ts": {
-            "maxDuration": 300
+            "maxDuration": 60
         }
     },
     "crons": [

@@ -18,7 +18,7 @@ type WaitOptions = {
     expectedReasonAllowlist?: string[]
     pollIntervalMs?: number
     /**
-     * Stop polling and return `pending`. Default sits under the 300s
+     * Stop polling and return `pending`. Default sits under the 60s
      * `/api/onchain` and lobby-ttl functions.
      */
     maxWaitMs?: number
@@ -98,7 +98,7 @@ export async function waitForTx(
         signal,
         expectedReasonAllowlist,
         pollIntervalMs = 5_000,
-        maxWaitMs = 270_000,
+        maxWaitMs = 50_000,
     } = options
 
     let settled = false
