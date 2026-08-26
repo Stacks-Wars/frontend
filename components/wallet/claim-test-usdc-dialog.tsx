@@ -52,7 +52,6 @@ export function ClaimTestUsdcDialog({
             }
             setBalance(result.data.balance)
             void queryClient.invalidateQueries({ queryKey: ["activity"] })
-            void queryClient.invalidateQueries({ queryKey: ["balance"] })
             if (result.data.minted) {
                 announceTestUsdc(result.data.amountMicro)
             } else {

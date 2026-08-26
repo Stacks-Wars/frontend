@@ -6,7 +6,7 @@ import { HowItWorks } from "@/components/landing/how-it-works"
 import { LeaderboardPreview } from "@/components/landing/leaderboard-preview"
 import { LiveMatches } from "@/components/landing/live-matches"
 import { RecentResults } from "@/components/landing/recent-results"
-import { currentChainFromCookie } from "@/lib/chain/server"
+import { lobbyListChainForSession } from "@/lib/chain/server"
 import {
     getLeaderboard,
     listGameActivity,
@@ -29,11 +29,11 @@ function activeSeason(seasons: Season[]): Season | null {
 }
 
 export default async function LandingPage() {
-    const chain = await currentChainFromCookie()
+    const chain = await lobbyListChainForSession()
     const [games, activity, lobbies, seasons, recentMatches] = await Promise.all([
         listGames().catch(() => []),
         listGameActivity().catch(() => []),
-        listLobbies({ limit: 12, chain }).catch(() => []),
+        listLobbies({ limit: 12, ...(chain ? { chain } : {}) }).catch(() => []),
         listSeasons().catch(() => [] as Season[]),
         listRecentMatches({ limit: 8 }).catch(() => []),
     ])

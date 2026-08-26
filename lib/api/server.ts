@@ -40,14 +40,13 @@ function chainQuery(chain?: ChainId) {
 function asCustodialWallet(data: {
     userId: string
     address?: string
-    stxAddress?: string
     publicKey: string
     network: string
     chain?: string
 }): CustodialWallet {
     return {
         userId: data.userId,
-        address: data.address ?? data.stxAddress ?? "",
+        address: data.address ?? "",
         publicKey: data.publicKey,
         network: data.network,
         chain: parseChainId(data.chain),
@@ -618,7 +617,6 @@ export async function listCustodialWallets(
     const rows = (await response.json()) as Array<{
         userId: string
         address?: string
-        stxAddress?: string
         publicKey: string
         network: string
         chain?: string
@@ -753,8 +751,8 @@ export async function getKickTargetAddress(
     if (!response.ok) {
         throw new Error(`Failed to resolve player address (${response.status})`)
     }
-    const data = (await response.json()) as { address?: string; stxAddress?: string }
-    return data.address ?? data.stxAddress ?? ""
+    const data = (await response.json()) as { address?: string }
+    return data.address ?? ""
 }
 
 export async function kickLobbyPlayer(
@@ -859,7 +857,6 @@ export async function createCustodialWallet(
     const data = (await response.json()) as {
         userId: string
         address?: string
-        stxAddress?: string
         publicKey: string
         network: string
         chain?: string
@@ -903,7 +900,6 @@ export async function createCustodialWalletInternal(
     const data = (await response.json()) as {
         userId: string
         address?: string
-        stxAddress?: string
         publicKey: string
         network: string
         chain?: string
@@ -943,7 +939,6 @@ export async function getSigningMaterial(
         id: string
         userId: string
         address?: string
-        stxAddress?: string
         publicKey: string
         network: string
         chain?: string
@@ -955,7 +950,7 @@ export async function getSigningMaterial(
     return {
         id: data.id,
         userId: data.userId,
-        address: data.address ?? data.stxAddress ?? "",
+        address: data.address ?? "",
         publicKey: data.publicKey,
         network: data.network,
         chain: parseChainId(data.chain),

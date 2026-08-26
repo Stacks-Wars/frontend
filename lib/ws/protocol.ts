@@ -14,6 +14,9 @@ import type { ChainId } from "@/lib/chain"
 
 export const APP_TOPIC = "app"
 
+/** Every lobby list delta (paid + free, every chain). Guests subscribe here. */
+export const ALL_FEED_TOPIC = "app:all"
+
 /** Paid lobby deltas for one settlement chain. Free lobbies dual-publish. */
 export function chainFeedTopic(chain: ChainId): string {
     return `app:${chain}`
@@ -168,7 +171,6 @@ export type MatchFinishedPayload = {
 export type WalletBalancePayload = {
     availableMicro: number
     address?: string
-    stxAddress?: string
     chain?: string
     payoutMicro?: number
 }

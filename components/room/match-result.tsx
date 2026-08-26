@@ -104,9 +104,7 @@ export function MatchResult({
                     body: `${result.error} Retry from Wallet → Pending wins.`,
                     tone: "danger",
                 })
-                return
             }
-            toast({ title: "Winnings claimed", tone: "success" })
         })()
     }, [
         finished.needsOnChainClaim,

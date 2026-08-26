@@ -52,7 +52,6 @@ export function ChainSwitcher({
             const balance = await provisionChain(chain)
             setBalance(balance)
             void queryClient.invalidateQueries({ queryKey: ["activity"] })
-            void queryClient.invalidateQueries({ queryKey: ["balance"] })
             void queryClient.invalidateQueries({ queryKey: ["deposit-wallet"] })
             router.refresh()
         } catch (error) {
@@ -73,7 +72,7 @@ export function ChainSwitcher({
                 aria-label="Play chain"
                 className={cn(
                     variant === "header"
-                        ? "h-8 w-[7.25rem] rounded-full px-2.5 text-xs"
+                        ? "h-8 w-29 rounded-full px-2.5 text-xs"
                         : "h-10 w-full rounded-lg text-sm",
                     pending && "opacity-70"
                 )}

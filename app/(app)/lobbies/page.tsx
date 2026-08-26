@@ -7,7 +7,7 @@ import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
 import { LobbyBrowser } from "@/components/lobbies/lobby-browser"
 import { Skeleton } from "@/components/ui"
 import { listGames, listLobbies } from "@/lib/api/server"
-import { currentChainFromCookie } from "@/lib/chain/server"
+import { lobbyListChainForSession } from "@/lib/chain/server"
 
 export const metadata: Metadata = {
     title: "Lobbies",
@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 }
 
 export default async function LobbiesPage() {
-    const chain = await currentChainFromCookie()
+    const chain = await lobbyListChainForSession()
     const [lobbies, games] = await Promise.all([
-        listLobbies({ limit: 120, chain }).catch(() => []),
+        listLobbies({ limit: 120, ...(chain ? { chain } : {}) }).catch(() => []),
         listGames().catch(() => []),
     ])
 

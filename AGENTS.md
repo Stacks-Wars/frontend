@@ -81,7 +81,7 @@ After reconnect, use the existing snapshot/resync path. Do not invent a second p
 
 ## Chain
 
-Stacks is the current chain, not a type name we should freeze. Domain fields like `stxAddress` are chain-specific; new code should treat address, vault, and explorer URLs as adapters behind `lib/`, not sprinkle `Stacks` through components. Do not add a second wallet path (browser extensions) for play funds. Custodial USDCx only, until a chain adapter exists.
+Play funds settle on the chain the player picked. Address format, vault calls, and explorer URLs live behind `lib/chain` adapters — do not sprinkle chain names through games or room UI. Individual official chain explorers are the source of truth for balances. Wire fields use `address`, not chain-prefixed names. Do not add a second wallet path (browser extensions) for play funds. Custodial play tokens only.
 
 ## Solana MCP
 

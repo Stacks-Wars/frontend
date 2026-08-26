@@ -7,6 +7,7 @@ import { playSfx } from "@/lib/audio/play-sound"
 import { appSocket } from "@/lib/ws/app-socket"
 import { emitGameEvent } from "@/lib/ws/game-bus"
 import {
+    ALL_FEED_TOPIC,
     APP_TOPIC,
     chainFeedTopic,
     asGameEvent,
@@ -28,7 +29,12 @@ import type { Lobby, LobbyChatMessage } from "@/lib/api/types"
 import { useConnectionActions, useConnectionStatus } from "@/stores/connection"
 import { useLiveStore } from "@/stores/live"
 import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionCurrentChain, useSessionStore } from "@/stores/session"
+import {
+    useSessionCurrentChain,
+    useSessionLoading,
+    useSessionStore,
+    useSessionUser,
+} from "@/stores/session"
 
 /**
  * Access tokens are minted by the auth provider, which rate limits. One mint
@@ -77,8 +83,19 @@ export function clearAccessTokenCache(): void {
 export function AppWsProvider({ children }: { children?: React.ReactNode }) {
     const queryClient = useQueryClient()
     const { setStatus } = useConnectionActions()
+    const user = useSessionUser()
+    const loading = useSessionLoading()
     const currentChain = useSessionCurrentChain()
-    useTopic(chainFeedTopic(currentChain))
+    // Signed-in: only the live play chain. Guests: `app:all` so both chains
+    // show up without enumerating CHAIN_IDS. Wait out auth-sync so a signed-in
+    // reload does not briefly subscribe to the all-chain feed.
+    useTopic(
+        loading
+            ? null
+            : user
+              ? chainFeedTopic(currentChain)
+              : ALL_FEED_TOPIC
+    )
 
     React.useEffect(() => {
         appSocket.setTokenProvider(mintAccessToken)
@@ -180,9 +197,7 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                                 : {}),
                             ...(payload.address
                                 ? { address: payload.address }
-                                : payload.stxAddress
-                                  ? { address: payload.stxAddress }
-                                  : {}),
+                                : {}),
                         })
                     }
                     void queryClient.invalidateQueries({

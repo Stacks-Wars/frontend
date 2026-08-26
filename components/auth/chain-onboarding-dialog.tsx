@@ -61,7 +61,6 @@ export function ChainOnboardingDialog() {
             setBalance(balance)
             setNeedsChainPick(false)
             void queryClient.invalidateQueries({ queryKey: ["activity"] })
-            void queryClient.invalidateQueries({ queryKey: ["balance"] })
             void queryClient.invalidateQueries({
                 queryKey: ["deposit-wallet"],
             })

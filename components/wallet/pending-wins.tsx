@@ -34,7 +34,6 @@ export function PendingWins() {
                 toast({ title: result.error, tone: "danger" })
                 return
             }
-            toast({ title: "Winnings claimed", tone: "success" })
             await queryClient.invalidateQueries({
                 queryKey: ["vault-drafts", "claim"],
             })
