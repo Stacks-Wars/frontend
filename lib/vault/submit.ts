@@ -18,7 +18,8 @@ import {
 import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network"
 
 import { getSigningMaterial } from "@/lib/api/server"
-import { parseChainId, type ChainId } from "@/lib/chain"
+import { chainAdapter, parseChainId, type ChainId } from "@/lib/chain"
+import { provisionDestWallet } from "@/lib/custodial/provision-dest"
 import { unlockCustodialAccount } from "@/lib/custodial/unlock"
 import { waitForSolanaSignature } from "@/lib/solana/rpc"
 import {
@@ -444,6 +445,30 @@ async function broadcastKick(input: {
     })
 }
 
+async function resolveClaimDest(input: {
+    chain?: ChainId
+    devWallet: string
+    devFee: number
+    devId?: string | null
+    devNeedsWallet?: boolean
+}): Promise<{ devWallet: string; devFee: number }> {
+    const chain = parseChainId(input.chain)
+    if (input.devNeedsWallet && input.devId) {
+        try {
+            const address = await provisionDestWallet(input.devId, chain)
+            return { devWallet: address, devFee: input.devFee }
+        } catch (error) {
+            console.error("[vault] dev wallet provision failed", error)
+            return { devWallet: input.devWallet, devFee: 0 }
+        }
+    }
+    const parsed = chainAdapter(chain).parseAddress(input.devWallet)
+    if (!parsed) {
+        return { devWallet: input.devWallet, devFee: 0 }
+    }
+    return { devWallet: parsed, devFee: input.devFee }
+}
+
 export async function vaultClaimOnChain(input: {
     userId: string
     lobbyPath: string
@@ -451,18 +476,21 @@ export async function vaultClaimOnChain(input: {
     nonce: number
     devWallet: string
     devFee: number
+    devId?: string | null
+    devNeedsWallet?: boolean
     lobbyId?: string
     resumeTxid?: string
     chain?: ChainId
 }): Promise<string> {
+    const dest = await resolveClaimDest(input)
     if (parseChainId(input.chain) === "solana") {
         const material = await getSigningMaterial(input.userId, "solana")
         return solanaVaultClaim({
             lobbyPath: input.lobbyPath,
             playerAddress: material.address,
             amountMicro: input.amountMicro,
-            devFeePct: input.devFee,
-            devAddress: input.devWallet,
+            devFeePct: dest.devFee,
+            devAddress: dest.devWallet,
         })
     }
     if (input.resumeTxid) {
@@ -478,8 +506,8 @@ export async function vaultClaimOnChain(input: {
         player: player.address,
         amount: input.amountMicro,
         nonce: input.nonce,
-        devWallet: input.devWallet,
-        devFee: input.devFee,
+        devWallet: dest.devWallet,
+        devFee: dest.devFee,
     })
     // Split pays winner + platform + optional game fee. Nested Clarity
     // with-ft post-conditions cover each leg — client Deny+eq(total) races
@@ -491,8 +519,8 @@ export async function vaultClaimOnChain(input: {
             Cl.stringAscii(input.lobbyPath),
             Cl.uint(input.amountMicro),
             Cl.uint(input.nonce),
-            Cl.principal(input.devWallet),
-            Cl.uint(input.devFee),
+            Cl.principal(dest.devWallet),
+            Cl.uint(dest.devFee),
             Cl.bufferFromHex(signature.replace(/^0x/, "")),
         ],
         postConditions: [],
@@ -509,8 +537,10 @@ export async function vaultClaimOnChain(input: {
             entryAmountMicro: 0,
             amountMicro: input.amountMicro,
             nonce: input.nonce,
-            devWallet: input.devWallet,
-            devFee: input.devFee,
+            devWallet: dest.devWallet,
+            devFee: dest.devFee,
+            devId: input.devId,
+            devNeedsWallet: input.devNeedsWallet,
         })
     } catch (error) {
         console.error("[vault] failed to persist claim draft", error)

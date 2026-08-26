@@ -465,6 +465,8 @@ export type VaultClaimInput = {
     nonce: number
     devWallet: string
     devFee: number
+    devId?: string | null
+    devNeedsWallet?: boolean
 }
 
 /** Submit the winner's on-chain vault claim (contract splits platform + optional dev). */
@@ -484,7 +486,10 @@ export async function settleVaultClaimsAction(input: {
         for (const claim of input.claims) {
             if (claim.amountMicro <= 0) continue
             if (claim.userId !== me.id) continue
-            if (!claim.devWallet) {
+            if (
+                !claim.devWallet &&
+                !(claim.devNeedsWallet && claim.devId)
+            ) {
                 throw new Error("Payout is not configured for this game.")
             }
             const drafts = await listVaultDrafts("claim").catch(() => [])
@@ -509,6 +514,8 @@ export async function settleVaultClaimsAction(input: {
                 nonce: claim.nonce,
                 devWallet: claim.devWallet,
                 devFee: claim.devFee,
+                devId: claim.devId,
+                devNeedsWallet: claim.devNeedsWallet,
                 resumeTxid,
                 chain: detail.lobby.chain,
             })
@@ -533,6 +540,8 @@ export async function savePendingClaimAction(input: {
     nonce: number
     devWallet: string
     devFee: number
+    devId?: string | null
+    devNeedsWallet?: boolean
 }): Promise<ActionResult<{ ok: true }>> {
     return actionResult(async () => {
         await requireUser()
@@ -547,6 +556,8 @@ export async function savePendingClaimAction(input: {
             nonce: input.nonce,
             devWallet: input.devWallet,
             devFee: input.devFee,
+            devId: input.devId,
+            devNeedsWallet: input.devNeedsWallet,
         })
         return { ok: true as const }
     })
@@ -561,7 +572,10 @@ export async function claimPendingWinAction(
     if (!draft?.lobbyId || !draft.amountMicro || draft.nonce == null) {
         return { ok: false, error: "No pending win found for this lobby." }
     }
-    if (!draft.devWallet) {
+    if (
+        !draft.devWallet &&
+        !(draft.devNeedsWallet && draft.devId)
+    ) {
         return { ok: false, error: "Payout is not configured for this win." }
     }
     const me = await requireUser().catch(() => null)
@@ -574,8 +588,10 @@ export async function claimPendingWinAction(
                 userId: me.id,
                 amountMicro: draft.amountMicro,
                 nonce: draft.nonce,
-                devWallet: draft.devWallet,
+                devWallet: draft.devWallet ?? "",
                 devFee: draft.devFee ?? 0,
+                devId: draft.devId,
+                devNeedsWallet: draft.devNeedsWallet,
             },
         ],
     })

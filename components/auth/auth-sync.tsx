@@ -3,7 +3,7 @@
 import * as React from "react"
 
 import { getMyBalance } from "@/actions/wallet"
-import { ensureChainWallet } from "@/actions/chain"
+import { listMyWallets } from "@/actions/chain"
 import { acceptLegalTerms, syncAuthUser, updateUserPreferences } from "@/actions/users"
 import { LEGAL_VERSION } from "@/lib/legal"
 import { authClient } from "@/lib/auth/client"
@@ -15,7 +15,7 @@ import {
     useUserTopic,
 } from "@/components/ws/app-ws-provider"
 import { appSocket } from "@/lib/ws/app-socket"
-import { readStoredChain } from "@/lib/chain"
+import { readStoredChain, writeStoredChain } from "@/lib/chain"
 import { useSessionActions, useSessionUser } from "@/stores/session"
 
 /**
@@ -24,7 +24,7 @@ import { useSessionActions, useSessionUser } from "@/stores/session"
  */
 export function AuthSync() {
     const { data: session, isPending } = authClient.useSession()
-    const { setUser, setLoading, setBalance, hydrateCurrentChain } =
+    const { setUser, setLoading, setBalance, hydrateCurrentChain, setNeedsChainPick } =
         useSessionActions()
     const userId = useSessionUser()?.id
 
@@ -53,6 +53,7 @@ export function AuthSync() {
                 clearAccessTokenCache()
                 setUser(null)
                 setBalance(null)
+                setNeedsChainPick(false)
                 setLoading(false)
                 return
             }
@@ -66,6 +67,7 @@ export function AuthSync() {
                 clearAccessTokenCache()
                 setUser(null)
                 setBalance(null)
+                setNeedsChainPick(false)
                 setLoading(false)
                 return
             }
@@ -93,17 +95,30 @@ export function AuthSync() {
                 appSocket.refreshAuth()
 
                 try {
-                    await updateUserPreferences({
-                        currentChain: readStoredChain(),
-                    })
-                } catch {
-                    // Push targeting is best-effort.
-                }
-
-                try {
-                    const chain = readStoredChain()
-                    const balance = await ensureChainWallet(chain)
-                    if (!cancelled) setBalance(balance)
+                    const wallets = await listMyWallets()
+                    if (wallets.length === 0) {
+                        setNeedsChainPick(true)
+                        setBalance(null)
+                    } else {
+                        setNeedsChainPick(false)
+                        const stored = readStoredChain()
+                        const chain = wallets.some((w) => w.chain === stored)
+                            ? stored
+                            : wallets[0].chain
+                        if (chain !== stored) writeStoredChain(chain)
+                        hydrateCurrentChain(chain)
+                        try {
+                            await updateUserPreferences({ currentChain: chain })
+                        } catch {
+                            // Push targeting is best-effort.
+                        }
+                        try {
+                            const balance = await getMyBalance(chain)
+                            if (!cancelled) setBalance(balance)
+                        } catch {
+                            if (!cancelled) setBalance(null)
+                        }
+                    }
                 } catch {
                     try {
                         const balance = await getMyBalance(readStoredChain())
@@ -145,6 +160,8 @@ export function AuthSync() {
         setBalance,
         setLoading,
         setUser,
+        setNeedsChainPick,
+        hydrateCurrentChain,
     ])
 
     return null

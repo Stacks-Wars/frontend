@@ -1,16 +1,17 @@
 import { z } from "zod"
 
+import { chainAdapter, type ChainId } from "@/lib/chain"
 import { toMicro, toUsdc } from "@/lib/format"
 import { MAX_WITHDRAW_MICRO, MIN_WITHDRAW_MICRO } from "@/lib/vault/config"
 
 const MIN_USD = toUsdc(MIN_WITHDRAW_MICRO)
 const MAX_USD = toUsdc(MAX_WITHDRAW_MICRO)
-const STACKS_ADDRESS = /^S[0-9A-Z]{25,60}$/
 
 export const withdrawMinUsd = MIN_USD
 export const withdrawMaxUsd = MAX_USD
 
-export function withdrawSchema(availableMicro: number) {
+export function withdrawSchema(availableMicro: number, chain: ChainId) {
+    const adapter = chainAdapter(chain)
     return z.object({
         amount: z
             .string()
@@ -35,11 +36,10 @@ export function withdrawSchema(availableMicro: number) {
         address: z
             .string()
             .trim()
+            .min(1, "Enter a destination address.")
             .refine(
-                (value) =>
-                    value.length === 0 ||
-                    STACKS_ADDRESS.test(value.toUpperCase()),
-                "That does not look like a Stacks address."
+                (value) => adapter.parseAddress(value) !== null,
+                `That does not look like a ${adapter.label} address.`
             ),
     })
 }

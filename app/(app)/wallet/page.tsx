@@ -62,10 +62,10 @@ export default function WalletPage() {
                     <section className="animate-rise-in space-y-4">
                         <SectionHeader
                             title="Withdraw"
-                            description={`Sends ${token} from your custodial wallet to a ${chainAdapter(chain).label} address.`}
+                            description={`Sends ${token} from your custodial wallet to a ${chainAdapter(chain).label} address you control.`}
                         />
                         <div className="lg:max-w-xl">
-                            <WithdrawForm />
+                            <WithdrawForm key={chain} />
                         </div>
                     </section>
 

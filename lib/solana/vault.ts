@@ -8,12 +8,14 @@ import "server-only"
  */
 
 import { sha256 } from "@noble/hashes/sha256"
+import { getCreateAssociatedTokenIdempotentInstruction } from "@solana-program/token"
 import {
     AccountRole,
     address,
     getAddressEncoder,
     getProgramDerivedAddress,
     getSignatureFromTransaction,
+    isAddress,
     type Address,
     type Instruction,
     type TransactionSigner,
@@ -63,6 +65,11 @@ function concatBytes(...parts: Uint8Array[]): Uint8Array {
     return out
 }
 
+function asSolanaAddress(raw: string): Address | null {
+    const value = raw.trim()
+    return isAddress(value) ? address(value) : null
+}
+
 const addressEncoder = getAddressEncoder()
 
 async function configPda() {
@@ -99,6 +106,29 @@ async function ata(owner: Address, mint: Address) {
         ],
     })
     return pda
+}
+
+/** Distinct dest owner used when dest fee is 0 so dest_usdc ≠ platform_usdc. */
+async function destFeeSkipDest(): Promise<Address> {
+    const [pda] = await getProgramDerivedAddress({
+        programAddress: programId(),
+        seeds: ["dev-fee-skip"],
+    })
+    return pda
+}
+
+function createAtaIx(
+    payer: TransactionSigner,
+    owner: Address,
+    ataAddress: Address,
+    mint: Address
+) {
+    return getCreateAssociatedTokenIdempotentInstruction({
+        payer,
+        ata: ataAddress,
+        owner,
+        mint,
+    })
 }
 
 function signerMeta(
@@ -210,7 +240,10 @@ async function solanaVaultRefund(
     input: { lobbyPath: string; playerAddress: string }
 ): Promise<string> {
     const payer = await getSolanaFeePayer()
-    const player = address(input.playerAddress)
+    const player = asSolanaAddress(input.playerAddress)
+    if (!player) {
+        throw new Error("Player wallet is not a Solana address.")
+    }
     const mint = address(getSolanaUsdcMint())
     const pathHash = lobbyPathHash(input.lobbyPath)
     const config = await configPda()
@@ -246,36 +279,54 @@ export async function solanaVaultClaim(input: {
     devAddress: string
 }): Promise<string> {
     const payer = await getSolanaFeePayer()
-    const player = address(input.playerAddress)
-    const dev = address(input.devAddress)
+    const player = asSolanaAddress(input.playerAddress)
+    if (!player) {
+        throw new Error("Player wallet is not a Solana address.")
+    }
+    const platform = address(payer.address)
+    const parsedDev = asSolanaAddress(input.devAddress)
+    // dest_usdc and platform_usdc are both mut TokenAccounts. Reusing the
+    // platform key (0% dest fee / Stacks SP remap) fails simulation.
+    const payDest =
+        parsedDev != null &&
+        parsedDev !== platform &&
+        input.devFeePct > 0
+    const dest = payDest ? parsedDev : await destFeeSkipDest()
+    const devFeePct = payDest ? input.devFeePct : 0
     const mint = address(getSolanaUsdcMint())
     const pathHash = lobbyPathHash(input.lobbyPath)
     const config = await configPda()
     const escrow = await escrowPda(pathHash)
+    const playerUsdc = await ata(player, mint)
+    const destUsdc = await ata(dest, mint)
 
     const ix: Instruction = {
         programAddress: programId(),
         accounts: [
             signerMeta(payer, AccountRole.WRITABLE_SIGNER),
             { address: player, role: AccountRole.READONLY },
-            { address: dev, role: AccountRole.READONLY },
+            { address: dest, role: AccountRole.READONLY },
             { address: config, role: AccountRole.READONLY },
             { address: mint, role: AccountRole.READONLY },
             { address: escrow, role: AccountRole.WRITABLE },
-            { address: await ata(player, mint), role: AccountRole.WRITABLE },
+            { address: playerUsdc, role: AccountRole.WRITABLE },
             {
                 address: await ata(payer.address, mint),
                 role: AccountRole.WRITABLE,
             },
-            { address: await ata(dev, mint), role: AccountRole.WRITABLE },
+            { address: destUsdc, role: AccountRole.WRITABLE },
             { address: await ata(escrow, mint), role: AccountRole.WRITABLE },
             { address: TOKEN_PROGRAM, role: AccountRole.READONLY },
         ],
         data: concatBytes(
             discriminator("claim"),
             u64le(input.amountMicro),
-            Uint8Array.of(input.devFeePct & 0xff)
+            Uint8Array.of(devFeePct & 0xff)
         ),
     }
-    return sendSponsored([ix])
+    return sendSponsored([
+        createAtaIx(payer, player, playerUsdc, mint),
+        createAtaIx(payer, dest, destUsdc, mint),
+        ix,
+    ])
 }

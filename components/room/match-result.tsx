@@ -89,6 +89,8 @@ export function MatchResult({
                 nonce: myClaim.nonce,
                 devWallet: myClaim.devWallet,
                 devFee: myClaim.devFee,
+                devId: myClaim.devId,
+                devNeedsWallet: myClaim.devNeedsWallet,
             }).catch(() => undefined)
 
             const result = await settleVaultClaimsOnchain({

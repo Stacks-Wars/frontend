@@ -37,8 +37,8 @@ export function BalanceCard() {
     const [error, setError] = React.useState<string | null>(null)
 
     const { data: activity } = useQuery({
-        queryKey: ["activity"],
-        queryFn: getMyActivity,
+        queryKey: ["activity", chain],
+        queryFn: () => getMyActivity(chain),
     })
 
     const pending = (activity ?? []).filter((item) =>

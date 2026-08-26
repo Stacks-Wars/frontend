@@ -46,9 +46,13 @@ export function AddFundsDialog({
                     </DialogTitle>
                     <DialogDescription>
                         {showShortfall
-                            ? `You need ${formatUsdc(requiredMicro)} to join, but only have ${formatUsdc(availableMicro, { zero: "$0.00" })}. Deposit at least ${formatUsdc(shortfall)} more, then try again.`
+                            ? `You need ${formatUsdc(requiredMicro)} to join, but only have ${formatUsdc(availableMicro, { zero: "$0.00" })}. ${
+                                  chain === "solana"
+                                      ? "Claim $50 test USDC if you're under $1, then try again."
+                                      : `Deposit at least ${formatUsdc(shortfall)} more, then try again.`
+                              }`
                             : chain === "solana"
-                              ? "New wallets get $50 test USDC. Deposit more of that mint if you've already spent it."
+                              ? "Don't send tokens here. Claim our Devnet USDC if your balance is under $1."
                               : `Send ${token} to your custodial address to top up your balance.`}
                     </DialogDescription>
                 </DialogHeader>

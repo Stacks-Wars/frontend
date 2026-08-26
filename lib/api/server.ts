@@ -430,10 +430,11 @@ export async function refreshBalance(
 }
 
 export async function listWalletActivity(
-    userId: string
+    userId: string,
+    chain?: ChainId
 ): Promise<ChainActivityItem[]> {
     const response = await fetch(
-        `${getApiBaseUrl()}/wallet/activity/${userId}`,
+        `${getApiBaseUrl()}/wallet/activity/${userId}?${chainQuery(chain)}`,
         {
             method: "GET",
             headers: await authHeaders(),
@@ -457,7 +458,8 @@ export type WithdrawPrepare = {
 
 export async function prepareWithdrawal(payload: {
     amountMicro: number
-    toAddress?: string
+    toAddress: string
+    chain?: ChainId
 }): Promise<WithdrawPrepare> {
     const response = await fetch(
         `${getApiBaseUrl()}/wallet/withdrawals/prepare`,
@@ -466,7 +468,8 @@ export async function prepareWithdrawal(payload: {
             headers: await authHeaders(),
             body: JSON.stringify({
                 amountMicro: payload.amountMicro,
-                toAddress: payload.toAddress ?? null,
+                toAddress: payload.toAddress,
+                chain: payload.chain,
             }),
             cache: "no-store",
         }
@@ -484,6 +487,7 @@ export async function prepareWithdrawal(payload: {
 
 export async function completeWithdrawal(payload: {
     txid: string
+    chain?: ChainId
 }): Promise<WalletBalance> {
     const response = await fetch(
         `${getApiBaseUrl()}/wallet/withdrawals/complete`,
@@ -492,6 +496,7 @@ export async function completeWithdrawal(payload: {
             headers: await authHeaders(),
             body: JSON.stringify({
                 txid: payload.txid,
+                chain: payload.chain,
             }),
             cache: "no-store",
         }
@@ -592,6 +597,49 @@ export async function getCustodialWallet(
     }
 
     return asCustodialWallet(await response.json())
+}
+
+export async function listCustodialWallets(
+    userId: string
+): Promise<CustodialWallet[]> {
+    const response = await fetch(
+        `${getApiBaseUrl()}/users/${userId}/custodial-wallets`,
+        {
+            method: "GET",
+            headers: await authHeaders(),
+            cache: "no-store",
+        }
+    )
+    if (!response.ok) {
+        throw new Error(
+            `Failed to list custodial wallets (${response.status})`
+        )
+    }
+    const rows = (await response.json()) as Array<{
+        userId: string
+        address?: string
+        stxAddress?: string
+        publicKey: string
+        network: string
+        chain?: string
+    }>
+    return rows.map(asCustodialWallet)
+}
+
+export async function sendPushNotice(payload: {
+    title: string
+    body?: string
+    path?: string
+}): Promise<void> {
+    const response = await fetch(`${getApiBaseUrl()}/users/me/push-notice`, {
+        method: "POST",
+        headers: await authHeaders(),
+        body: JSON.stringify(payload),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        throw new Error(`Failed to send notice (${response.status})`)
+    }
 }
 
 export async function getUserByUsername(
@@ -786,6 +834,50 @@ export async function createCustodialWallet(
         {
             method: "POST",
             headers: await authHeaders(),
+            body: JSON.stringify({
+                address: payload.address,
+                publicKey: payload.publicKey,
+                encryptedSigningMaterial: payload.encryptedSigningMaterial,
+                kmsKeyVersion: payload.kmsKeyVersion,
+                network: payload.network,
+                chain: payload.chain,
+            }),
+            cache: "no-store",
+        }
+    )
+
+    if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+            error?: string
+        } | null
+        throw new Error(
+            body?.error ??
+                `Failed to create custodial wallet (${response.status})`
+        )
+    }
+
+    const data = (await response.json()) as {
+        userId: string
+        address?: string
+        stxAddress?: string
+        publicKey: string
+        network: string
+        chain?: string
+    }
+
+    return asCustodialWallet(data)
+}
+
+/** Internal: persist a custodial wallet for any user (game dest provision). */
+export async function createCustodialWalletInternal(
+    userId: string,
+    payload: CreateCustodialWalletPayload
+): Promise<CustodialWallet> {
+    const response = await fetch(
+        `${getApiBaseUrl()}/wallet/custodial/${userId}`,
+        {
+            method: "POST",
+            headers: internalHeaders(),
             body: JSON.stringify({
                 address: payload.address,
                 publicKey: payload.publicKey,

@@ -173,6 +173,11 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     if (typeof payload.availableMicro === "number") {
                         session.patchBalance({
                             availableMicro: payload.availableMicro,
+                            ...(payload.chain
+                                ? {
+                                      chain: payload.chain as import("@/lib/chain").ChainId,
+                                  }
+                                : {}),
                             ...(payload.address
                                 ? { address: payload.address }
                                 : payload.stxAddress

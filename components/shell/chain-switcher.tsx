@@ -2,8 +2,9 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 
-import { ensureChainWallet } from "@/actions/chain"
+import { provisionChain } from "@/lib/wallet/provision-chain"
 import { chainAdapter, CHAIN_IDS, type ChainId } from "@/lib/chain"
 import { cn } from "@/lib/utils"
 import {
@@ -16,6 +17,7 @@ import {
 import {
     useSessionActions,
     useSessionCurrentChain,
+    useSessionNeedsChainPick,
     useSessionUser,
 } from "@/stores/session"
 import { useLiveStore } from "@/stores/live"
@@ -33,11 +35,13 @@ export function ChainSwitcher({
 }) {
     const user = useSessionUser()
     const current = useSessionCurrentChain()
+    const needsPick = useSessionNeedsChainPick()
     const { setCurrentChain, setBalance } = useSessionActions()
     const router = useRouter()
+    const queryClient = useQueryClient()
     const [pending, setPending] = React.useState(false)
 
-    if (!user) return null
+    if (!user || needsPick) return null
 
     async function select(chain: ChainId) {
         if (chain === current || pending) return
@@ -45,8 +49,11 @@ export function ChainSwitcher({
         setCurrentChain(chain)
         useLiveStore.getState().actions.pruneFeedForChain(chain)
         try {
-            const balance = await ensureChainWallet(chain)
+            const balance = await provisionChain(chain)
             setBalance(balance)
+            void queryClient.invalidateQueries({ queryKey: ["activity"] })
+            void queryClient.invalidateQueries({ queryKey: ["balance"] })
+            void queryClient.invalidateQueries({ queryKey: ["deposit-wallet"] })
             router.refresh()
         } catch (error) {
             console.error("[chain] switch failed", error)

@@ -5,18 +5,26 @@ import { useQuery } from "@tanstack/react-query"
 import { RiCheckLine, RiFileCopyLine, RiLoader4Line } from "@remixicon/react"
 
 import { getMyDepositWallet, refreshMyBalance } from "@/actions/wallet"
+import { ClaimTestUsdcDialog } from "@/components/wallet/claim-test-usdc-dialog"
 import { Badge, Button, Skeleton } from "@/components/ui"
 import { chainAdapter } from "@/lib/chain"
+import { MICRO } from "@/lib/format"
 import { useNotificationActions } from "@/stores/notifications"
-import { useSessionActions, useSessionCurrentChain } from "@/stores/session"
+import {
+    useSessionActions,
+    useSessionBalance,
+    useSessionCurrentChain,
+} from "@/stores/session"
 
 export function DepositPanel() {
     const { setBalance } = useSessionActions()
     const { toast } = useNotificationActions()
     const chain = useSessionCurrentChain()
+    const balance = useSessionBalance()
     const token = chainAdapter(chain).playToken
     const [copied, setCopied] = React.useState(false)
     const [checking, setChecking] = React.useState(false)
+    const [claimOpen, setClaimOpen] = React.useState(false)
 
     const {
         data: wallet,
@@ -59,12 +67,60 @@ export function DepositPanel() {
         }
     }
 
+    function onGetUsdc() {
+        const available = balance?.availableMicro ?? 0
+        if (available >= MICRO) {
+            toast({
+                title: "You already have test USDC",
+                body: "The claim is only for wallets under $1.",
+            })
+            return
+        }
+        setClaimOpen(true)
+    }
+
+    if (chain === "solana") {
+        return (
+            <div className="space-y-4 rounded-2xl border border-border/70 p-5 surface-raised">
+                <p className="text-sm text-muted-foreground">
+                    Don&apos;t send any tokens here, including Circle USDC.
+                    Matches use our own minted USDC on Devnet.
+                </p>
+                <Button type="button" variant="primary" onClick={onGetUsdc}>
+                    Get USDC for Stacks Wars Devnet
+                </Button>
+                {wallet ? (
+                    <p className="text-xs text-muted-foreground">
+                        Play wallet{" "}
+                        <code className="font-mono break-all">
+                            {wallet.address}
+                        </code>
+                        <Badge variant="outline" className="ml-2">
+                            {wallet.network}
+                        </Badge>
+                    </p>
+                ) : isLoading ? (
+                    <Skeleton className="h-8 rounded-xl" />
+                ) : error ? (
+                    <p className="text-sm text-destructive">
+                        {error instanceof Error
+                            ? error.message
+                            : "No Solana wallet yet."}
+                    </p>
+                ) : null}
+                <ClaimTestUsdcDialog
+                    open={claimOpen}
+                    onOpenChange={setClaimOpen}
+                />
+            </div>
+        )
+    }
+
     return (
         <div className="space-y-4 rounded-2xl border border-border/70 p-5 surface-raised">
             <p className="text-sm text-muted-foreground">
-                {chain === "solana"
-                    ? "New Solana wallets get $50 of our test USDC on devnet. Skip the faucet. If you burn through it, send more of that same mint here."
-                    : `${token} sent to the address below credits this account. The balance updates once the transfer confirms on-chain.`}
+                {token} sent to the address below credits this account. The
+                balance updates once the transfer confirms on-chain.
             </p>
 
             {isLoading ? (

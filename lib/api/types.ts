@@ -6,8 +6,6 @@ export type AppUser = {
     displayName: string | null
     email: string
     emailVerifiedAt: string | null
-    walletAddress: string | null
-    walletVerifiedAt: string | null
     avatarUrl: string | null
     lobbyAlertsEnabled?: boolean
     currentChain?: import("@/lib/chain").ChainId
@@ -75,6 +73,8 @@ export type VaultDraftPayload = {
     paidMicro?: number
     devWallet?: string
     devFee?: number
+    devId?: string | null
+    devNeedsWallet?: boolean
 }
 
 export type VaultDraft = VaultDraftPayload & {
@@ -207,6 +207,8 @@ export type VaultClaimIntent = {
     nonce: number
     devWallet: string
     devFee: number
+    devId?: string | null
+    devNeedsWallet?: boolean
     role?: string
 }
 

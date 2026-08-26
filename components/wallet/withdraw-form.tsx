@@ -7,9 +7,9 @@ import { RiCheckLine, RiLoader4Line } from "@remixicon/react"
 import { useForm, useWatch } from "react-hook-form"
 
 import { Button, Input, Label } from "@/components/ui"
+import { chainAdapter, liveExplorerTxUrl } from "@/lib/chain"
 import { formatUsdc, toMicro, toUsdc } from "@/lib/format"
 import { withdrawOnchain } from "@/lib/onchain"
-import { hiroExplorerTxUrl } from "@/lib/stacks/explorer"
 import { truncateWallet } from "@/lib/utils"
 import {
     withdrawMaxUsd,
@@ -18,10 +18,15 @@ import {
     type WithdrawFormValues,
 } from "@/lib/wallet/withdraw-schema"
 import { useNotificationActions } from "@/stores/notifications"
-import { useSessionActions, useSessionBalance } from "@/stores/session"
+import {
+    useSessionActions,
+    useSessionBalance,
+    useSessionCurrentChain,
+} from "@/stores/session"
 
 export function WithdrawForm() {
     const balance = useSessionBalance()
+    const chain = useSessionCurrentChain()
     const { setBalance } = useSessionActions()
     const { toast } = useNotificationActions()
     const queryClient = useQueryClient()
@@ -30,7 +35,10 @@ export function WithdrawForm() {
     const [txid, setTxid] = React.useState<string | null>(null)
 
     const available = balance?.availableMicro ?? 0
-    const schema = React.useMemo(() => withdrawSchema(available), [available])
+    const schema = React.useMemo(
+        () => withdrawSchema(available, chain),
+        [available, chain]
+    )
 
     const {
         control,
@@ -56,7 +64,7 @@ export function WithdrawForm() {
         const usd = Number.parseFloat(values.amount)
         const result = await withdrawOnchain({
             amountUsd: usd,
-            toAddress: values.address.trim() || undefined,
+            toAddress: values.address.trim(),
         })
         if (!result.ok) {
             setError(result.error)
@@ -132,15 +140,10 @@ export function WithdrawForm() {
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="withdraw-address">
-                    Destination address
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        optional
-                    </span>
-                </Label>
+                <Label htmlFor="withdraw-address">Destination address</Label>
                 <Input
                     id="withdraw-address"
-                    placeholder="SP…"
+                    placeholder={balance?.address ?? ""}
                     autoComplete="off"
                     spellCheck={false}
                     className="font-mono text-xs sm:text-sm"
@@ -153,7 +156,8 @@ export function WithdrawForm() {
                     </p>
                 ) : (
                     <p className="text-xs text-muted-foreground">
-                        Defaults to your linked wallet.
+                        Required. Send {chainAdapter(chain).playToken} to a{" "}
+                        {chainAdapter(chain).label} wallet you control.
                     </p>
                 )}
             </div>
@@ -169,7 +173,7 @@ export function WithdrawForm() {
                     <RiCheckLine className="size-4" />
                     Broadcast as{" "}
                     <a
-                        href={hiroExplorerTxUrl(txid)}
+                        href={liveExplorerTxUrl(chain, txid)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-mono underline-offset-2 hover:underline"

@@ -6,6 +6,9 @@ export const SOLANA_TEST_USDC_MINT =
 
 export const SOLANA_USDC_DECIMALS = 6
 
+/** $1 in base units. Claim dialog / remint only below this. */
+export const SOLANA_CLAIM_MIN_AMOUNT = BigInt(1_000_000)
+
 /** $50 in base units (6 decimals). */
 export const SOLANA_TEST_USDC_AMOUNT = BigInt(50_000_000)
 

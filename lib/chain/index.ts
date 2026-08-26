@@ -1,4 +1,4 @@
-export { chainAdapter, explorerTxUrl } from "@/lib/chain/registry"
+export { chainAdapter, explorerTxUrl, liveExplorerTxUrl } from "@/lib/chain/registry"
 export { CHAIN_COOKIE, readStoredChain, writeStoredChain } from "@/lib/chain/storage"
 export {
     CHAIN_IDS,

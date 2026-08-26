@@ -21,6 +21,7 @@ import { getSolanaFeePayer } from "@/lib/solana/fee-payer"
 import {
     getSolanaUsdcMint,
     isSolanaTestUsdcEnabled,
+    SOLANA_CLAIM_MIN_AMOUNT,
     SOLANA_TEST_USDC_AMOUNT,
     SOLANA_USDC_DECIMALS,
 } from "@/lib/solana/network"
@@ -55,7 +56,7 @@ export async function fundSolanaTestUsdc(
     })
 
     const existing = await tokenAmount(ata)
-    if (existing > BigInt(0)) return null
+    if (existing >= SOLANA_CLAIM_MIN_AMOUNT) return null
 
     const createAta = getCreateAssociatedTokenIdempotentInstruction({
         payer,

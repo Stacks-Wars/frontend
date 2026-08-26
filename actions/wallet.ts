@@ -17,6 +17,7 @@ import {
     MAX_WITHDRAW_MICRO,
     MIN_WITHDRAW_MICRO,
 } from "@/lib/vault/config"
+import { broadcastSolanaUsdcTransfer } from "@/lib/solana/withdraw-transfer"
 import { broadcastUsdcxTransfer } from "@/lib/wallet/withdraw-transfer"
 
 async function requireUser() {
@@ -50,9 +51,14 @@ export async function getMyDepositWallet(
     )
 }
 
-export async function getMyActivity(): Promise<ChainActivityItem[]> {
+export async function getMyActivity(
+    chain?: ChainId
+): Promise<ChainActivityItem[]> {
     const user = await requireUser()
-    return listWalletActivity(user.id)
+    return listWalletActivity(
+        user.id,
+        chain ?? (await currentChainFromCookie())
+    )
 }
 
 /** User-triggered: bust Redis cache and re-read the play-token balance. */
@@ -65,9 +71,10 @@ export async function refreshMyBalance(
 
 export async function withdrawAction(input: {
     amountUsd: number
-    toAddress?: string
+    toAddress: string
 }): Promise<{ txid: string; balance: WalletBalance }> {
     const user = await requireUser()
+    const chain = await currentChainFromCookie()
     const amountMicro = Math.round(input.amountUsd * 1_000_000)
     if (amountMicro < MIN_WITHDRAW_MICRO) {
         throw new Error("Minimum withdrawal is $1.")
@@ -75,25 +82,37 @@ export async function withdrawAction(input: {
     if (amountMicro > MAX_WITHDRAW_MICRO) {
         throw new Error("Maximum withdrawal is $10,000.")
     }
+    const toAddress = input.toAddress.trim()
+    if (!toAddress) {
+        throw new Error("Enter a destination address.")
+    }
 
     const prepared = await prepareWithdrawal({
         amountMicro,
-        toAddress: input.toAddress,
+        toAddress,
+        chain,
     })
 
     try {
-        const txid = await broadcastUsdcxTransfer({
-            userId: user.id,
-            amountMicro: prepared.amountMicro,
-            toAddress: prepared.toAddress,
-            usdcxContract: prepared.usdcxContract,
-        })
+        const txid =
+            chain === "solana"
+                ? await broadcastSolanaUsdcTransfer({
+                      userId: user.id,
+                      amountMicro: prepared.amountMicro,
+                      toAddress: prepared.toAddress,
+                  })
+                : await broadcastUsdcxTransfer({
+                      userId: user.id,
+                      amountMicro: prepared.amountMicro,
+                      toAddress: prepared.toAddress,
+                      usdcxContract: prepared.usdcxContract,
+                  })
         const balance = await completeWithdrawal({
             txid,
+            chain,
         })
         return { txid, balance }
     } catch (err) {
-        // Lock TTL will expire; rethrow for UI.
         throw err
     }
 }

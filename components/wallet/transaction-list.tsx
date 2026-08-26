@@ -8,9 +8,10 @@ import { RiHistoryLine } from "@remixicon/react"
 import { getMyActivity } from "@/actions/wallet"
 import { Badge, EmptyState, Skeleton } from "@/components/ui"
 import type { ChainActivityItem, ChainActivityKind } from "@/lib/api/types"
+import { liveExplorerTxUrl } from "@/lib/chain"
 import { formatUsdc, timeAgo } from "@/lib/format"
-import { hiroExplorerTxUrl } from "@/lib/stacks/explorer"
 import { cn, truncateWallet } from "@/lib/utils"
+import { useSessionCurrentChain } from "@/stores/session"
 
 type TxState = "confirmed" | "failed" | "pending"
 type FilterId =
@@ -65,10 +66,11 @@ function txState(status: string): TxState {
 
 export function TransactionList() {
     const [filter, setFilter] = React.useState<FilterId>("all")
+    const chain = useSessionCurrentChain()
 
     const { data, isLoading, error } = useQuery({
-        queryKey: ["activity"],
-        queryFn: getMyActivity,
+        queryKey: ["activity", chain],
+        queryFn: () => getMyActivity(chain),
     })
 
     const items = React.useMemo(() => {
@@ -124,6 +126,7 @@ export function TransactionList() {
                             key={`${item.txid}-${item.kind}-${index}`}
                             item={item}
                             index={index}
+                            chain={chain}
                         />
                     ))}
                 </ul>
@@ -135,9 +138,11 @@ export function TransactionList() {
 function TransactionRow({
     item,
     index,
+    chain,
 }: {
     item: ChainActivityItem
     index: number
+    chain: import("@/lib/chain").ChainId
 }) {
     const { label, direction } = KINDS[item.kind]
     const state = txState(item.status)
@@ -167,11 +172,11 @@ function TransactionRow({
                 <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{timeAgo(item.blockTime)}</span>
                     <a
-                        href={hiroExplorerTxUrl(item.txid)}
+                        href={liveExplorerTxUrl(chain, item.txid)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-mono text-primary hover:underline"
-                        title="Open on Hiro explorer"
+                        title="Open explorer"
                     >
                         {truncateWallet(item.txid)}
                     </a>

@@ -24,6 +24,8 @@ export type VaultDraft = {
     nonce?: number
     devWallet?: string
     devFee?: number
+    devId?: string | null
+    devNeedsWallet?: boolean
     paidMicro?: number
     createdAt: number
 }
