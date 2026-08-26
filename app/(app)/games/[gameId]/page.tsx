@@ -10,6 +10,7 @@ import {
     listLobbies,
     listRecentMatches,
 } from "@/lib/api/server"
+import { currentChainFromCookie } from "@/lib/chain/server"
 
 type Params = { params: Promise<{ gameId: string }> }
 
@@ -35,9 +36,10 @@ export default async function GameDetailPage({ params }: Params) {
     const game = await getGame(gameId)
     if (!game) notFound()
 
+    const chain = await currentChainFromCookie()
     const [activity, lobbies, recentMatches] = await Promise.all([
         listGameActivity().catch(() => []),
-        listLobbies({ gameId, limit: 48 }).catch(() => []),
+        listLobbies({ gameId, limit: 48, chain }).catch(() => []),
         listRecentMatches({ gameId, limit: 8 }).catch(() => []),
     ])
 

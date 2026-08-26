@@ -25,6 +25,7 @@ import {
 } from "@/lib/api/server"
 import type { JoinRequest, LobbyDetail } from "@/lib/api/types"
 import { auth } from "@/lib/auth/server"
+import { currentChainFromCookie } from "@/lib/chain/server"
 import { MIN_ENTRY_MICRO, needsOnChainVault, vaultConfigured } from "@/lib/vault/config"
 import {
     resumeVaultTxOrDiscard,
@@ -72,6 +73,7 @@ export async function createLobbyAction(input: {
 }): Promise<ActionResult<LobbyDetail>> {
     return actionResult(async () => {
         const user = await requireUser()
+        const chain = await currentChainFromCookie()
 
         const createDrafts = await listVaultDrafts("create").catch(() => [])
         const joinDrafts = await listVaultDrafts("join").catch(() => [])
@@ -171,6 +173,7 @@ export async function createLobbyAction(input: {
                     transferMicro: entryAmountMicro,
                     sponsored: isSponsored,
                     wait: false,
+                    chain,
                 })
                 await saveVaultDraft({
                     kind: "create",
@@ -190,13 +193,14 @@ export async function createLobbyAction(input: {
                         { kind: "create", lobbyPath: path },
                         { kind: "join", lobbyPath: path },
                     ],
+                    chain,
                 })
             }
         } else if (entryAmountMicro > 0 && !vaultConfigured()) {
             throw new Error("Paid lobbies are unavailable right now.")
         }
 
-        const detail = await createLobbyApi({
+         const detail = await createLobbyApi({
             name: name.trim(),
             description,
             gameId,
@@ -205,6 +209,7 @@ export async function createLobbyAction(input: {
             entryAmountMicro,
             path: path ?? null,
             vaultTxid: vaultTxid ?? null,
+            chain,
         })
         if (path) {
             await clearVaultDraft("create", path).catch(() => undefined)
@@ -260,6 +265,7 @@ export async function joinLobbyAction(
                         entryAmountMicro: entry,
                         transferMicro: paidMicro,
                         sponsored: detail.lobby.isSponsored,
+                        chain: detail.lobby.chain,
                     })
                 }
             }
@@ -281,6 +287,7 @@ export async function joinLobbyAction(
                         paidMicro,
                         nonce: Date.now(),
                         lobbyId,
+                        chain: detail.lobby.chain,
                     })
                     await clearVaultDraft("join", path).catch(() => undefined)
                     await clearVaultDraft("leave", path).catch(() => undefined)
@@ -375,6 +382,7 @@ export async function leaveLobbyAction(
                     paidMicro: paid,
                     nonce: Date.now(),
                     wait: false,
+                    chain: detail.lobby.chain,
                 })
                 vaultTxid = await waitForVaultTx(vaultTxid, {
                     discardDraftsOnFailure: [
@@ -426,6 +434,7 @@ export async function kickLobbyPlayerAction(
                 lobbyPath: detail.lobby.path,
                 paidMicro: detail.lobby.isSponsored ? 0 : entry,
                 nonce: Date.now(),
+                chain: detail.lobby.chain,
             })
         }
 
@@ -469,6 +478,7 @@ export async function settleVaultClaimsAction(input: {
             return { claimed: 0 }
         }
         const me = await requireUser()
+        const detail = await requireLobby(input.lobbyId)
 
         let claimed = 0
         for (const claim of input.claims) {
@@ -500,6 +510,7 @@ export async function settleVaultClaimsAction(input: {
                 devWallet: claim.devWallet,
                 devFee: claim.devFee,
                 resumeTxid,
+                chain: detail.lobby.chain,
             })
             await confirmVaultClaim({
                 lobbyId: input.lobbyId,

@@ -9,6 +9,8 @@ import {
     refreshBalance,
 } from "@/lib/api/server"
 import type { ChainActivityItem, CustodialWallet, WalletBalance } from "@/lib/api/types"
+import type { ChainId } from "@/lib/chain"
+import { currentChainFromCookie } from "@/lib/chain/server"
 import { auth } from "@/lib/auth/server"
 import { getCustodialWallet } from "@/lib/api/server"
 import {
@@ -33,14 +35,19 @@ async function requireUser() {
     )
 }
 
-export async function getMyBalance(): Promise<WalletBalance> {
+export async function getMyBalance(chain?: ChainId): Promise<WalletBalance> {
     const user = await requireUser()
-    return getBalance(user.id)
+    return getBalance(user.id, chain ?? (await currentChainFromCookie()))
 }
 
-export async function getMyDepositWallet(): Promise<CustodialWallet | null> {
+export async function getMyDepositWallet(
+    chain?: ChainId
+): Promise<CustodialWallet | null> {
     const user = await requireUser()
-    return getCustodialWallet(user.id)
+    return getCustodialWallet(
+        user.id,
+        chain ?? (await currentChainFromCookie())
+    )
 }
 
 export async function getMyActivity(): Promise<ChainActivityItem[]> {
@@ -48,10 +55,12 @@ export async function getMyActivity(): Promise<ChainActivityItem[]> {
     return listWalletActivity(user.id)
 }
 
-/** User-triggered: bust Redis cache and re-read Hiro FT balance. */
-export async function refreshMyBalance(): Promise<WalletBalance> {
+/** User-triggered: bust Redis cache and re-read the play-token balance. */
+export async function refreshMyBalance(
+    chain?: ChainId
+): Promise<WalletBalance> {
     const user = await requireUser()
-    return refreshBalance(user.id)
+    return refreshBalance(user.id, chain ?? (await currentChainFromCookie()))
 }
 
 export async function withdrawAction(input: {

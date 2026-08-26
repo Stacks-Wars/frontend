@@ -10,6 +10,7 @@ export type AppUser = {
     walletVerifiedAt: string | null
     avatarUrl: string | null
     lobbyAlertsEnabled?: boolean
+    currentChain?: import("@/lib/chain").ChainId
     legalAcceptedAt?: string | null
     legalVersion?: string | null
     createdAt: string
@@ -26,9 +27,10 @@ export type UserCard = {
 
 export type CustodialWallet = {
     userId: string
-    stxAddress: string
+    address: string
     publicKey: string
     network: string
+    chain: import("@/lib/chain").ChainId
 }
 
 export type UpsertUserPayload = {
@@ -46,11 +48,12 @@ export type UpdateProfilePayload = {
 }
 
 export type CreateCustodialWalletPayload = {
-    stxAddress: string
+    address: string
     publicKey: string
-    encryptedMnemonic: string
+    encryptedSigningMaterial: string
     kmsKeyVersion: string
     network: string
+    chain: import("@/lib/chain").ChainId
 }
 
 export type VaultDraftPayload = {
@@ -108,6 +111,7 @@ export type Lobby = {
     description: string | null
     gameId: string
     creatorId: string
+    chain?: import("@/lib/chain").ChainId
     entryAmountMicro: number
     potMicro: number
     isPrivate: boolean
@@ -178,6 +182,7 @@ export type CreateLobbyPayload = {
     entryAmountMicro?: number
     path?: string | null
     vaultTxid?: string | null
+    chain?: import("@/lib/chain").ChainId
 }
 
 /** Filters accepted by `GET /lobbies`. */
@@ -191,6 +196,7 @@ export type LobbyQuery = {
     includePrivate?: boolean
     limit?: number
     offset?: number
+    chain?: import("@/lib/chain").ChainId
 }
 
 /** Single on-chain claim the winner must submit after a paid match. */
@@ -206,7 +212,8 @@ export type VaultClaimIntent = {
 
 export type WalletBalance = {
     userId: string
-    stxAddress: string
+    address: string
+    chain?: import("@/lib/chain").ChainId
     availableMicro: number
     updatedAt: string
     cached?: boolean

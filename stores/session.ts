@@ -3,14 +3,19 @@
 import { create } from "zustand"
 
 import type { WalletBalance, AppUser } from "@/lib/api/types"
+import { parseChainId, type ChainId } from "@/lib/chain"
+import { writeStoredChain } from "@/lib/chain/storage"
 
 type SessionState = {
     user: AppUser | null
     loading: boolean
+    currentChain: ChainId
     balance: WalletBalance | null
     actions: {
         setUser: (user: AppUser | null) => void
         setLoading: (loading: boolean) => void
+        setCurrentChain: (chain: ChainId) => void
+        hydrateCurrentChain: (chain: ChainId) => void
         setBalance: (balance: WalletBalance | null) => void
         patchBalance: (partial: Partial<WalletBalance>) => void
     }
@@ -19,10 +24,17 @@ type SessionState = {
 export const useSessionStore = create<SessionState>((set) => ({
     user: null,
     loading: true,
+    currentChain: parseChainId(null),
     balance: null,
     actions: {
         setUser: (user) => set({ user }),
         setLoading: (loading) => set({ loading }),
+        setCurrentChain: (chain) => {
+            writeStoredChain(chain)
+            set({ currentChain: parseChainId(chain), balance: null })
+        },
+        hydrateCurrentChain: (chain) =>
+            set({ currentChain: parseChainId(chain) }),
         setBalance: (balance) => set({ balance }),
         patchBalance: (partial) =>
             set((state) => {
@@ -36,7 +48,8 @@ export const useSessionStore = create<SessionState>((set) => ({
                     return {
                         balance: {
                             userId: state.user.id,
-                            stxAddress: partial.stxAddress ?? "",
+                            address: partial.address ?? "",
+                            chain: partial.chain ?? state.currentChain,
                             availableMicro: partial.availableMicro,
                             updatedAt: new Date().toISOString(),
                         },
@@ -49,5 +62,7 @@ export const useSessionStore = create<SessionState>((set) => ({
 
 export const useSessionUser = () => useSessionStore((s) => s.user)
 export const useSessionLoading = () => useSessionStore((s) => s.loading)
+export const useSessionCurrentChain = () =>
+    useSessionStore((s) => s.currentChain)
 export const useSessionBalance = () => useSessionStore((s) => s.balance)
 export const useSessionActions = () => useSessionStore((s) => s.actions)

@@ -13,7 +13,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui"
+import { chainAdapter } from "@/lib/chain"
 import { formatUsdc } from "@/lib/format"
+import { useSessionCurrentChain } from "@/stores/session"
 
 export type AddFundsDialogProps = {
     open: boolean
@@ -29,6 +31,8 @@ export function AddFundsDialog({
     requiredMicro = 0,
     availableMicro = 0,
 }: AddFundsDialogProps) {
+    const chain = useSessionCurrentChain()
+    const token = chainAdapter(chain).playToken
     const shortfall = Math.max(0, requiredMicro - availableMicro)
     const showShortfall = requiredMicro > 0 && shortfall > 0
 
@@ -43,7 +47,9 @@ export function AddFundsDialog({
                     <DialogDescription>
                         {showShortfall
                             ? `You need ${formatUsdc(requiredMicro)} to join, but only have ${formatUsdc(availableMicro, { zero: "$0.00" })}. Deposit at least ${formatUsdc(shortfall)} more, then try again.`
-                            : "Send USDCx to your custodial address to top up your balance."}
+                            : chain === "solana"
+                              ? "New wallets get $50 test USDC. Deposit more of that mint if you've already spent it."
+                              : `Send ${token} to your custodial address to top up your balance.`}
                     </DialogDescription>
                 </DialogHeader>
 

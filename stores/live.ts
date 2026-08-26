@@ -11,6 +11,7 @@ import type {
     PlayerState,
     JoinRequest,
 } from "@/lib/api/types"
+import { lobbyVisibleOnChain, type ChainId } from "@/lib/chain"
 import type {
     GameSnapshot,
     LobbyFinishedPayload,
@@ -51,6 +52,7 @@ type LiveActions = {
     seedLobbies: (lobbies: Lobby[], replace?: boolean) => void
     upsertLobby: (lobby: Lobby) => void
     removeLobby: (lobbyId: string) => void
+    pruneFeedForChain: (chain: ChainId) => void
 
     setActivity: (items: GameActivity[]) => void
     bumpLeaderboard: () => void
@@ -303,6 +305,17 @@ export const useLiveStore = create<LiveState>((set) => ({
                         [lobbyId]: true as const,
                     },
                 }
+            }),
+
+        pruneFeedForChain: (chain) =>
+            set((current) => {
+                const lobbies = { ...current.lobbies }
+                for (const [id, lobby] of Object.entries(lobbies)) {
+                    if (!lobbyVisibleOnChain(lobby, chain)) {
+                        delete lobbies[id]
+                    }
+                }
+                return { lobbies }
             }),
 
         setActivity: (items) =>

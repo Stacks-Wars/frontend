@@ -33,7 +33,7 @@ export async function broadcastUsdcxTransfer(input: {
     usdcxContract: string
 }): Promise<string> {
     const account = await unlockCustodialAccount(
-        await getSigningMaterial(input.userId)
+        await getSigningMaterial(input.userId, "stacks")
     )
     const tokenName = USDCX_ASSET_NAME
     const contractId = USDCX_CONTRACT
@@ -49,7 +49,7 @@ export async function broadcastUsdcxTransfer(input: {
         functionName: "transfer",
         functionArgs: [
             Cl.uint(input.amountMicro),
-            Cl.principal(account.stxAddress),
+            Cl.principal(account.address),
             Cl.principal(input.toAddress),
             Cl.none(),
         ],
@@ -59,7 +59,7 @@ export async function broadcastUsdcxTransfer(input: {
         fee: 0,
         postConditionMode: PostConditionMode.Deny,
         postConditions: [
-            Pc.principal(account.stxAddress)
+            Pc.principal(account.address)
                 .willSendEq(input.amountMicro)
                 .ft(contractId, tokenName),
         ],

@@ -8,6 +8,7 @@ import { appSocket } from "@/lib/ws/app-socket"
 import { emitGameEvent } from "@/lib/ws/game-bus"
 import {
     APP_TOPIC,
+    chainFeedTopic,
     asGameEvent,
     lobbyTopic,
     payloadAs,
@@ -27,7 +28,7 @@ import type { Lobby, LobbyChatMessage } from "@/lib/api/types"
 import { useConnectionActions, useConnectionStatus } from "@/stores/connection"
 import { useLiveStore } from "@/stores/live"
 import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import { useSessionCurrentChain, useSessionStore } from "@/stores/session"
 
 /**
  * Access tokens are minted by the auth provider, which rate limits. One mint
@@ -76,6 +77,8 @@ export function clearAccessTokenCache(): void {
 export function AppWsProvider({ children }: { children?: React.ReactNode }) {
     const queryClient = useQueryClient()
     const { setStatus } = useConnectionActions()
+    const currentChain = useSessionCurrentChain()
+    useTopic(chainFeedTopic(currentChain))
 
     React.useEffect(() => {
         appSocket.setTokenProvider(mintAccessToken)
@@ -170,9 +173,11 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     if (typeof payload.availableMicro === "number") {
                         session.patchBalance({
                             availableMicro: payload.availableMicro,
-                            ...(payload.stxAddress
-                                ? { stxAddress: payload.stxAddress }
-                                : {}),
+                            ...(payload.address
+                                ? { address: payload.address }
+                                : payload.stxAddress
+                                  ? { address: payload.stxAddress }
+                                  : {}),
                         })
                     }
                     void queryClient.invalidateQueries({

@@ -26,10 +26,32 @@ import type {
     WalletBalance,
 } from "@/lib/api/types"
 import { AccountDeleteError } from "@/lib/api/account-delete"
+import { parseChainId, type ChainId } from "@/lib/chain"
 
 function getApiBaseUrl() {
     const url = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8080"
     return url.replace(/\/$/, "")
+}
+
+function chainQuery(chain?: ChainId) {
+    return `chain=${encodeURIComponent(parseChainId(chain))}`
+}
+
+function asCustodialWallet(data: {
+    userId: string
+    address?: string
+    stxAddress?: string
+    publicKey: string
+    network: string
+    chain?: string
+}): CustodialWallet {
+    return {
+        userId: data.userId,
+        address: data.address ?? data.stxAddress ?? "",
+        publicKey: data.publicKey,
+        network: data.network,
+        chain: parseChainId(data.chain),
+    }
 }
 
 async function authHeaders(): Promise<HeadersInit> {
@@ -90,6 +112,7 @@ export async function createLobby(
             entryAmountMicro: payload.entryAmountMicro ?? 0,
             path: payload.path ?? null,
             vaultTxid: payload.vaultTxid ?? null,
+            chain: payload.chain ?? "solana",
         }),
         cache: "no-store",
     })
@@ -125,6 +148,7 @@ export async function listLobbies(query: LobbyQuery = {}): Promise<Lobby[]> {
     if (query.includePrivate) params.set("includePrivate", "true")
     if (query.limit != null) params.set("limit", String(query.limit))
     if (query.offset != null) params.set("offset", String(query.offset))
+    if (query.chain) params.set("chain", query.chain)
 
     const qs = params.toString()
     const response = await fetch(
@@ -369,9 +393,12 @@ export async function startLobby(lobbyId: string): Promise<LobbyDetail> {
     return response.json()
 }
 
-export async function getBalance(userId: string): Promise<WalletBalance> {
+export async function getBalance(
+    userId: string,
+    chain?: ChainId
+): Promise<WalletBalance> {
     const response = await fetch(
-        `${getApiBaseUrl()}/wallet/balance/${userId}`,
+        `${getApiBaseUrl()}/wallet/balance/${userId}?${chainQuery(chain)}`,
         {
             method: "GET",
             headers: await authHeaders(),
@@ -385,10 +412,11 @@ export async function getBalance(userId: string): Promise<WalletBalance> {
 }
 
 export async function refreshBalance(
-    userId: string
+    userId: string,
+    chain?: ChainId
 ): Promise<WalletBalance> {
     const response = await fetch(
-        `${getApiBaseUrl()}/wallet/balance/${userId}/refresh`,
+        `${getApiBaseUrl()}/wallet/balance/${userId}/refresh?${chainQuery(chain)}`,
         {
             method: "POST",
             headers: await authHeaders(),
@@ -537,10 +565,11 @@ export async function upsertAppUser(
 }
 
 export async function getCustodialWallet(
-    userId: string
+    userId: string,
+    chain?: ChainId
 ): Promise<CustodialWallet | null> {
     const response = await fetch(
-        `${getApiBaseUrl()}/users/${userId}/custodial-wallet`,
+        `${getApiBaseUrl()}/users/${userId}/custodial-wallet?${chainQuery(chain)}`,
         {
             method: "GET",
             headers: await authHeaders(),
@@ -562,19 +591,7 @@ export async function getCustodialWallet(
         )
     }
 
-    const data = (await response.json()) as {
-        userId: string
-        stxAddress: string
-        publicKey: string
-        network: string
-    }
-
-    return {
-        userId: data.userId,
-        stxAddress: data.stxAddress,
-        publicKey: data.publicKey,
-        network: data.network,
-    }
+    return asCustodialWallet(await response.json())
 }
 
 export async function getUserByUsername(
@@ -688,8 +705,8 @@ export async function getKickTargetAddress(
     if (!response.ok) {
         throw new Error(`Failed to resolve player address (${response.status})`)
     }
-    const data = (await response.json()) as { stxAddress: string }
-    return data.stxAddress
+    const data = (await response.json()) as { address?: string; stxAddress?: string }
+    return data.address ?? data.stxAddress ?? ""
 }
 
 export async function kickLobbyPlayer(
@@ -770,11 +787,12 @@ export async function createCustodialWallet(
             method: "POST",
             headers: await authHeaders(),
             body: JSON.stringify({
-                stxAddress: payload.stxAddress,
+                address: payload.address,
                 publicKey: payload.publicKey,
-                encryptedMnemonic: payload.encryptedMnemonic,
+                encryptedSigningMaterial: payload.encryptedSigningMaterial,
                 kmsKeyVersion: payload.kmsKeyVersion,
                 network: payload.network,
+                chain: payload.chain,
             }),
             cache: "no-store",
         }
@@ -792,35 +810,34 @@ export async function createCustodialWallet(
 
     const data = (await response.json()) as {
         userId: string
-        stxAddress: string
+        address?: string
+        stxAddress?: string
         publicKey: string
         network: string
+        chain?: string
     }
 
-    return {
-        userId: data.userId,
-        stxAddress: data.stxAddress,
-        publicKey: data.publicKey,
-        network: data.network,
-    }
+    return asCustodialWallet(data)
 }
 
 export type SigningMaterial = {
     id: string
     userId: string
-    stxAddress: string
+    address: string
     publicKey: string
     network: string
-    encryptedMnemonic: string
+    chain: ChainId
+    encryptedSigningMaterial: string
     kmsKeyVersion: string
     usdcxContract: string
 }
 
 export async function getSigningMaterial(
-    userId: string
+    userId: string,
+    chain: ChainId
 ): Promise<SigningMaterial> {
     const response = await fetch(
-        `${getApiBaseUrl()}/wallet/custodial/${userId}/signing-material`,
+        `${getApiBaseUrl()}/wallet/custodial/${userId}/signing-material?${chainQuery(chain)}`,
         {
             method: "GET",
             headers: internalHeaders(),
@@ -830,15 +847,39 @@ export async function getSigningMaterial(
     if (!response.ok) {
         throw new Error(`Failed to load signing material (${response.status})`)
     }
-    const data = (await response.json()) as SigningMaterial
-    return data
+    const data = (await response.json()) as {
+        id: string
+        userId: string
+        address?: string
+        stxAddress?: string
+        publicKey: string
+        network: string
+        chain?: string
+        encryptedSigningMaterial?: string
+        encryptedMnemonic?: string
+        kmsKeyVersion: string
+        usdcxContract: string
+    }
+    return {
+        id: data.id,
+        userId: data.userId,
+        address: data.address ?? data.stxAddress ?? "",
+        publicKey: data.publicKey,
+        network: data.network,
+        chain: parseChainId(data.chain),
+        encryptedSigningMaterial:
+            data.encryptedSigningMaterial ?? data.encryptedMnemonic ?? "",
+        kmsKeyVersion: data.kmsKeyVersion,
+        usdcxContract: data.usdcxContract,
+    }
 }
 
 export async function updateCustodialEncryption(
     userId: string,
     payload: {
-        encryptedMnemonic: string
+        encryptedSigningMaterial: string
         kmsKeyVersion: string
+        chain?: ChainId
     }
 ): Promise<void> {
     const response = await fetch(
@@ -960,6 +1001,7 @@ export async function acceptLegal(version: string): Promise<AppUser> {
 
 export async function updatePreferences(payload: {
     lobbyAlertsEnabled?: boolean
+    currentChain?: import("@/lib/chain").ChainId
 }): Promise<AppUser> {
     const response = await fetch(`${getApiBaseUrl()}/users/me/preferences`, {
         method: "PATCH",

@@ -70,9 +70,16 @@ function aadBytes(aad: string | undefined): Buffer | undefined {
     return Buffer.from(aad, "utf8")
 }
 
-/** `wallet:{userId}:stacks:{network}` — a swapped ciphertext fails GCM. */
-export function mnemonicAad(userId: string, network: string): string {
-    return `wallet:${userId}:stacks:${network}`
+/**
+ * Bind ciphertext to a wallet row. Stacks v2 rows stay
+ * `wallet:{userId}:stacks:{network}` so existing envelopes still open.
+ */
+export function mnemonicAad(
+    userId: string,
+    network: string,
+    chain = "stacks"
+): string {
+    return `wallet:${userId}:${chain}:${network}`
 }
 
 function encryptWithDevSecret(

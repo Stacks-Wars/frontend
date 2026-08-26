@@ -3,7 +3,8 @@
 import * as React from "react"
 
 import { getMyBalance } from "@/actions/wallet"
-import { acceptLegalTerms, syncAuthUser } from "@/actions/users"
+import { ensureChainWallet } from "@/actions/chain"
+import { acceptLegalTerms, syncAuthUser, updateUserPreferences } from "@/actions/users"
 import { LEGAL_VERSION } from "@/lib/legal"
 import { authClient } from "@/lib/auth/client"
 import { isEmailVerified, isVerificationDisabled } from "@/lib/auth/flags"
@@ -14,6 +15,7 @@ import {
     useUserTopic,
 } from "@/components/ws/app-ws-provider"
 import { appSocket } from "@/lib/ws/app-socket"
+import { readStoredChain } from "@/lib/chain"
 import { useSessionActions, useSessionUser } from "@/stores/session"
 
 /**
@@ -22,7 +24,8 @@ import { useSessionActions, useSessionUser } from "@/stores/session"
  */
 export function AuthSync() {
     const { data: session, isPending } = authClient.useSession()
-    const { setUser, setLoading, setBalance } = useSessionActions()
+    const { setUser, setLoading, setBalance, hydrateCurrentChain } =
+        useSessionActions()
     const userId = useSessionUser()?.id
 
     useUserTopic(userId)
@@ -34,6 +37,10 @@ export function AuthSync() {
     const name = session?.user?.name ?? null
     const image = session?.user?.image ?? null
     const emailVerified = session?.user?.emailVerified ?? null
+
+    React.useEffect(() => {
+        hydrateCurrentChain(readStoredChain())
+    }, [hydrateCurrentChain])
 
     React.useEffect(() => {
         if (isPending) return
@@ -86,10 +93,24 @@ export function AuthSync() {
                 appSocket.refreshAuth()
 
                 try {
-                    const balance = await getMyBalance()
+                    await updateUserPreferences({
+                        currentChain: readStoredChain(),
+                    })
+                } catch {
+                    // Push targeting is best-effort.
+                }
+
+                try {
+                    const chain = readStoredChain()
+                    const balance = await ensureChainWallet(chain)
                     if (!cancelled) setBalance(balance)
                 } catch {
-                    // No wallet yet on a brand new account.
+                    try {
+                        const balance = await getMyBalance(readStoredChain())
+                        if (!cancelled) setBalance(balance)
+                    } catch {
+                        // No wallet yet on a brand new account.
+                    }
                 }
 
                 if (

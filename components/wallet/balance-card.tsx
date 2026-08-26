@@ -12,6 +12,7 @@ import { useNotificationActions } from "@/stores/notifications"
 import {
     useSessionActions,
     useSessionBalance,
+    useSessionCurrentChain,
     useSessionLoading,
 } from "@/stores/session"
 
@@ -29,6 +30,7 @@ function isPending(status: string): boolean {
 export function BalanceCard() {
     const balance = useSessionBalance()
     const loading = useSessionLoading()
+    const chain = useSessionCurrentChain()
     const { setBalance } = useSessionActions()
     const { toast } = useNotificationActions()
     const [refreshing, setRefreshing] = React.useState(false)
@@ -47,7 +49,7 @@ export function BalanceCard() {
         setRefreshing(true)
         setError(null)
         try {
-            const next = await refreshMyBalance()
+            const next = await refreshMyBalance(chain)
             setBalance(next)
         } catch (err) {
             const message =
@@ -102,7 +104,7 @@ export function BalanceCard() {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 {balance ? (
                     <span className="font-mono text-xs text-muted-foreground">
-                        {truncateWallet(balance.stxAddress)}
+                        {truncateWallet(balance.address)}
                     </span>
                 ) : null}
                 {balance ? (

@@ -54,9 +54,9 @@ export async function syncAuthUser(sessionUser: SessionUser): Promise<AppUser> {
         emailVerifiedAt,
     })
 
-    const existingWallet = await getCustodialWallet(user.id)
+    const existingWallet = await getCustodialWallet(user.id, "stacks")
     if (!existingWallet) {
-        const material = await createCustodialWalletMaterial(user.id)
+        const material = await createCustodialWalletMaterial(user.id, "stacks")
         await createCustodialWallet(user.id, material)
     }
 
@@ -70,6 +70,7 @@ export async function acceptLegalTerms(version: string) {
 
 export async function updateUserPreferences(payload: {
     lobbyAlertsEnabled?: boolean
+    currentChain?: import("@/lib/chain").ChainId
 }) {
     const { updatePreferences } = await import("@/lib/api/server")
     return updatePreferences(payload)

@@ -9,7 +9,7 @@ export const maxDuration = 60
 
 type StaleSeat = {
     userId: string
-    stxAddress: string
+    address: string
     paidMicro: number
     isCreator: boolean
 }
@@ -95,7 +95,7 @@ export async function GET(request: Request) {
                         )
                     }
                     vaultTxid = await vaultKickAsPlatform({
-                        targetAddress: seat.stxAddress,
+                        targetAddress: seat.address,
                         lobbyPath: item.lobby.path,
                         paidMicro: seat.paidMicro,
                         nonce: Date.now() + Math.floor(Math.random() * 1000),
@@ -107,7 +107,7 @@ export async function GET(request: Request) {
                         method: "POST",
                         body: JSON.stringify({
                             userId: seat.userId,
-                            stxAddress: seat.stxAddress,
+                            address: seat.address,
                             vaultTxid: vaultTxid ?? null,
                         }),
                     }

@@ -29,8 +29,10 @@ export async function deriveCustodialAccountFromMnemonic(mnemonic: string) {
             DerivationType.Wallet | DerivationType.Data,
     })
 
+    const stxAddress = getStxAddress(account, network)
     return {
-        stxAddress: getStxAddress(account, network),
+        address: stxAddress,
+        stxAddress,
         stxPrivateKey: account.stxPrivateKey,
         publicKey: getPublicKeyFromPrivate(account.stxPrivateKey),
         network,

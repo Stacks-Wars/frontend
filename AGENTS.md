@@ -83,6 +83,23 @@ After reconnect, use the existing snapshot/resync path. Do not invent a second p
 
 Stacks is the current chain, not a type name we should freeze. Domain fields like `stxAddress` are chain-specific; new code should treat address, vault, and explorer URLs as adapters behind `lib/`, not sprinkle `Stacks` through components. Do not add a second wallet path (browser extensions) for play funds. Custodial USDCx only, until a chain adapter exists.
 
+## Solana MCP
+
+For Solana-related work, prefer the Solana Developer MCP tools over model memory.
+
+Use `list_sections` first for non-trivial Solana questions so you can find the
+right documentation source ids and section ids.
+
+Use `get_documentation` when you need canonical docs for a specific source,
+framework, library, or ecosystem area. Use `Solana_Documentation_Search` or
+`Solana_Expert__Ask_For_Help` for narrow how-to questions, errors, or API usage.
+
+Whenever you write or modify Solana program Rust, call `program_autofixer` before
+returning code. It accepts `code`, optional `filename`, and optional `framework`
+(`auto`, `anchor`, or `pinocchio`). Apply the suggested fixes, then call
+`program_autofixer` again. Repeat until `require_another_tool_call_after_fixing`
+is false.
+
 ## Don't
 
 - Poll for socket-owned state.
