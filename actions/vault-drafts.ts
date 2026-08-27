@@ -1,8 +1,12 @@
 "use server"
 
-import { clearVaultDraft, listVaultDrafts } from "@/lib/api/server"
-import type { VaultDraft } from "@/lib/api/types"
+import { listLobbies, listVaultDrafts, clearVaultDraft } from "@/lib/api/server"
+import type { HostedLobbyRef, VaultDraft } from "@/lib/api/types"
 import { auth } from "@/lib/auth/server"
+import {
+    ACTIVE_HOST_STATUSES,
+    toHostedLobbyRef,
+} from "@/lib/lobby/host-cap"
 import { peekTx } from "@/lib/tx/wait-for-tx"
 import { isIdempotentVaultSuccess } from "@/lib/vault/tx-errors"
 
@@ -29,19 +33,35 @@ async function keepResumableDraft(
     return draft
 }
 
-/**
- * Newest incomplete paid create attempt (broadcast happened, lobby row may not).
- * Prefer a `create` draft (has name/game metadata); fall back to orphan `join`.
- * Terminal aborts (e.g. ft-transfer u1) are discarded so Create Lobby stays clean.
- */
-export async function getIncompletePaidCreateDraftAction(): Promise<VaultDraft | null> {
-    const { data: session } = await auth.getSession()
-    if (!session?.user) return null
+export type CreateLobbyGate = {
+    draft: VaultDraft | null
+    activeLobbies: HostedLobbyRef[]
+}
 
-    const [createDrafts, joinDrafts] = await Promise.all([
+/**
+ * Newest incomplete paid create attempt (broadcast happened, lobby row may not),
+ * plus the caller's unfinished hosted lobbies for the two-lobby cap.
+ */
+export async function getIncompletePaidCreateDraftAction(): Promise<CreateLobbyGate> {
+    const { data: session } = await auth.getSession()
+    if (!session?.user) {
+        return { draft: null, activeLobbies: [] }
+    }
+
+    const userId = session.user.id
+    const [createDrafts, joinDrafts, hosted] = await Promise.all([
         listVaultDrafts("create").catch(() => []),
         listVaultDrafts("join").catch(() => []),
+        userId
+            ? listLobbies({
+                  creatorId: userId,
+                  status: [...ACTIVE_HOST_STATUSES],
+                  limit: 8,
+              }).catch(() => [])
+            : Promise.resolve([]),
     ])
+
+    const activeLobbies = hosted.map(toHostedLobbyRef)
 
     const create = createDrafts.find(
         (draft) =>
@@ -52,7 +72,7 @@ export async function getIncompletePaidCreateDraftAction(): Promise<VaultDraft |
     )
     if (create) {
         const kept = await keepResumableDraft(create)
-        if (kept) return kept
+        if (kept) return { draft: kept, activeLobbies }
     }
 
     const join = joinDrafts.find(
@@ -62,6 +82,6 @@ export async function getIncompletePaidCreateDraftAction(): Promise<VaultDraft |
             Boolean(draft.lobbyPath?.trim()) &&
             !draft.lobbyId
     )
-    if (!join) return null
-    return keepResumableDraft(join)
+    if (!join) return { draft: null, activeLobbies }
+    return { draft: await keepResumableDraft(join), activeLobbies }
 }

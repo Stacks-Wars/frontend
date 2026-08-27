@@ -104,6 +104,13 @@ export type GameActivity = {
 
 export type LobbyStatus = "waiting" | "starting" | "inProgress" | "finished"
 
+/** Unfinished hosted lobby the create-cap 409 / gate fetch returns. */
+export type HostedLobbyRef = {
+    path: string
+    name: string
+    status: LobbyStatus
+}
+
 export type Lobby = {
     id: string
     path: string

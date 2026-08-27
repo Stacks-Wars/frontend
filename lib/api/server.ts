@@ -8,6 +8,7 @@ import type {
     CustodialWallet,
     GameActivity,
     GameMetadata,
+    HostedLobbyRef,
     LeaderboardPage,
     LeaderboardQuery,
     Lobby,
@@ -121,10 +122,18 @@ export async function createLobby(
             code?: string
             requiredMicro?: number
             availableMicro?: number
+            lobbies?: HostedLobbyRef[]
         } | null
         if (body?.code === "insufficient_balance") {
             throw new Error(
                 `Insufficient balance. Need ${((body.requiredMicro ?? 0) / 1_000_000).toFixed(2)} — fund your account.`
+            )
+        }
+        if (body?.code === "too_many_lobbies") {
+            throw new LobbyApiError(
+                body.error ?? "Settle your open lobbies before hosting another.",
+                "too_many_lobbies",
+                body.lobbies ?? []
             )
         }
         throw new Error(
@@ -191,9 +200,11 @@ export async function listRecentMatches(options: {
 
 export class LobbyApiError extends Error {
     code: string
-    constructor(message: string, code: string) {
+    lobbies?: HostedLobbyRef[]
+    constructor(message: string, code: string, lobbies?: HostedLobbyRef[]) {
         super(message)
         this.code = code
+        this.lobbies = lobbies
     }
 }
 
