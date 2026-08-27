@@ -10,18 +10,22 @@ import { PendingWins } from "@/components/wallet/pending-wins"
 import { TransactionList } from "@/components/wallet/transaction-list"
 import { WithdrawForm } from "@/components/wallet/withdraw-form"
 import { ButtonLink, EmptyState, Skeleton } from "@/components/ui"
-import { useSessionLoading, useSessionUser } from "@/stores/session"
+import { chainAdapter } from "@/lib/chain"
+import {
+    useSessionCurrentChain,
+    useSessionLoading,
+    useSessionUser,
+} from "@/stores/session"
 
 export default function WalletPage() {
     const user = useSessionUser()
     const loading = useSessionLoading()
+    const chain = useSessionCurrentChain()
+    const token = chainAdapter(chain).playToken
 
     return (
         <PageContainer size="default" className="space-y-8">
-            <PageHeader
-                title="Wallet"
-                description="Your custodial USDCx balance on Stacks, with every on-chain movement it makes."
-            />
+            <PageHeader title="Wallet" />
 
             {!user ? (
                 loading ? (
@@ -58,10 +62,10 @@ export default function WalletPage() {
                     <section className="animate-rise-in space-y-4">
                         <SectionHeader
                             title="Withdraw"
-                            description="Sends USDCx from your custodial wallet to a Stacks address."
+                            description={`Sends ${token} from your custodial wallet to a ${chainAdapter(chain).label} address you control.`}
                         />
                         <div className="lg:max-w-xl">
-                            <WithdrawForm />
+                            <WithdrawForm key={chain} />
                         </div>
                     </section>
 

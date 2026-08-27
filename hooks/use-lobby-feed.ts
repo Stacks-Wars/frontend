@@ -3,7 +3,9 @@
 import * as React from "react"
 
 import type { Lobby, LobbyStatus } from "@/lib/api/types"
+import { lobbyVisibleOnChain, type ChainId } from "@/lib/chain"
 import { useLiveActions, useLiveStore } from "@/stores/live"
+import { useSessionCurrentChain, useSessionUser } from "@/stores/session"
 
 export type LobbyFilters = {
     gameId?: string | null
@@ -24,7 +26,14 @@ const STATUS_WEIGHT: Record<LobbyStatus, number> = {
     finished: 3,
 }
 
-function matches(lobby: Lobby, filters: LobbyFilters): boolean {
+function matches(
+    lobby: Lobby,
+    filters: LobbyFilters,
+    chain: ChainId | null
+): boolean {
+    if (chain && !lobbyVisibleOnChain(lobby, chain)) {
+        return false
+    }
     if (filters.gameId && lobby.gameId !== filters.gameId) return false
     if (filters.statuses?.length && !filters.statuses.includes(lobby.status)) {
         return false
@@ -67,7 +76,10 @@ function compare(a: Lobby, b: Lobby, sort: LobbySort): number {
 
 /**
  * Live lobby list. Seeded once from the server render, then kept current by
- * `lobby.created` / `lobby.updated` / `lobby.removed` on the app topic.
+ * `lobby.created` / `lobby.updated` / `lobby.removed` on `app:{chain}` (signed
+ * in) or `app:all` (guest). Guests skip the chain visibility filter so both
+ * settlement chains show. Paid events never arrive on the other chain's topic;
+ * the visibility check is only a safety net for SSR merge after login.
  */
 export function useLobbyFeed(
     initial: Lobby[],
@@ -105,6 +117,9 @@ export function useLobbyFeed(
         maxPlayers = null,
         search = "",
     } = filters
+    const user = useSessionUser()
+    const currentChain = useSessionCurrentChain()
+    const visibilityChain = user ? currentChain : null
     const statusKey = filters.statuses?.join(",") ?? ""
 
     const visible = React.useMemo(() => {
@@ -120,7 +135,7 @@ export function useLobbyFeed(
                 : undefined,
         }
         return all
-            .filter((lobby) => matches(lobby, active))
+            .filter((lobby) => matches(lobby, active, visibilityChain))
             .sort((a, b) => compare(a, b, sort))
     }, [
         all,
@@ -132,6 +147,7 @@ export function useLobbyFeed(
         maxPlayers,
         search,
         statusKey,
+        visibilityChain,
     ])
 
     return { lobbies: visible, total: all.length }

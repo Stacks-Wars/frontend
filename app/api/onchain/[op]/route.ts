@@ -9,6 +9,7 @@ import {
     settleVaultClaimsAction,
 } from "@/actions/lobbies"
 import { withdrawAction } from "@/actions/wallet"
+import { claimSolanaTestUsdc } from "@/actions/chain"
 import { actionResult } from "@/lib/action-result"
 
 /**
@@ -26,6 +27,7 @@ const OPS = new Set([
     "claim",
     "claim-pending",
     "withdraw",
+    "claim-usdc",
 ])
 
 function sameOrigin(request: Request): boolean {
@@ -98,9 +100,13 @@ export async function POST(
                         toAddress:
                             typeof body.toAddress === "string"
                                 ? body.toAddress
-                                : undefined,
+                                : "",
                     })
                 )
+            )
+        case "claim-usdc":
+            return NextResponse.json(
+                await actionResult(() => claimSolanaTestUsdc())
             )
         default:
             return NextResponse.json(

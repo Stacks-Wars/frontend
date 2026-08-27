@@ -6,6 +6,7 @@ import { RiMenuLine } from "@remixicon/react"
 
 import { BalancePill } from "@/components/shell/balance-pill"
 import { Brand } from "@/components/shell/brand"
+import { ChainSwitcher } from "@/components/shell/chain-switcher"
 import { ConnectionPill } from "@/components/shell/connection-pill"
 import { LiveTicker } from "@/components/shell/live-ticker"
 import { NotificationsMenu } from "@/components/shell/notifications-menu"
@@ -44,7 +45,7 @@ export function AppHeader() {
             <div className="mx-auto flex h-16 w-full max-w-350 items-center gap-4 px-4 sm:px-6 lg:px-8">
                 <Brand />
 
-                <nav className="hidden items-center gap-1 md:flex">
+                <nav className="hidden items-center gap-1 lg:flex">
                     {NAV.map((item) => (
                         <ButtonLink
                             key={item.href}
@@ -71,6 +72,9 @@ export function AppHeader() {
                     <ConnectionPill />
                     {user ? (
                         <>
+                            <div className="hidden lg:block">
+                                <ChainSwitcher />
+                            </div>
                             <BalancePill />
                             <NotificationsMenu />
                         </>
@@ -80,7 +84,7 @@ export function AppHeader() {
                         variant="ghost"
                         size="icon"
                         aria-label="Menu"
-                        className="md:hidden"
+                        className="lg:hidden"
                         onClick={() => setMenuOpen(true)}
                     >
                         <RiMenuLine />
@@ -112,6 +116,7 @@ export function AppHeader() {
                         ))}
                         {user ? (
                             <>
+                                <ChainSwitcher variant="nav" />
                                 <ButtonLink
                                     href="/wallet"
                                     variant="ghost"

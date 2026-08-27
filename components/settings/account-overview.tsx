@@ -26,7 +26,7 @@ export function AccountOverview({ user }: { user: AppUser }) {
         error,
     } = useQuery({
         queryKey: ["deposit-wallet"],
-        queryFn: getMyDepositWallet,
+        queryFn: () => getMyDepositWallet(),
         staleTime: 10 * 60_000,
     })
 
@@ -67,14 +67,14 @@ export function AccountOverview({ user }: { user: AppUser }) {
                 ) : wallet ? (
                     <>
                         <span className="font-mono text-sm">
-                            {truncateWallet(wallet.stxAddress)}
+                            {truncateWallet(wallet.address)}
                         </span>
                         <Badge variant="outline">{wallet.network}</Badge>
                         <Button
                             variant="ghost"
                             size="icon-sm"
                             aria-label="Copy custodial address"
-                            onClick={() => void copyAddress(wallet.stxAddress)}
+                            onClick={() => void copyAddress(wallet.address)}
                         >
                             {copied ? (
                                 <RiCheckLine className="text-success" />

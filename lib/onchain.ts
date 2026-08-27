@@ -69,3 +69,12 @@ export function withdrawOnchain(input: Parameters<typeof withdrawAction>[0]) {
         input
     )
 }
+
+export function claimTestUsdcOnchain() {
+    return postOnchain<{
+        minted: boolean
+        signature: string | null
+        amountMicro: number
+        balance: WalletBalance
+    }>("claim-usdc", {})
+}

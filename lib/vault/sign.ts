@@ -42,7 +42,7 @@ export async function getSponsorPrivateKey(): Promise<string> {
 
 /** Platform principal derived from STACKS_WARS_KEY (kick janitor sender). */
 export async function getPlatformAccount(): Promise<{
-    stxAddress: string
+    address: string
     privateKey: string
 }> {
     const mnemonic = process.env.STACKS_WARS_KEY?.trim()
@@ -54,7 +54,7 @@ export async function getPlatformAccount(): Promise<{
     )
     const account = await deriveCustodialAccountFromMnemonic(mnemonic)
     return {
-        stxAddress: account.stxAddress,
+        address: account.address,
         privateKey: account.stxPrivateKey,
     }
 }

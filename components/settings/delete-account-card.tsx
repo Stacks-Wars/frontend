@@ -50,13 +50,7 @@ export function DeleteAccountCard() {
                 }
                 return
             }
-            const client = authClient as typeof authClient & {
-                deleteUser?: (args?: Record<string, unknown>) => Promise<unknown>
-            }
-            if (typeof client.deleteUser === "function") {
-                await client.deleteUser({}).catch(() => undefined)
-            }
-            await authClient.signOut()
+            await authClient.signOut().catch(() => undefined)
             window.location.href = "/"
         } catch (err) {
             setError(
@@ -97,8 +91,9 @@ export function DeleteAccountCard() {
                         <DialogDescription>
                             This anonymizes your profile and deletes encrypted
                             wallet keys. Match history will show you as a
-                            deleted player. You must have a zero balance and no
-                            live matches.
+                            deleted player. You can sign up again later with the
+                            same email. You must have a zero balance and no live
+                            matches.
                         </DialogDescription>
                     </DialogHeader>
                     {error ? (

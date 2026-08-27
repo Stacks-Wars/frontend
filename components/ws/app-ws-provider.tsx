@@ -7,7 +7,9 @@ import { playSfx } from "@/lib/audio/play-sound"
 import { appSocket } from "@/lib/ws/app-socket"
 import { emitGameEvent } from "@/lib/ws/game-bus"
 import {
+    ALL_FEED_TOPIC,
     APP_TOPIC,
+    chainFeedTopic,
     asGameEvent,
     lobbyTopic,
     payloadAs,
@@ -27,7 +29,12 @@ import type { Lobby, LobbyChatMessage } from "@/lib/api/types"
 import { useConnectionActions, useConnectionStatus } from "@/stores/connection"
 import { useLiveStore } from "@/stores/live"
 import { useNotificationsStore } from "@/stores/notifications"
-import { useSessionStore } from "@/stores/session"
+import {
+    useSessionCurrentChain,
+    useSessionLoading,
+    useSessionStore,
+    useSessionUser,
+} from "@/stores/session"
 
 /**
  * Access tokens are minted by the auth provider, which rate limits. One mint
@@ -76,6 +83,19 @@ export function clearAccessTokenCache(): void {
 export function AppWsProvider({ children }: { children?: React.ReactNode }) {
     const queryClient = useQueryClient()
     const { setStatus } = useConnectionActions()
+    const user = useSessionUser()
+    const loading = useSessionLoading()
+    const currentChain = useSessionCurrentChain()
+    // Signed-in: only the live play chain. Guests: `app:all` so both chains
+    // show up without enumerating CHAIN_IDS. Wait out auth-sync so a signed-in
+    // reload does not briefly subscribe to the all-chain feed.
+    useTopic(
+        loading
+            ? null
+            : user
+              ? chainFeedTopic(currentChain)
+              : ALL_FEED_TOPIC
+    )
 
     React.useEffect(() => {
         appSocket.setTokenProvider(mintAccessToken)
@@ -170,8 +190,13 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     if (typeof payload.availableMicro === "number") {
                         session.patchBalance({
                             availableMicro: payload.availableMicro,
-                            ...(payload.stxAddress
-                                ? { stxAddress: payload.stxAddress }
+                            ...(payload.chain
+                                ? {
+                                      chain: payload.chain as import("@/lib/chain").ChainId,
+                                  }
+                                : {}),
+                            ...(payload.address
+                                ? { address: payload.address }
                                 : {}),
                         })
                     }

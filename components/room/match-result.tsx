@@ -89,6 +89,8 @@ export function MatchResult({
                 nonce: myClaim.nonce,
                 devWallet: myClaim.devWallet,
                 devFee: myClaim.devFee,
+                devId: myClaim.devId,
+                devNeedsWallet: myClaim.devNeedsWallet,
             }).catch(() => undefined)
 
             const result = await settleVaultClaimsOnchain({
@@ -102,9 +104,7 @@ export function MatchResult({
                     body: `${result.error} Retry from Wallet → Pending wins.`,
                     tone: "danger",
                 })
-                return
             }
-            toast({ title: "Winnings claimed", tone: "success" })
         })()
     }, [
         finished.needsOnChainClaim,

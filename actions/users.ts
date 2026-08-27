@@ -1,11 +1,6 @@
 "use server"
 
-import { createCustodialWalletMaterial } from "@/lib/custodial/wallets"
-import {
-    createCustodialWallet,
-    getCustodialWallet,
-    upsertAppUser,
-} from "@/lib/api/server"
+import { upsertAppUser } from "@/lib/api/server"
 import { auth } from "@/lib/auth/server"
 import { AccountDeleteError, type DeleteAccountResult } from "@/lib/api/account-delete"
 import type { AppUser } from "@/lib/api/types"
@@ -54,12 +49,6 @@ export async function syncAuthUser(sessionUser: SessionUser): Promise<AppUser> {
         emailVerifiedAt,
     })
 
-    const existingWallet = await getCustodialWallet(user.id)
-    if (!existingWallet) {
-        const material = await createCustodialWalletMaterial(user.id)
-        await createCustodialWallet(user.id, material)
-    }
-
     return user
 }
 
@@ -70,6 +59,7 @@ export async function acceptLegalTerms(version: string) {
 
 export async function updateUserPreferences(payload: {
     lobbyAlertsEnabled?: boolean
+    currentChain?: import("@/lib/chain").ChainId
 }) {
     const { updatePreferences } = await import("@/lib/api/server")
     return updatePreferences(payload)
@@ -93,16 +83,6 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
     const { deleteAppAccount } = await import("@/lib/api/server")
     try {
         await deleteAppAccount()
-        try {
-            const neon = auth as unknown as {
-                deleteUser?: (args: Record<string, unknown>) => Promise<unknown>
-            }
-            if (typeof neon.deleteUser === "function") {
-                await neon.deleteUser({})
-            }
-        } catch {
-            /* client also calls deleteUser after this succeeds */
-        }
         return { ok: true }
     } catch (err) {
         if (err instanceof AccountDeleteError) {

@@ -18,7 +18,16 @@ import {
 import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network"
 
 import { getSigningMaterial } from "@/lib/api/server"
+import { chainAdapter, parseChainId, type ChainId } from "@/lib/chain"
+import { provisionDestWallet } from "@/lib/custodial/provision-dest"
 import { unlockCustodialAccount } from "@/lib/custodial/unlock"
+import { waitForSolanaSignature } from "@/lib/solana/rpc"
+import {
+    solanaVaultClaim,
+    solanaVaultJoin,
+    solanaVaultKick,
+    solanaVaultLeave,
+} from "@/lib/solana/vault"
 import { getStacksNetworkName } from "@/lib/stacks/network"
 import { peekTx, waitForTx } from "@/lib/tx/wait-for-tx"
 import { parseVaultContract, usdcxAsset } from "@/lib/vault/config"
@@ -59,7 +68,7 @@ function stacksNetwork() {
 }
 
 async function loadPlayerKey(userId: string) {
-    return unlockCustodialAccount(await getSigningMaterial(userId))
+    return unlockCustodialAccount(await getSigningMaterial(userId, "stacks"))
 }
 
 async function broadcastSponsored(params: {
@@ -114,8 +123,12 @@ export async function waitForVaultTx(
     options?: {
         discardDraftsOnFailure?: VaultDraftRef[]
         maxWaitMs?: number
+        chain?: ChainId
     }
 ): Promise<string> {
+    if (parseChainId(options?.chain) === "solana") {
+        return waitForSolanaSignature(txid, undefined, options?.maxWaitMs)
+    }
     const wait = await waitForTx(txid, { maxWaitMs: options?.maxWaitMs })
     if (wait.status === "pending") {
         throw new VaultTxPendingError(txid)
@@ -171,6 +184,7 @@ export async function vaultJoinOnChain(input: {
     /** Amount leaving custodial (0 for sponsored follow-up seats). */
     transferMicro: number
     sponsored: boolean
+    chain?: ChainId
     /** When set, skip broadcast and wait on this existing txid. */
     resumeTxid?: string
     /**
@@ -185,6 +199,37 @@ export async function vaultJoinOnChain(input: {
                 { kind: "join", lobbyPath: input.lobbyPath },
                 { kind: "create", lobbyPath: input.lobbyPath },
             ],
+            chain: input.chain,
+        })
+    }
+    if (parseChainId(input.chain) === "solana") {
+        const txid = await solanaVaultJoin({
+            userId: input.userId,
+            lobbyPath: input.lobbyPath,
+            amountMicro: input.transferMicro || input.entryAmountMicro,
+        })
+        try {
+            const { saveVaultDraft } = await import("@/lib/api/server")
+            await saveVaultDraft({
+                kind: "join",
+                lobbyPath: input.lobbyPath,
+                txid,
+                entryAmountMicro: input.entryAmountMicro,
+                transferMicro: input.transferMicro,
+                sponsored: input.sponsored,
+            })
+        } catch (error) {
+            console.error("[vault] failed to persist join draft", error)
+        }
+        if (input.wait === false) {
+            return txid
+        }
+        return waitForVaultTx(txid, {
+            discardDraftsOnFailure: [
+                { kind: "join", lobbyPath: input.lobbyPath },
+                { kind: "create", lobbyPath: input.lobbyPath },
+            ],
+            chain: "solana",
         })
     }
     const player = await loadPlayerKey(input.userId)
@@ -192,7 +237,7 @@ export async function vaultJoinOnChain(input: {
     const postConditions: PostCondition[] =
         input.transferMicro > 0
             ? [
-                  Pc.principal(player.stxAddress)
+                  Pc.principal(player.address)
                       .willSendEq(input.transferMicro)
                       .ft(contractId, tokenName),
               ]
@@ -239,11 +284,19 @@ export async function vaultLeaveOnChain(input: {
     lobbyPath: string
     paidMicro: number
     nonce: number
+    chain?: ChainId
     resumeTxid?: string
     lobbyId?: string
     /** When false, return after broadcast + draft persist. Default true. */
     wait?: boolean
 }): Promise<string> {
+    if (parseChainId(input.chain) === "solana") {
+        const material = await getSigningMaterial(input.userId, "solana")
+        return solanaVaultLeave({
+            lobbyPath: input.lobbyPath,
+            playerAddress: material.address,
+        })
+    }
     if (input.resumeTxid) {
         return waitForVaultTx(input.resumeTxid, {
             discardDraftsOnFailure: [
@@ -255,7 +308,7 @@ export async function vaultLeaveOnChain(input: {
     const signature = await signVaultOracle({
         action: "leave",
         lobbyPath: input.lobbyPath,
-        player: player.stxAddress,
+        player: player.address,
         amount: input.paidMicro,
         nonce: input.nonce,
     })
@@ -309,7 +362,14 @@ export async function vaultKickOnChain(input: {
     lobbyPath: string
     paidMicro: number
     nonce: number
+    chain?: ChainId
 }): Promise<string> {
+    if (parseChainId(input.chain) === "solana") {
+        return solanaVaultKick({
+            lobbyPath: input.lobbyPath,
+            playerAddress: input.targetAddress,
+        })
+    }
     const player = await loadPlayerKey(input.actorUserId)
     const txid = await broadcastKick({
         senderKey: player.senderKey,
@@ -328,7 +388,14 @@ export async function vaultKickAsPlatform(input: {
     lobbyPath: string
     paidMicro: number
     nonce: number
+    chain?: ChainId
 }): Promise<string> {
+    if (parseChainId(input.chain) === "solana") {
+        return solanaVaultKick({
+            lobbyPath: input.lobbyPath,
+            playerAddress: input.targetAddress,
+        })
+    }
     const platform = await getPlatformAccount()
     const txid = await broadcastKick({
         senderKey: platform.privateKey,
@@ -378,6 +445,30 @@ async function broadcastKick(input: {
     })
 }
 
+async function resolveClaimDest(input: {
+    chain?: ChainId
+    devWallet: string
+    devFee: number
+    devId?: string | null
+    devNeedsWallet?: boolean
+}): Promise<{ devWallet: string; devFee: number }> {
+    const chain = parseChainId(input.chain)
+    if (input.devNeedsWallet && input.devId) {
+        try {
+            const address = await provisionDestWallet(input.devId, chain)
+            return { devWallet: address, devFee: input.devFee }
+        } catch (error) {
+            console.error("[vault] dev wallet provision failed", error)
+            return { devWallet: input.devWallet, devFee: 0 }
+        }
+    }
+    const parsed = chainAdapter(chain).parseAddress(input.devWallet)
+    if (!parsed) {
+        return { devWallet: input.devWallet, devFee: 0 }
+    }
+    return { devWallet: parsed, devFee: input.devFee }
+}
+
 export async function vaultClaimOnChain(input: {
     userId: string
     lobbyPath: string
@@ -385,9 +476,23 @@ export async function vaultClaimOnChain(input: {
     nonce: number
     devWallet: string
     devFee: number
+    devId?: string | null
+    devNeedsWallet?: boolean
     lobbyId?: string
     resumeTxid?: string
+    chain?: ChainId
 }): Promise<string> {
+    const dest = await resolveClaimDest(input)
+    if (parseChainId(input.chain) === "solana") {
+        const material = await getSigningMaterial(input.userId, "solana")
+        return solanaVaultClaim({
+            lobbyPath: input.lobbyPath,
+            playerAddress: material.address,
+            amountMicro: input.amountMicro,
+            devFeePct: dest.devFee,
+            devAddress: dest.devWallet,
+        })
+    }
     if (input.resumeTxid) {
         return waitForVaultTx(input.resumeTxid, {
             discardDraftsOnFailure: [
@@ -398,11 +503,11 @@ export async function vaultClaimOnChain(input: {
     const player = await loadPlayerKey(input.userId)
     const signature = await signVaultClaimOracle({
         lobbyPath: input.lobbyPath,
-        player: player.stxAddress,
+        player: player.address,
         amount: input.amountMicro,
         nonce: input.nonce,
-        devWallet: input.devWallet,
-        devFee: input.devFee,
+        devWallet: dest.devWallet,
+        devFee: dest.devFee,
     })
     // Split pays winner + platform + optional game fee. Nested Clarity
     // with-ft post-conditions cover each leg — client Deny+eq(total) races
@@ -414,8 +519,8 @@ export async function vaultClaimOnChain(input: {
             Cl.stringAscii(input.lobbyPath),
             Cl.uint(input.amountMicro),
             Cl.uint(input.nonce),
-            Cl.principal(input.devWallet),
-            Cl.uint(input.devFee),
+            Cl.principal(dest.devWallet),
+            Cl.uint(dest.devFee),
             Cl.bufferFromHex(signature.replace(/^0x/, "")),
         ],
         postConditions: [],
@@ -432,8 +537,10 @@ export async function vaultClaimOnChain(input: {
             entryAmountMicro: 0,
             amountMicro: input.amountMicro,
             nonce: input.nonce,
-            devWallet: input.devWallet,
-            devFee: input.devFee,
+            devWallet: dest.devWallet,
+            devFee: dest.devFee,
+            devId: input.devId,
+            devNeedsWallet: input.devNeedsWallet,
         })
     } catch (error) {
         console.error("[vault] failed to persist claim draft", error)

@@ -7,6 +7,7 @@ import { GameArt } from "@/components/common/game-art"
 import { LobbyStatusBadge } from "@/components/common/status-badge"
 import { Badge, ButtonLink, Progress } from "@/components/ui"
 import type { GameMetadata, Lobby } from "@/lib/api/types"
+import { chainAdapter, parseChainId } from "@/lib/chain"
 import { formatUsdc, timeAgo } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -61,6 +62,11 @@ export function LobbyCard({
                                     className="size-3.5 shrink-0 text-muted-foreground"
                                     aria-label="Private"
                                 />
+                            ) : null}
+                            {lobby.entryAmountMicro > 0 ? (
+                                <Badge variant="outline">
+                                    {chainAdapter(parseChainId(lobby.chain)).label}
+                                </Badge>
                             ) : null}
                         </div>
                         <p className="truncate text-xs text-muted-foreground">

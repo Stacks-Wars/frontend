@@ -15,11 +15,11 @@ self.addEventListener("push", (event) => {
                 return
             }
 
-            const clients = await self.clients.matchAll({
-                type: "window",
-                includeUncontrolled: true,
-            })
-            if (clients.some((client) => client.focused)) return
+            //const clients = await self.clients.matchAll({
+            //    type: "window",
+            //    includeUncontrolled: true,
+            //})
+            //if (clients.some((client) => client.focused)) return
 
             await self.registration.showNotification(data.title, {
                 body: data.body,
