@@ -1,7 +1,7 @@
 "use server"
 
 import { syncAuthUser } from "@/actions/users"
-import { type ActionResult, actionResult } from "@/lib/action-result"
+import { type ActionResult, TooManyLobbiesError, actionResult } from "@/lib/action-result"
 import {
     allocateLobbyPath,
     approveJoinRequest as approveJoinRequestApi,
@@ -14,6 +14,7 @@ import {
     joinLobby as joinLobbyApi,
     kickLobbyPlayer as kickLobbyPlayerApi,
     leaveLobby as leaveLobbyApi,
+    listLobbies,
     listVaultDrafts,
     LobbyApiError,
     rejectJoinRequest as rejectJoinRequestApi,
@@ -26,6 +27,11 @@ import {
 import type { JoinRequest, LobbyDetail } from "@/lib/api/types"
 import { auth } from "@/lib/auth/server"
 import { currentChainFromCookie } from "@/lib/chain/server"
+import {
+    ACTIVE_HOST_STATUSES,
+    isAtHostCap,
+    toHostedLobbyRef,
+} from "@/lib/lobby/host-cap"
 import { MIN_ENTRY_MICRO, needsOnChainVault, vaultConfigured } from "@/lib/vault/config"
 import {
     resumeVaultTxOrDiscard,
@@ -98,6 +104,17 @@ export async function createLobbyAction(input: {
         const shouldResume = Boolean(incomplete)
         if (input.resumeIncomplete && !incomplete) {
             throw new Error("No unfinished paid lobby to continue.")
+        }
+
+        if (!shouldResume) {
+            const hosted = await listLobbies({
+                creatorId: user.id,
+                status: [...ACTIVE_HOST_STATUSES],
+                limit: 8,
+            }).catch(() => [])
+            if (isAtHostCap(hosted.length)) {
+                throw new TooManyLobbiesError(hosted.map(toHostedLobbyRef))
+            }
         }
 
         const name = (shouldResume && incomplete?.name?.trim()) || input.name
@@ -200,22 +217,32 @@ export async function createLobbyAction(input: {
             throw new Error("Paid lobbies are unavailable right now.")
         }
 
-         const detail = await createLobbyApi({
-            name: name.trim(),
-            description,
-            gameId,
-            isPrivate,
-            isSponsored,
-            entryAmountMicro,
-            path: path ?? null,
-            vaultTxid: vaultTxid ?? null,
-            chain,
-        })
-        if (path) {
-            await clearVaultDraft("create", path).catch(() => undefined)
-            await clearVaultDraft("join", path).catch(() => undefined)
+        try {
+            const detail = await createLobbyApi({
+                name: name.trim(),
+                description,
+                gameId,
+                isPrivate,
+                isSponsored,
+                entryAmountMicro,
+                path: path ?? null,
+                vaultTxid: vaultTxid ?? null,
+                chain,
+            })
+            if (path) {
+                await clearVaultDraft("create", path).catch(() => undefined)
+                await clearVaultDraft("join", path).catch(() => undefined)
+            }
+            return detail
+        } catch (error) {
+            if (
+                error instanceof LobbyApiError &&
+                error.code === "too_many_lobbies"
+            ) {
+                throw new TooManyLobbiesError(error.lobbies ?? [])
+            }
+            throw error
         }
-        return detail
     })
 }
 

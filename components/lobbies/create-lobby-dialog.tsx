@@ -12,6 +12,7 @@ import {
 import { getIncompletePaidCreateDraftAction } from "@/actions/vault-drafts"
 import {
     Button,
+    ButtonLink,
     Dialog,
     DialogContent,
     DialogDescription,
@@ -29,8 +30,15 @@ import {
     Textarea,
 } from "@/components/ui"
 import type { ActionResult } from "@/lib/action-result"
-import type { GameMetadata, LobbyDetail, VaultDraft } from "@/lib/api/types"
+import type {
+    GameMetadata,
+    HostedLobbyRef,
+    LobbyDetail,
+    VaultDraft,
+} from "@/lib/api/types"
 import { formatUsdc, toMicro, toUsdc } from "@/lib/format"
+import { isAtHostCap } from "@/lib/lobby/host-cap"
+import { randomLobbyName } from "@/lib/lobby/random-name"
 import { createLobbyOnchain } from "@/lib/onchain"
 import { cn } from "@/lib/utils"
 import { useNotificationActions } from "@/stores/notifications"
@@ -38,6 +46,13 @@ import { useSessionBalance, useSessionUser } from "@/stores/session"
 
 const ENTRY_PRESETS = [0, 1, 5, 25, 100]
 const MIN_PAID_ENTRY_USD = 1
+
+const HOST_STATUS_LABEL: Record<HostedLobbyRef["status"], string> = {
+    waiting: "Waiting",
+    starting: "Starting",
+    inProgress: "In play",
+    finished: "Finished",
+}
 
 export type CreateLobbyDialogProps = {
     open: boolean
@@ -65,7 +80,7 @@ export function CreateLobbyDialog({
     const [picked, setPicked] = React.useState<string | null>(null)
     // Falls through to the catalogue default, which may arrive after mount.
     const selectedGame = picked ?? gameId ?? games[0]?.id ?? ""
-    const [name, setName] = React.useState("")
+    const [name, setName] = React.useState(() => randomLobbyName())
     const [description, setDescription] = React.useState("")
     const [entryUsd, setEntryUsd] = React.useState("0")
     const [isPrivate, setIsPrivate] = React.useState(false)
@@ -75,6 +90,9 @@ export function CreateLobbyDialog({
     const [draftLoading, setDraftLoading] = React.useState(false)
     const [incompleteDraft, setIncompleteDraft] =
         React.useState<VaultDraft | null>(null)
+    const [activeLobbies, setActiveLobbies] = React.useState<
+        HostedLobbyRef[]
+    >([])
 
     const game = games.find((candidate) => candidate.id === selectedGame)
     const entryValue = Number.parseFloat(entryUsd)
@@ -97,9 +115,12 @@ export function CreateLobbyDialog({
         belowMinimum ||
         underfunded
 
+    const atHostCap = isAtHostCap(activeLobbies.length)
+
     React.useEffect(() => {
         if (!open || !user) {
             setIncompleteDraft(null)
+            setActiveLobbies([])
             setDraftLoading(false)
             return
         }
@@ -108,22 +129,27 @@ export function CreateLobbyDialog({
         setDraftLoading(true)
         setError(null)
         void getIncompletePaidCreateDraftAction()
-            .then((draft) => {
+            .then((gate) => {
                 if (cancelled) return
-                setIncompleteDraft(draft)
-                if (!draft) return
+                setIncompleteDraft(gate.draft)
+                setActiveLobbies(gate.activeLobbies)
+                if (!gate.draft) return
                 // Prefill so a resume has sensible fallbacks if metadata is thin.
-                if (draft.gameId) setPicked(draft.gameId)
-                if (draft.name?.trim()) setName(draft.name.trim())
-                if (draft.description) setDescription(draft.description)
-                setEntryUsd(String(toUsdc(draft.entryAmountMicro)))
-                setIsPrivate(Boolean(draft.isPrivate))
+                if (gate.draft.gameId) setPicked(gate.draft.gameId)
+                if (gate.draft.name?.trim()) setName(gate.draft.name.trim())
+                if (gate.draft.description) setDescription(gate.draft.description)
+                setEntryUsd(String(toUsdc(gate.draft.entryAmountMicro)))
+                setIsPrivate(Boolean(gate.draft.isPrivate))
                 setIsSponsored(
-                    Boolean(draft.isSponsored ?? draft.sponsored)
+                    Boolean(gate.draft.isSponsored ?? gate.draft.sponsored)
                 )
             })
             .catch(() => {
-                if (!cancelled) setIncompleteDraft(null)
+                if (cancelled) {
+                    return
+                }
+                setIncompleteDraft(null)
+                setActiveLobbies([])
             })
             .finally(() => {
                 if (!cancelled) setDraftLoading(false)
@@ -136,6 +162,11 @@ export function CreateLobbyDialog({
 
     async function finishCreate(result: ActionResult<LobbyDetail>) {
         if (!result.ok) {
+            if (result.code === "too_many_lobbies") {
+                if (result.lobbies?.length) setActiveLobbies(result.lobbies)
+                setError(result.error)
+                return
+            }
             setError(
                 `${result.error} Your on-chain entry is saved — tap Continue to finish without paying again.`
             )
@@ -225,14 +256,20 @@ export function CreateLobbyDialog({
                     <DialogTitle>
                         {incompleteDraft
                             ? "Finish your lobby"
-                            : "Create a lobby"}
+                            : atHostCap
+                              ? "Open lobbies"
+                              : "Create a lobby"}
                     </DialogTitle>
                     <DialogDescription>
                         {incompleteDraft
-                            ? "Your entry already confirmed on-chain. Continue to open the lobby without paying again."
-                            : game
-                              ? `${game.minPlayers}–${game.maxPlayers} players · ${game.name}`
-                              : "Pick a game and set the stakes."}
+                            ? atHostCap
+                                ? "Your entry already confirmed on-chain. Settle an open lobby, then continue."
+                                : "Your entry already confirmed on-chain. Continue to open the lobby without paying again."
+                            : atHostCap
+                              ? "Settle an open lobby before hosting another."
+                              : game
+                                ? `${game.minPlayers}–${game.maxPlayers} players · ${game.name}`
+                                : "Pick a game and set the stakes."}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -243,7 +280,7 @@ export function CreateLobbyDialog({
                 ) : draftLoading ? (
                     <div className="flex items-center gap-2 rounded-xl border border-border/70 px-4 py-6 text-sm text-muted-foreground">
                         <RiLoader4Line className="animate-spin" />
-                        Checking for an unfinished paid lobby…
+                        Checking your lobbies…
                     </div>
                 ) : incompleteDraft ? (
                     <div className="space-y-5">
@@ -300,6 +337,13 @@ export function CreateLobbyDialog({
                             </dl>
                         </div>
 
+                        {atHostCap ? (
+                            <HostedLobbyLinks
+                                lobbies={activeLobbies}
+                                onNavigate={() => onOpenChange(false)}
+                            />
+                        ) : null}
+
                         {error ? (
                             <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                                 {error}
@@ -326,6 +370,31 @@ export function CreateLobbyDialog({
                                     <RiRefreshLine />
                                 )}
                                 Continue lobby
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                ) : atHostCap ? (
+                    <div className="space-y-5">
+                        <p className="text-sm text-muted-foreground">
+                            You already have two unfinished lobbies. Finish or
+                            leave one, then come back to host.
+                        </p>
+                        <HostedLobbyLinks
+                            lobbies={activeLobbies}
+                            onNavigate={() => onOpenChange(false)}
+                        />
+                        {error ? (
+                            <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                                {error}
+                            </p>
+                        ) : null}
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Close
                             </Button>
                         </DialogFooter>
                     </div>
@@ -364,14 +433,26 @@ export function CreateLobbyDialog({
                         ) : null}
 
                         <div className="grid gap-2">
-                            <Label htmlFor="lobby-name">Lobby name</Label>
+                            <div className="flex items-center justify-between gap-2">
+                                <Label htmlFor="lobby-name">Lobby name</Label>
+                                <button
+                                    type="button"
+                                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                                    onClick={() =>
+                                        setName(randomLobbyName(name))
+                                    }
+                                >
+                                    <RiRefreshLine className="size-3.5" />
+                                    Shuffle
+                                </button>
+                            </div>
                             <Input
                                 id="lobby-name"
                                 value={name}
                                 onChange={(event) =>
                                     setName(event.target.value)
                                 }
-                                placeholder="Friday night runback"
+                                placeholder="Quiet Orchard"
                                 maxLength={60}
                                 autoFocus
                             />
@@ -527,5 +608,33 @@ export function CreateLobbyDialog({
                 )}
             </DialogContent>
         </Dialog>
+    )
+}
+
+function HostedLobbyLinks({
+    lobbies,
+    onNavigate,
+}: {
+    lobbies: HostedLobbyRef[]
+    onNavigate: () => void
+}) {
+    return (
+        <ul className="space-y-2">
+            {lobbies.map((lobby) => (
+                <li key={lobby.path}>
+                    <ButtonLink
+                        href={`/room/${lobby.path}`}
+                        variant="outline"
+                        className="w-full justify-between gap-3"
+                        onClick={onNavigate}
+                    >
+                        <span className="min-w-0 truncate">{lobby.name}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                            {HOST_STATUS_LABEL[lobby.status]}
+                        </span>
+                    </ButtonLink>
+                </li>
+            ))}
+        </ul>
     )
 }

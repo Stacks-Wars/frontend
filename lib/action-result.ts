@@ -1,6 +1,18 @@
+import type { HostedLobbyRef } from "@/lib/api/types"
+
 export type ActionResult<T> =
     | { ok: true; data: T }
-    | { ok: false; error: string }
+    | { ok: false; error: string; code?: string; lobbies?: HostedLobbyRef[] }
+
+export class TooManyLobbiesError extends Error {
+    code = "too_many_lobbies" as const
+    lobbies: HostedLobbyRef[]
+
+    constructor(lobbies: HostedLobbyRef[]) {
+        super("Settle your open lobbies before hosting another.")
+        this.lobbies = lobbies
+    }
+}
 
 const PREFIXES = ["bad request: ", "conflict: ", "forbidden: ", "not found: "]
 
@@ -15,6 +27,14 @@ export async function actionResult<T>(
     try {
         return { ok: true, data: await task() }
     } catch (error) {
+        if (error instanceof TooManyLobbiesError) {
+            return {
+                ok: false,
+                error: error.message,
+                code: error.code,
+                lobbies: error.lobbies,
+            }
+        }
         const raw =
             error instanceof Error ? error.message : "Something went wrong"
         const prefix = PREFIXES.find((candidate) =>
