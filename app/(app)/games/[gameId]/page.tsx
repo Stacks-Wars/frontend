@@ -4,12 +4,7 @@ import { notFound } from "next/navigation"
 import { PageContainer } from "@/components/common/page-container"
 import { GamePageResolver } from "@/components/games/game-page-resolver"
 import type { GameActivity } from "@/lib/api/types"
-import {
-    getGame,
-    listGameActivity,
-    listLobbies,
-    listRecentMatches,
-} from "@/lib/api/server"
+import { getGame, listGameActivity, listLobbies } from "@/lib/api/server"
 import { lobbyListChainForSession } from "@/lib/chain/server"
 
 type Params = { params: Promise<{ gameId: string }> }
@@ -37,14 +32,19 @@ export default async function GameDetailPage({ params }: Params) {
     if (!game) notFound()
 
     const chain = await lobbyListChainForSession()
-    const [activity, lobbies, recentMatches] = await Promise.all([
+    const [activity, lobbies, recentFinished] = await Promise.all([
         listGameActivity().catch(() => []),
         listLobbies({
             gameId,
             limit: 48,
             ...(chain ? { chain } : {}),
         }).catch(() => []),
-        listRecentMatches({ gameId, limit: 8 }).catch(() => []),
+        // Both chains, finished only — `updated_at` recency is server-side.
+        listLobbies({
+            gameId,
+            status: ["finished"],
+            limit: 12,
+        }).catch(() => []),
     ])
 
     return (
@@ -56,7 +56,7 @@ export default async function GameDetailPage({ params }: Params) {
                     emptyActivity(gameId)
                 }
                 lobbies={lobbies}
-                recentMatches={recentMatches}
+                recentFinished={recentFinished}
             />
         </PageContainer>
     )

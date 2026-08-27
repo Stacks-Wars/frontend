@@ -163,8 +163,14 @@ export type MatchFinishedPayload = {
     matchId: string
     lobbyId: string
     lobbyPath: string
+    lobbyName?: string
     gameId: string
+    chain?: import("@/lib/chain").ChainId
     potMicro: number
+    entryAmountMicro?: number
+    playerCount?: number
+    isPrivate?: boolean
+    finishedAt?: string
     winners: string[]
 }
 
