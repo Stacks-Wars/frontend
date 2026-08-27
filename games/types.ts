@@ -6,7 +6,6 @@ import type {
     Lobby,
     LobbyDetail,
     PlayerState,
-    RecentMatch,
 } from "@/lib/api/types"
 import type { ConnectionStatus } from "@/lib/ws/app-socket"
 import type { GameChannel } from "@/hooks/use-lobby-room"
@@ -59,7 +58,7 @@ export type GamePageProps = {
     game: GameMetadata
     activity: GameActivity
     lobbies: Lobby[]
-    recentMatches: RecentMatch[]
+    recentFinished: Lobby[]
     sections: DefaultGameSections
 }
 

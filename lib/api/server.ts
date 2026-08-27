@@ -181,11 +181,9 @@ export async function listGameActivity(): Promise<GameActivity[]> {
 }
 
 export async function listRecentMatches(options: {
-    gameId?: string
     limit?: number
 } = {}): Promise<RecentMatch[]> {
     const params = new URLSearchParams()
-    if (options.gameId) params.set("gameId", options.gameId)
     if (options.limit != null) params.set("limit", String(options.limit))
     const qs = params.toString()
     const response = await fetch(

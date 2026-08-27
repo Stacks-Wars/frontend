@@ -12,14 +12,14 @@ import {
 import { GameArt } from "@/components/common/game-art"
 import { LiveNumber } from "@/components/common/live-number"
 import { SectionHeader } from "@/components/common/section"
-import { UserChip } from "@/components/common/user-chip"
+import { FinishedLobbies } from "@/components/games/finished-lobbies"
 import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
 import { LobbyCard } from "@/components/lobbies/lobby-card"
 import { Badge, ButtonLink, EmptyState, Stat } from "@/components/ui"
 import { isPlayable } from "@/games/playable"
 import type { DefaultGameSections, GamePageProps } from "@/games/types"
 import { useLobbyFeed, type LobbyFilters } from "@/hooks/use-lobby-feed"
-import { formatPercent, formatUsdc, label, timeAgo } from "@/lib/format"
+import { formatPercent, formatUsdc, label } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 const LOBBY_TABS: { id: "open" | "live" | "all"; label: string }[] = [
@@ -38,14 +38,15 @@ export function useDefaultGameSections({
     game,
     activity,
     lobbies,
-    recentMatches,
+    recentFinished,
 }: Omit<GamePageProps, "sections">): DefaultGameSections {
     const [tab, setTab] = React.useState<"open" | "live" | "all">("open")
 
     const filters = React.useMemo<LobbyFilters>(() => {
         const base: LobbyFilters = { gameId: game.id }
         if (tab === "open") return { ...base, statuses: ["waiting"] }
-        if (tab === "live") return { ...base, statuses: ["starting", "inProgress"] }
+        if (tab === "live")
+            return { ...base, statuses: ["starting", "inProgress"] }
         return base
     }, [game.id, tab])
 
@@ -141,7 +142,9 @@ export function useDefaultGameSections({
                     value={
                         <LiveNumber
                             value={activity.openPotMicro}
-                            format={(value) => formatUsdc(value, { zero: "$0" })}
+                            format={(value) =>
+                                formatUsdc(value, { zero: "$0" })
+                            }
                         />
                     }
                     tone="gold"
@@ -224,47 +227,13 @@ export function useDefaultGameSections({
         () => (
             <section className="space-y-4">
                 <SectionHeader
-                    title="Recent results"
-                    description="How the last matches finished."
+                    title="Recent matches"
+                    description="Finished lobbies for this game."
                 />
-                {recentMatches.length === 0 ? (
-                    <EmptyState
-                        title="No matches yet"
-                        description="Be the first name on this board."
-                    />
-                ) : (
-                    <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/70 surface-raised">
-                        {recentMatches.map((match) => (
-                            <li
-                                key={match.matchId}
-                                className="flex items-center gap-3 px-4 py-3"
-                            >
-                                <UserChip
-                                    user={{
-                                        userId: match.winnerId ?? "",
-                                        username: match.winnerUsername,
-                                        displayName: match.winnerDisplayName,
-                                        avatarUrl: match.winnerAvatarUrl,
-                                    }}
-                                    subtitle={`${match.playerCount} players · ${timeAgo(match.finishedAt)}`}
-                                />
-                                <span className="ml-auto shrink-0 text-right">
-                                    <span className="block font-display text-sm text-gold">
-                                        {formatUsdc(match.winnerPrizeMicro, {
-                                            zero: "—",
-                                        })}
-                                    </span>
-                                    <span className="block text-xs text-muted-foreground">
-                                        pot {formatUsdc(match.potMicro, { zero: "free" })}
-                                    </span>
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                <FinishedLobbies gameId={game.id} initial={recentFinished} />
             </section>
         ),
-        [recentMatches]
+        [game.id, recentFinished]
     )
 
     const HowItWorks = React.useCallback(
