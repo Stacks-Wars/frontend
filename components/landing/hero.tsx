@@ -47,10 +47,9 @@ export function Hero({
                             on the line.
                         </h1>
                         <p className="max-w-lg text-base text-muted-foreground sm:text-lg">
-                            {games.length} skill games, real lobbies, real
-                            stakes. Entry fees sit in an on-chain vault until
-                            the match ends, then the winner gets paid in the
-                            same transaction.
+                            {games.length} games, real lobbies, real stakes.
+                            Entry fees sit in an on-chain vault until the match
+                            ends, then the pot is paid out.
                         </p>
                     </div>
 

@@ -20,7 +20,7 @@ export function ClosingCta() {
                 </h2>
                 <p className="text-muted-foreground">
                     Free lobbies cost nothing to try. Paid ones settle on-chain
-                    the moment the match ends.
+                    when the match ends.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3">
                     {user ? (

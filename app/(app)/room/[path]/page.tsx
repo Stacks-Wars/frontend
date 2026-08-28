@@ -3,14 +3,12 @@ import type { Metadata } from "next"
 import { PageContainer } from "@/components/common/page-container"
 import { RoomView } from "@/components/room/room-view"
 import { getLobbyByPath, listGames } from "@/lib/api/server"
+import { SITE_NAME, siteOrigin } from "@/lib/seo"
 
 type Params = { params: Promise<{ path: string }> }
 
 function appOrigin(): string {
-    return (
-        process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-        "https://stackswars.com"
-    )
+    return siteOrigin()
 }
 
 /** Prefer game-specific art; OG crawlers get an absolute URL. */
@@ -39,19 +37,20 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
                       : " · Paid"
                   : " · Free"
           }`
-        : "Competitive Stacks arena lobby."
+        : "Onchain game lobby."
 
     const image = gameOgImage(lobby?.gameId)
 
     return {
         title,
         description,
+        robots: { index: false, follow: true },
         openGraph: {
             title,
             description,
             url: `${appOrigin()}/room/${path}`,
             type: "website",
-            images: [{ url: image, alt: gameName ?? "Stacks Wars" }],
+            images: [{ url: image, alt: gameName ?? SITE_NAME }],
         },
         twitter: {
             card: "summary_large_image",

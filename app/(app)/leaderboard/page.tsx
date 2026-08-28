@@ -8,6 +8,9 @@ import type { LeaderboardPage, Season } from "@/lib/api/types"
 
 export const metadata: Metadata = {
     title: "Leaderboard",
+    description:
+        "Season standings for onchain matches. Points land when a game settles.",
+    alternates: { canonical: "/leaderboard" },
 }
 
 const EMPTY: LeaderboardPage = { items: [], total: 0, limit: 25, offset: 0 }
@@ -17,7 +20,8 @@ function activeSeason(seasons: Season[]): Season | null {
     const now = Date.now()
     const live = seasons.find(
         (season) =>
-            Date.parse(season.startsAt) <= now && Date.parse(season.endsAt) >= now
+            Date.parse(season.startsAt) <= now &&
+            Date.parse(season.endsAt) >= now
     )
     return live ?? seasons[0] ?? null
 }
