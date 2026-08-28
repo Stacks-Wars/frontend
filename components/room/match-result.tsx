@@ -9,7 +9,10 @@ import { ButtonLink } from "@/components/ui"
 import type { PlayerState } from "@/lib/api/types"
 import type { LobbyFinishedPayload } from "@/lib/ws/protocol"
 import { formatUsdc, ordinal } from "@/lib/format"
-import { settleVaultClaimsOnchain } from "@/lib/onchain"
+import {
+    refundDrawSeatsOnchain,
+    settleVaultClaimsOnchain,
+} from "@/lib/onchain"
 import { cn } from "@/lib/utils"
 import { useNotificationActions } from "@/stores/notifications"
 
@@ -28,6 +31,13 @@ export function MatchResult({
 }) {
     const { toast } = useNotificationActions()
     const claimStarted = React.useRef(false)
+    const refundStarted = React.useRef(false)
+    const isDraw = finished.winners.length === 0
+    const refundClaims = React.useMemo(
+        () =>
+            (finished.claims ?? []).filter((claim) => claim.role === "refund"),
+        [finished.claims]
+    )
 
     const standings = React.useMemo(() => {
         if (finished.standings?.length) {
@@ -72,8 +82,47 @@ export function MatchResult({
     }, [finished.standings, finished.winners, players])
 
     const myClaim = finished.claims?.find(
-        (claim) => claim.userId === selfUserId && claim.amountMicro > 0
+        (claim) =>
+            claim.userId === selfUserId &&
+            claim.amountMicro > 0 &&
+            claim.role !== "refund"
     )
+
+    React.useEffect(() => {
+        if (!finished.needsOnChainRefund || refundClaims.length === 0) {
+            return
+        }
+        if (refundStarted.current) return
+        refundStarted.current = true
+        void (async () => {
+            const result = await refundDrawSeatsOnchain({
+                lobbyId: finished.lobbyId,
+                lobbyPath: finished.lobbyPath,
+                claims: refundClaims.map((claim) => ({
+                    userId: claim.userId,
+                    principal: claim.principal,
+                    amountMicro: claim.amountMicro,
+                    nonce: claim.nonce,
+                    devWallet: claim.devWallet,
+                    devFee: claim.devFee,
+                    role: "refund",
+                })),
+            })
+            if (!result.ok) {
+                toast({
+                    title: "Could not return entry fees automatically",
+                    body: result.error,
+                    tone: "danger",
+                })
+            }
+        })()
+    }, [
+        finished.needsOnChainRefund,
+        finished.lobbyId,
+        finished.lobbyPath,
+        refundClaims,
+        toast,
+    ])
 
     React.useEffect(() => {
         if (!finished.needsOnChainClaim || !myClaim || claimStarted.current) {
@@ -121,9 +170,13 @@ export function MatchResult({
                     <RiTrophyLine />
                 </span>
                 <div>
-                    <h2 className="font-display text-xl">Match complete</h2>
+                    <h2 className="font-display text-xl">
+                        {isDraw ? "Draw" : "Match complete"}
+                    </h2>
                     <p className="text-sm text-muted-foreground">
-                        Season points and stats have been updated.
+                        {isDraw
+                            ? "Paid entries are returned in full."
+                            : "Season points and stats have been updated."}
                     </p>
                 </div>
             </div>
@@ -135,10 +188,14 @@ export function MatchResult({
                     // paint that amount on every row — only the claim recipient.
                     // Free / no-claim matches still use per-player prizeMicro.
                     const claimForPlayer = finished.claims?.find(
-                        (c) => c.userId === player.userId && c.amountMicro > 0
+                        (c) =>
+                            c.userId === player.userId &&
+                            c.amountMicro > 0 &&
+                            (isDraw ? c.role === "refund" : c.role !== "refund")
                     )
                     const wonMicro =
                         finished.needsOnChainClaim ||
+                        finished.needsOnChainRefund ||
                         (finished.claims?.length ?? 0) > 0
                             ? (claimForPlayer?.amountMicro ?? 0)
                             : (player.prizeMicro ?? 0)
@@ -148,7 +205,7 @@ export function MatchResult({
                             key={player.userId}
                             className={cn(
                                 "flex items-center gap-3 px-4 py-3",
-                                rank === 1 && "bg-gold/10"
+                                rank === 1 && !isDraw && "bg-gold/10"
                             )}
                         >
                             <span

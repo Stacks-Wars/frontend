@@ -6,6 +6,7 @@ import {
     joinLobbyAction,
     kickLobbyPlayerAction,
     leaveLobbyAction,
+    refundDrawSeatsAction,
     settleVaultClaimsAction,
 } from "@/actions/lobbies"
 import { withdrawAction } from "@/actions/wallet"
@@ -26,6 +27,7 @@ const OPS = new Set([
     "kick",
     "claim",
     "claim-pending",
+    "draw-refund",
     "withdraw",
     "claim-usdc",
 ])
@@ -87,6 +89,10 @@ export async function POST(
         case "claim":
             return NextResponse.json(
                 await settleVaultClaimsAction(body as never)
+            )
+        case "draw-refund":
+            return NextResponse.json(
+                await refundDrawSeatsAction(body as never)
             )
         case "claim-pending":
             return NextResponse.json(

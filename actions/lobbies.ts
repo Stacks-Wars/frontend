@@ -7,6 +7,7 @@ import {
     approveJoinRequest as approveJoinRequestApi,
     clearVaultDraft,
     confirmVaultClaim,
+    confirmVaultRefund,
     createJoinRequest as createJoinRequestApi,
     createLobby as createLobbyApi,
     getKickTargetAddress,
@@ -37,6 +38,7 @@ import {
     resumeVaultTxOrDiscard,
     vaultClaimOnChain,
     vaultJoinOnChain,
+    vaultKickAsPlatform,
     vaultKickOnChain,
     vaultLeaveOnChain,
     waitForVaultTx,
@@ -494,6 +496,7 @@ export type VaultClaimInput = {
     devFee: number
     devId?: string | null
     devNeedsWallet?: boolean
+    role?: string
 }
 
 /** Submit the winner's on-chain vault claim (contract splits platform + optional dev). */
@@ -556,6 +559,47 @@ export async function settleVaultClaimsAction(input: {
             claimed += 1
         }
         return { claimed }
+    })
+}
+
+/** Kick every paid seat after a draw so each player gets their entry back. */
+export async function refundDrawSeatsAction(input: {
+    lobbyId: string
+    lobbyPath: string
+    claims: VaultClaimInput[]
+}): Promise<ActionResult<{ refunded: number }>> {
+    return actionResult(async () => {
+        if (!vaultConfigured() || input.claims.length === 0) {
+            return { refunded: 0 }
+        }
+        await requireUser()
+        const detail = await requireLobby(input.lobbyId)
+        let refunded = 0
+        for (const claim of input.claims) {
+            if (claim.role !== "refund") continue
+            if (!claim.principal) continue
+            if (claim.amountMicro <= 0) continue
+            try {
+                const txid = await vaultKickAsPlatform({
+                    targetAddress: claim.principal,
+                    lobbyPath: input.lobbyPath,
+                    paidMicro: claim.amountMicro,
+                    nonce: claim.nonce,
+                    chain: detail.lobby.chain,
+                })
+                await confirmVaultRefund({
+                    lobbyId: input.lobbyId,
+                    address: claim.principal,
+                    amountMicro: claim.amountMicro,
+                    vaultTxid: txid,
+                    userId: claim.userId,
+                })
+                refunded += 1
+            } catch (error) {
+                console.error("[draw-refund] seat kick failed", error)
+            }
+        }
+        return { refunded }
     })
 }
 

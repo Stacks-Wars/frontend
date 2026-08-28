@@ -1007,6 +1007,37 @@ export async function allocateLobbyPath(): Promise<string> {
     return data.path
 }
 
+export async function confirmVaultRefund(payload: {
+    lobbyId: string
+    address: string
+    amountMicro: number
+    vaultTxid: string
+    userId?: string
+}): Promise<void> {
+    const response = await fetch(
+        `${getApiBaseUrl()}/lobbies/${payload.lobbyId}/vault-refund`,
+        {
+            method: "POST",
+            headers: await authHeaders(),
+            body: JSON.stringify({
+                address: payload.address,
+                amountMicro: payload.amountMicro,
+                vaultTxid: payload.vaultTxid,
+                userId: payload.userId,
+            }),
+            cache: "no-store",
+        }
+    )
+    if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+            error?: string
+        } | null
+        throw new Error(
+            body?.error ?? `Failed to confirm refund (${response.status})`
+        )
+    }
+}
+
 export async function confirmVaultClaim(payload: {
     lobbyId: string
     amountMicro: number

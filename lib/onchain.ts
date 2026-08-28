@@ -1,6 +1,7 @@
 import type {
     claimPendingWinAction,
     createLobbyAction,
+    refundDrawSeatsAction,
     settleVaultClaimsAction,
 } from "@/actions/lobbies"
 import type { withdrawAction } from "@/actions/wallet"
@@ -55,6 +56,12 @@ export function settleVaultClaimsOnchain(
     input: Parameters<typeof settleVaultClaimsAction>[0]
 ) {
     return postOnchain<{ claimed: number }>("claim", input)
+}
+
+export function refundDrawSeatsOnchain(
+    input: Parameters<typeof refundDrawSeatsAction>[0]
+) {
+    return postOnchain<{ refunded: number }>("draw-refund", input)
 }
 
 export function claimPendingWinOnchain(
