@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import { Oxanium } from "next/font/google"
 import localFont from "next/font/local"
 
 import { Provider } from "@/app/provider"
@@ -30,6 +31,12 @@ const neueMontreal = localFont({
         },
     ],
     variable: "--font-neue",
+    display: "swap",
+})
+
+const oxanium = Oxanium({
+    subsets: ["latin"],
+    variable: "--font-oxanium",
     display: "swap",
 })
 
@@ -93,7 +100,10 @@ export default function RootLayout({
     children: React.ReactNode
 }>) {
     return (
-        <html lang="en" className={`${neueMontreal.variable} dark`}>
+        <html
+            lang="en"
+            className={`${neueMontreal.variable} ${oxanium.variable} dark`}
+        >
             <body>
                 <Provider>{children}</Provider>
             </body>

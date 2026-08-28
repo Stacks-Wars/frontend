@@ -22,9 +22,9 @@ export function SplashScreen({ className }: { className?: string }) {
                     width={72}
                     height={72}
                     priority
-                    className="size-18 animate-splash-pulse rounded-2xl object-contain"
+                    className="size-18 animate-splash-pulse object-contain"
                 />
-                <p className="font-display text-lg tracking-tight">
+                <p className="font-brand text-lg font-semibold tracking-[0.06em] uppercase">
                     Stacks Wars
                 </p>
                 <p className="text-sm text-muted-foreground">
