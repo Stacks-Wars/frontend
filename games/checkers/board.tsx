@@ -7,6 +7,7 @@ import {
     type CheckersMove,
     type Position,
 } from "@/games/checkers/protocol"
+import { AntiCapture } from "@/games/shared/anti-capture"
 import { cn } from "@/lib/utils"
 
 /**
@@ -43,7 +44,7 @@ export function CheckersBoardView({
     const ordered = flipped ? [...rows].reverse() : rows
 
     return (
-        <div className="w-full max-w-[min(560px,100%)]">
+        <AntiCapture className="w-full max-w-[min(560px,100%)]">
             <div className="grid aspect-square grid-cols-8 overflow-hidden rounded-xl ring-1 ring-border-strong">
                 {ordered.map((row) =>
                     (flipped
@@ -123,6 +124,6 @@ export function CheckersBoardView({
                     })
                 )}
             </div>
-        </div>
+        </AntiCapture>
     )
 }

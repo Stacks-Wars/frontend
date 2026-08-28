@@ -8,6 +8,7 @@ import type {
     LexiWarsEvent,
     LexiWarsSnapshot,
 } from "@/games/lexi-wars/protocol"
+import { AntiCapture } from "@/games/shared/anti-capture"
 import { EventFeed, useEventFeed } from "@/games/shared/event-feed"
 import { GameShell } from "@/games/shared/game-shell"
 import { PlayerRail } from "@/games/shared/player-rail"
@@ -17,6 +18,23 @@ import { Button, Input } from "@/components/ui"
 import { playSfx } from "@/lib/audio/play-sound"
 import { displayNameFor } from "@/lib/format"
 import { cn } from "@/lib/utils"
+
+function rejectCapture(
+    event: React.ClipboardEvent | React.DragEvent | React.MouseEvent
+) {
+    event.preventDefault()
+}
+
+function rejectAssistedInsert(event: React.FormEvent<HTMLInputElement>) {
+    const inputType = (event.nativeEvent as InputEvent).inputType
+    if (
+        inputType === "insertFromPaste" ||
+        inputType === "insertFromDrop" ||
+        inputType === "insertReplacementText"
+    ) {
+        event.preventDefault()
+    }
+}
 
 export function LexiWarsRoom({
     players,
@@ -124,7 +142,7 @@ export function LexiWarsRoom({
             }
             stage={
                 <div className="flex w-full max-w-xl flex-col items-center gap-6 py-2">
-                    <div
+                    <AntiCapture
                         className={cn(
                             "w-full rounded-2xl border px-5 py-6 text-center transition-colors",
                             isMyTurn && rule
@@ -148,9 +166,16 @@ export function LexiWarsRoom({
                                     : "The rule is revealed to whoever is on the clock."}
                             </p>
                         )}
-                    </div>
+                    </AntiCapture>
 
-                    <form onSubmit={submit} className="flex w-full gap-2">
+                    <form
+                        onSubmit={submit}
+                        autoComplete="off"
+                        className="flex w-full gap-2"
+                        onCopy={rejectCapture}
+                        onCut={rejectCapture}
+                        onPaste={rejectCapture}
+                    >
                         <Input
                             ref={inputRef}
                             value={draft}
@@ -162,7 +187,21 @@ export function LexiWarsRoom({
                                     : "Wait for your turn"
                             }
                             autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="none"
                             spellCheck={false}
+                            inputMode="text"
+                            enterKeyHint="send"
+                            aria-autocomplete="none"
+                            data-lpignore="true"
+                            data-1p-ignore="true"
+                            data-form-type="other"
+                            onCopy={rejectCapture}
+                            onCut={rejectCapture}
+                            onPaste={rejectCapture}
+                            onDrop={rejectCapture}
+                            onContextMenu={rejectCapture}
+                            onBeforeInput={rejectAssistedInsert}
                             className="h-12 text-base"
                             aria-invalid={error ? true : undefined}
                         />
@@ -187,7 +226,7 @@ export function LexiWarsRoom({
                         {words.slice(0, 18).map((word, index) => (
                             <span
                                 key={`${word}-${index}`}
-                                className="stagger animate-pop-in rounded-md bg-muted px-2 py-1 text-xs"
+                                className="animate-pop-in rounded-md bg-muted px-2 py-1 text-xs stagger"
                                 style={
                                     { "--index": index } as React.CSSProperties
                                 }
@@ -224,10 +263,17 @@ export function LexiWarsLobbyPanel() {
         <div className="space-y-2 rounded-xl border border-border/70 p-4 surface-raised">
             <p className="font-display text-sm">How Lexi Wars plays here</p>
             <ul className="space-y-1.5 text-sm text-muted-foreground">
-                <li>Each turn comes with a rule only the active player sees.</li>
-                <li>Submit a word that satisfies it before the clock runs out.</li>
+                <li>
+                    Each turn comes with a rule only the active player sees.
+                </li>
+                <li>
+                    Submit a word that satisfies it before the clock runs out.
+                </li>
                 <li>Repeats and rule breaks cost you the turn.</li>
-                <li>Miss the clock and you are eliminated. Last one standing wins.</li>
+                <li>
+                    Miss the clock and you are eliminated. Last one standing
+                    wins.
+                </li>
             </ul>
         </div>
     )
