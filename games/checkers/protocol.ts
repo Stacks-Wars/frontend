@@ -30,11 +30,18 @@ export type EnginePlayer = {
     rank: number | null
 }
 
+export type ClockReading = {
+    userId: string
+    remainingMs: number
+}
+
 export type CheckersTurn = {
     type: "turn"
     player: EnginePlayer
-    timeoutSecs: number
     legalMoves: CheckersMove[]
+    clocks: ClockReading[]
+    turnDeadlineAt: number | null
+    activeUserId: string | null
 }
 
 export type CheckersEvent =
@@ -46,7 +53,6 @@ export type CheckersEvent =
           mv: CheckersMove
           becameKing: boolean
       }
-    | { type: "countdown"; time: number }
     | { type: "invalid"; reason: string }
     | { type: "gameDraw"; reason: string }
 

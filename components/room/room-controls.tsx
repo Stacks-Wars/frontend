@@ -10,6 +10,14 @@ import {
     startLobbyAction,
 } from "@/actions/lobbies"
 import { Button } from "@/components/ui"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { useAddFunds } from "@/stores/funds"
 import type { GameMetadata, JoinRequest, Lobby, PlayerState } from "@/lib/api/types"
 import { formatUsdc } from "@/lib/format"
@@ -39,6 +47,7 @@ export function RoomControls({
     const balance = useSessionBalance()
     const { open: openAddFunds } = useAddFunds()
     const [pending, setPending] = React.useState<Pending>(null)
+    const [forfeitOpen, setForfeitOpen] = React.useState(false)
 
     const me = players.find((player) => player.userId === selfUserId)
     const isCreator = selfUserId === lobby.creatorId
@@ -105,11 +114,49 @@ export function RoomControls({
 
     if (lobby.status === "inProgress" || lobby.status === "starting") {
         if (!me || !onForfeit) return null
+        const stakeMicro =
+            lobby.entryAmountMicro <= 0
+                ? 0
+                : lobby.isSponsored && selfUserId !== lobby.creatorId
+                  ? 0
+                  : lobby.entryAmountMicro
         return (
-            <Button variant="destructive" onClick={onForfeit}>
-                <RiFlagLine />
-                Forfeit
-            </Button>
+            <>
+                <Button variant="destructive" onClick={() => setForfeitOpen(true)}>
+                    <RiFlagLine />
+                    Forfeit
+                </Button>
+                <Dialog open={forfeitOpen} onOpenChange={setForfeitOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Forfeit this match?</DialogTitle>
+                            <DialogDescription>
+                                You will lose the match
+                                {stakeMicro > 0
+                                    ? `, the wars points for a win, and your ${formatUsdc(stakeMicro)} stake. The pot goes to your opponent.`
+                                    : " and the wars points for a win."}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setForfeitOpen(false)}
+                            >
+                                Stay in the match
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => {
+                                    setForfeitOpen(false)
+                                    onForfeit()
+                                }}
+                            >
+                                Forfeit
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </>
         )
     }
 

@@ -144,6 +144,7 @@ export type LobbyFinishedPayload = {
     matchId: string
     winners: string[]
     needsOnChainClaim: boolean
+    needsOnChainRefund?: boolean
     claims: VaultClaimIntent[]
     /** Ordered final standings; present on new finishes, optional on older Redis payloads. */
     standings?: FinishedStanding[]
