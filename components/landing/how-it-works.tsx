@@ -24,7 +24,7 @@ const STEPS = [
     {
         icon: RiTrophyLine,
         title: "Collect",
-        body: "The contract splits the pot on claim. Points land on the season board straight away.",
+        body: "The contract pays out when the match settles. Points land on the season board straight away.",
     },
 ]
 
@@ -34,7 +34,7 @@ export function HowItWorks() {
             {STEPS.map((step, index) => (
                 <div
                     key={step.title}
-                    className="stagger animate-rise-in space-y-3 rounded-2xl border border-border/70 p-5 surface-raised"
+                    className="animate-rise-in space-y-3 rounded-2xl border border-border/70 p-5 stagger surface-raised"
                     style={{ "--index": index } as React.CSSProperties}
                 >
                     <div className="flex items-center gap-2.5">

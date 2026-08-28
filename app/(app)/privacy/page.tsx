@@ -6,11 +6,12 @@ import { LEGAL_CONTACT_EMAIL, LEGAL_TELEGRAM } from "@/lib/legal"
 export const metadata: Metadata = {
     title: "Privacy Policy",
     description: "How Stacks Wars collects and uses account and match data.",
+    alternates: { canonical: "/privacy" },
 }
 
 export default function PrivacyPage() {
     return (
-        <LegalDoc title="Privacy Policy" updated="21 August 2026">
+        <LegalDoc title="Privacy Policy" updated="28 August 2026">
             <section className="space-y-3">
                 <h2>1. What we collect</h2>
                 <ul>
@@ -19,19 +20,19 @@ export default function PrivacyPage() {
                         a managed Better Auth service, stored separately from
                         app Postgres.
                     </li>
+                    <li>Profile fields: username, display name, avatar URL.</li>
                     <li>
-                        Profile fields: username, display name, avatar URL.
-                    </li>
-                    <li>
-                        Custodial wallet address, public key, and encrypted
-                        mnemonic. Balance is read from Hiro; we do not keep an
-                        internal ledger.
+                        Custodial wallet addresses, public keys, and encrypted
+                        mnemonic material per supported chain. Balance is read
+                        from the network; we do not keep an internal ledger.
                     </li>
                     <li>
                         Match history, stats, lobby participation, Redis vault
                         drafts, and Web Push endpoints.
                     </li>
-                    <li>IP addresses and application logs for abuse control.</li>
+                    <li>
+                        IP addresses and application logs for abuse control.
+                    </li>
                 </ul>
             </section>
 
@@ -47,8 +48,8 @@ export default function PrivacyPage() {
                 <h2>3. Processors</h2>
                 <p>
                     Neon (database and Auth), Google (OAuth if you use it), the
-                    Stacks network and Hiro APIs, and browser push services
-                    (Apple, Google, Mozilla, and similar).
+                    Stacks and Solana networks and their RPC providers, and
+                    browser push services (Apple, Google, Mozilla, and similar).
                 </p>
             </section>
 

@@ -1,3 +1,5 @@
+import type { Metadata } from "next"
+
 import { PageContainer } from "@/components/common/page-container"
 import { ClosingCta } from "@/components/landing/closing-cta"
 import { FeaturedGames } from "@/components/landing/featured-games"
@@ -7,6 +9,7 @@ import { LeaderboardPreview } from "@/components/landing/leaderboard-preview"
 import { LiveMatches } from "@/components/landing/live-matches"
 import { RecentResults } from "@/components/landing/recent-results"
 import { lobbyListChainForSession } from "@/lib/chain/server"
+import { HOME_DESCRIPTION, HOME_TITLE } from "@/lib/seo"
 import {
     getLeaderboard,
     listGameActivity,
@@ -17,29 +20,55 @@ import {
 } from "@/lib/api/server"
 import type { LeaderboardPage, Season } from "@/lib/api/types"
 
-const EMPTY_BOARD: LeaderboardPage = { items: [], total: 0, limit: 8, offset: 0 }
+export const metadata: Metadata = {
+    title: { absolute: HOME_TITLE },
+    description: HOME_DESCRIPTION,
+    openGraph: {
+        title: HOME_TITLE,
+        description: HOME_DESCRIPTION,
+        url: "/",
+    },
+    twitter: {
+        title: HOME_TITLE,
+        description: HOME_DESCRIPTION,
+    },
+    alternates: { canonical: "/" },
+}
+
+const EMPTY_BOARD: LeaderboardPage = {
+    items: [],
+    total: 0,
+    limit: 8,
+    offset: 0,
+}
 
 function activeSeason(seasons: Season[]): Season | null {
     const now = Date.now()
     const live = seasons.find(
         (season) =>
-            Date.parse(season.startsAt) <= now && Date.parse(season.endsAt) >= now
+            Date.parse(season.startsAt) <= now &&
+            Date.parse(season.endsAt) >= now
     )
     return live ?? seasons[0] ?? null
 }
 
 export default async function LandingPage() {
     const chain = await lobbyListChainForSession()
-    const [games, activity, lobbies, seasons, recentMatches] = await Promise.all([
-        listGames().catch(() => []),
-        listGameActivity().catch(() => []),
-        listLobbies({ limit: 12, ...(chain ? { chain } : {}) }).catch(() => []),
-        listSeasons().catch(() => [] as Season[]),
-        listRecentMatches({ limit: 8 }).catch(() => []),
-    ])
+    const [games, activity, lobbies, seasons, recentMatches] =
+        await Promise.all([
+            listGames().catch(() => []),
+            listGameActivity().catch(() => []),
+            listLobbies({ limit: 12, ...(chain ? { chain } : {}) }).catch(
+                () => []
+            ),
+            listSeasons().catch(() => [] as Season[]),
+            listRecentMatches({ limit: 8 }).catch(() => []),
+        ])
 
     const season = activeSeason(
-        [...seasons].sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt))
+        [...seasons].sort(
+            (a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)
+        )
     )
     const board = await getLeaderboard({
         seasonId: season?.id,
@@ -48,11 +77,7 @@ export default async function LandingPage() {
 
     return (
         <PageContainer size="wide" className="space-y-16 pb-8">
-            <Hero
-                activity={activity}
-                games={games}
-                initialLobbies={lobbies}
-            />
+            <Hero activity={activity} games={games} initialLobbies={lobbies} />
             <FeaturedGames games={games} activity={activity} />
             <LiveMatches initialLobbies={lobbies} games={games} />
 

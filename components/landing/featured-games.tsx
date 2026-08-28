@@ -21,7 +21,8 @@ export function FeaturedGames({
             const left = get(a.id)
             const right = get(b.id)
             return (
-                right.activePlayers + right.waitingLobbies -
+                right.activePlayers +
+                right.waitingLobbies -
                 (left.activePlayers + left.waitingLobbies)
             )
         })
@@ -31,7 +32,7 @@ export function FeaturedGames({
         <section className="space-y-4">
             <SectionHeader
                 title="Featured games"
-                description="Every title settles through the same vault and season system."
+                description="Every title settles through the same vault and season system, on the chain you pick."
                 action={
                     <ButtonLink href="/games" variant="ghost" size="sm">
                         All games

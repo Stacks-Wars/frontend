@@ -20,8 +20,8 @@ export function AppFooter() {
                 <div className="space-y-2">
                     <Brand />
                     <p className="text-xs text-muted-foreground">
-                        Skill-based multiplayer on Stacks. Entry fees are held
-                        in an on-chain vault until a match settles.
+                        Onchain multiplayer on Stacks Wars. Entry fees sit in a
+                        vault until the match settles.
                     </p>
                 </div>
                 <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">

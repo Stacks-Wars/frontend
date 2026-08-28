@@ -250,7 +250,7 @@ export function useDefaultGameSections({
                     },
                     {
                         title: "Get paid",
-                        body: `The vault splits the pot when the match settles — winner, platform, and the game developer in one transaction.`,
+                        body: `The vault splits the pot when the match settles: players, platform, and the game developer in one transaction.`,
                     },
                 ].map((item) => (
                     <div

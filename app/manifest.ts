@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next"
 
+import { SITE_DESCRIPTION } from "@/lib/seo"
 import { APP_BACKGROUND } from "@/lib/theme"
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
         name: "Stacks Wars",
         short_name: "Stacks Wars",
-        description:
-            "Competitive Stacks arena — lobbies, seasons, and skill-based games.",
+        description: SITE_DESCRIPTION,
         start_url: "/",
         display: "standalone",
         background_color: APP_BACKGROUND,

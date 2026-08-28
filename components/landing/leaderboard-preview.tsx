@@ -29,7 +29,7 @@ export function LeaderboardPreview({
                 title="Season standings"
                 description={
                     seasonName
-                        ? `${seasonName} — updated the moment a match settles.`
+                        ? `${seasonName}. Updated the moment a match settles.`
                         : "Updated the moment a match settles."
                 }
                 action={
@@ -49,7 +49,7 @@ export function LeaderboardPreview({
                     {top.map((entry, index) => (
                         <li
                             key={entry.userId}
-                            className="stagger flex animate-rise-in items-center gap-3 px-4 py-2.5"
+                            className="flex animate-rise-in items-center gap-3 px-4 py-2.5 stagger"
                             style={{ "--index": index } as React.CSSProperties}
                         >
                             <RankBadge rank={entry.rank} />

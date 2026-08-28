@@ -3,6 +3,13 @@ import { Oxanium } from "next/font/google"
 import localFont from "next/font/local"
 
 import { Provider } from "@/app/provider"
+import { JsonLd } from "@/components/seo/json-ld"
+import {
+    organizationJsonLd,
+    SITE_DESCRIPTION,
+    SITE_NAME,
+    siteOrigin,
+} from "@/lib/seo"
 import { APP_BACKGROUND } from "@/lib/theme"
 
 import "./globals.css"
@@ -40,19 +47,16 @@ const oxanium = Oxanium({
     display: "swap",
 })
 
-const appOrigin =
-    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-    "https://stackswars.com"
+const appOrigin = siteOrigin()
 
 export const metadata: Metadata = {
     metadataBase: new URL(appOrigin),
     title: {
-        default: "Stacks Wars",
-        template: "%s · Stacks Wars",
+        default: SITE_NAME,
+        template: `%s · ${SITE_NAME}`,
     },
-    description:
-        "Competitive Stacks arena — lobbies, seasons, and skill-based games.",
-    applicationName: "Stacks Wars",
+    description: SITE_DESCRIPTION,
+    applicationName: SITE_NAME,
     icons: {
         icon: [
             { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -71,21 +75,21 @@ export const metadata: Metadata = {
     },
     appleWebApp: {
         capable: true,
-        title: "Stacks Wars",
+        title: SITE_NAME,
         statusBarStyle: "black",
     },
     openGraph: {
         type: "website",
-        siteName: "Stacks Wars",
-        title: "Stacks Wars",
-        description:
-            "Competitive Stacks arena — lobbies, seasons, and skill-based games.",
+        siteName: SITE_NAME,
+        title: SITE_NAME,
+        description: SITE_DESCRIPTION,
+        url: appOrigin,
+        locale: "en_US",
     },
     twitter: {
         card: "summary_large_image",
-        title: "Stacks Wars",
-        description:
-            "Competitive Stacks arena — lobbies, seasons, and skill-based games.",
+        title: SITE_NAME,
+        description: SITE_DESCRIPTION,
     },
 }
 
@@ -105,6 +109,7 @@ export default function RootLayout({
             className={`${neueMontreal.variable} ${oxanium.variable} dark`}
         >
             <body>
+                <JsonLd data={organizationJsonLd()} />
                 <Provider>{children}</Provider>
             </body>
         </html>

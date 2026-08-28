@@ -11,13 +11,17 @@ import { lobbyListChainForSession } from "@/lib/chain/server"
 
 export const metadata: Metadata = {
     title: "Lobbies",
-    description: "Every open and live lobby across Stacks Wars.",
+    description:
+        "Open and live multiplayer lobbies. Lobbies are grouped by the chain you are playing on.",
+    alternates: { canonical: "/lobbies" },
 }
 
 export default async function LobbiesPage() {
     const chain = await lobbyListChainForSession()
     const [lobbies, games] = await Promise.all([
-        listLobbies({ limit: 120, ...(chain ? { chain } : {}) }).catch(() => []),
+        listLobbies({ limit: 120, ...(chain ? { chain } : {}) }).catch(
+            () => []
+        ),
         listGames().catch(() => []),
     ])
 
@@ -26,7 +30,7 @@ export default async function LobbiesPage() {
             <PageHeader
                 eyebrow="Lobby browser"
                 title="Find a lobby"
-                description="Lobbies appear, fill, and disappear here in real time."
+                description="Lobbies appear, fill, and disappear here in real time, on the chain you picked."
                 action={<CreateLobbyButton>Create lobby</CreateLobbyButton>}
             />
             <Suspense fallback={<BrowserSkeleton />}>

@@ -10,12 +10,13 @@ import {
 
 export const metadata: Metadata = {
     title: "Terms of Service",
-    description: "Terms for using Stacks Wars, a skill-based USDC arena.",
+    description: "Terms for using Stacks Wars, an onchain gaming platform.",
+    alternates: { canonical: "/terms" },
 }
 
 export default function TermsPage() {
     return (
-        <LegalDoc title="Terms of Service" updated="21 August 2026">
+        <LegalDoc title="Terms of Service" updated="28 August 2026">
             <section className="space-y-3">
                 <h2>1. Who we are</h2>
                 <p>
@@ -48,9 +49,9 @@ export default function TermsPage() {
                         your responsibility; we may block regions.
                     </li>
                     <li>
-                        We are not a bank, broker, or investment adviser. USDCx
-                        on Stacks is not a deposit. Nothing here is investment
-                        advice.
+                        We are not a bank, broker, or investment adviser. Play
+                        tokens (USDCx on Stacks, USDC on Solana) are not a
+                        deposit. Nothing here is investment advice.
                     </li>
                 </ul>
             </section>
@@ -73,10 +74,11 @@ export default function TermsPage() {
             <section className="space-y-3">
                 <h2>4. Custodial wallet and vault</h2>
                 <p>
-                    We provision a custodial Stacks wallet for you. Private keys
-                    / mnemonic material are encrypted (KMS). You authorize
-                    deposits, withdrawals, match entries, and claim transactions
-                    by using those flows in the app.
+                    We provision a custodial wallet on each supported chain
+                    (currently Stacks and Solana). Private keys / mnemonic
+                    material are encrypted (KMS). You authorize deposits,
+                    withdrawals, match entries, and claim transactions by using
+                    those flows in the app.
                 </p>
                 <p>
                     On-chain transactions are irreversible. Network congestion,
@@ -91,8 +93,8 @@ export default function TermsPage() {
                     You may request deletion in Settings. We will refuse while
                     you have a spendable balance, unclaimed vault winnings, or
                     an active match. After deletion we anonymize your profile
-                    and delete encrypted keys. On-chain USDCx that was not
-                    withdrawn stays on chain; we do not sweep it.
+                    and delete encrypted keys. On-chain play tokens that were
+                    not withdrawn stay on chain; we do not sweep them.
                 </p>
             </section>
 
@@ -101,7 +103,7 @@ export default function TermsPage() {
                 <p>
                     The service is provided as is. To the fullest extent allowed
                     by law we are not liable for lost funds, lost profits,
-                    downtime, or third-party (Stacks, Neon, Google, push
+                    downtime, or third-party (Stacks, Solana, Neon, Google, push
                     networks) failures. Governing law placeholder: to be set by
                     counsel for the operating entity.
                 </p>

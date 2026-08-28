@@ -1,5 +1,5 @@
 /** Bump to re-prompt signed-in users. */
-export const LEGAL_VERSION = "2026-08-21"
+export const LEGAL_VERSION = "2026-08-28"
 
 export const LEGAL_CONTACT_EMAIL = "legal@mail.stackswars.com"
 export const LEGAL_TELEGRAM = "https://t.me/stackswars"

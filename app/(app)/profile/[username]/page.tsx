@@ -9,11 +9,7 @@ import { MatchHistory } from "@/components/profile/match-history"
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { ProfileStats } from "@/components/profile/profile-stats"
 import { SeasonHistory } from "@/components/profile/season-history"
-import {
-    getUserByUsername,
-    getUserProfile,
-    listGames,
-} from "@/lib/api/server"
+import { getUserByUsername, getUserProfile, listGames } from "@/lib/api/server"
 import { displayNameFor, pluralize } from "@/lib/format"
 
 type Params = { params: Promise<{ username: string }> }
@@ -22,7 +18,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     const { username } = await params
     const user = await getUserByUsername(username).catch(() => null)
     if (!user) return { title: "Player" }
-    return { title: displayNameFor(user) }
+    const name = displayNameFor(user)
+    return {
+        title: name,
+        description: `${name} on Stacks Wars. Match history and season standings.`,
+    }
 }
 
 export default async function ProfilePage({ params }: Params) {

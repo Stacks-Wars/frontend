@@ -26,7 +26,7 @@ import {
 } from "@/stores/session"
 
 const COPY: Record<ChainId, string> = {
-    solana: "Play with Stacks Wars USDC. New wallets get $50 on Devnet.",
+    solana: "Play with USDC on Solana. New wallets get $50 on Devnet.",
     stacks: "Play with USDCx on Stacks.",
 }
 
@@ -81,7 +81,8 @@ export function ChainOnboardingDialog() {
                 <DialogHeader className="pr-0">
                     <DialogTitle>Choose a chain</DialogTitle>
                     <DialogDescription>
-                        Select a chain for transactions. You can switch later.
+                        Games and lobbies are grouped by network. You can switch
+                        later.
                     </DialogDescription>
                 </DialogHeader>
 

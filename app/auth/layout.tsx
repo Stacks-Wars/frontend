@@ -1,7 +1,12 @@
+import type { Metadata } from "next"
 import { RiArrowLeftLine } from "@remixicon/react"
 
 import { Brand } from "@/components/shell/brand"
 import { ButtonLink } from "@/components/ui"
+
+export const metadata: Metadata = {
+    robots: { index: false, follow: false },
+}
 
 const POINTS = [
     "Entry fees sit in an on-chain vault, not with us.",
@@ -36,7 +41,7 @@ export default function AuthLayout({
                 <div className="absolute inset-0 bg-linear-to-br from-primary/15 via-transparent to-gold/10" />
                 <div className="relative flex h-full flex-col justify-end gap-8 p-12">
                     <p className="font-display text-4xl leading-tight">
-                        Skill games,
+                        Multiplayer games,
                         <br />
                         settled on-chain.
                     </p>

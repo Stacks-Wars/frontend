@@ -56,7 +56,7 @@ export default async function OpenGraphImage() {
                             color: "rgba(244,245,248,0.65)",
                         }}
                     >
-                        Skill-based multiplayer on Stacks
+                        Onchain multiplayer on Stacks Wars
                     </div>
                 </div>
             </div>
