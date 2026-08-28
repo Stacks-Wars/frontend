@@ -29,9 +29,11 @@ const CHAIN_LABELS: Record<string, string> = Object.fromEntries(
 export function ChainSwitcher({
     className,
     variant = "header",
+    onSelect,
 }: {
     className?: string
     variant?: "header" | "nav"
+    onSelect?: () => void
 }) {
     const user = useSessionUser()
     const current = useSessionCurrentChain()
@@ -45,6 +47,7 @@ export function ChainSwitcher({
 
     async function select(chain: ChainId) {
         if (chain === current || pending) return
+        onSelect?.()
         setPending(true)
         setCurrentChain(chain)
         useLiveStore.getState().actions.pruneFeedForChain(chain)

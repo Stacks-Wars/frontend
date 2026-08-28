@@ -116,7 +116,10 @@ export function AppHeader() {
                         ))}
                         {user ? (
                             <>
-                                <ChainSwitcher variant="nav" />
+                                <ChainSwitcher
+                                    variant="nav"
+                                    onSelect={closeMenu}
+                                />
                                 <ButtonLink
                                     href="/wallet"
                                     variant="ghost"
