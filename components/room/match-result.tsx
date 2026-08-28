@@ -3,22 +3,19 @@
 import * as React from "react"
 import { RiTrophyLine } from "@remixicon/react"
 
-import { savePendingClaimAction } from "@/actions/lobbies"
 import { UserChip } from "@/components/common/user-chip"
 import { ButtonLink } from "@/components/ui"
 import type { PlayerState } from "@/lib/api/types"
 import type { LobbyFinishedPayload } from "@/lib/ws/protocol"
 import { formatUsdc, ordinal } from "@/lib/format"
-import {
-    refundDrawSeatsOnchain,
-    settleVaultClaimsOnchain,
-} from "@/lib/onchain"
+import { refundDrawSeatsOnchain } from "@/lib/onchain"
+import { claimMyVaultPayout, isMyPlaceClaim } from "@/lib/vault/claim-payout"
 import { cn } from "@/lib/utils"
 import { useNotificationActions } from "@/stores/notifications"
 
 /**
- * Final standings. Paid winners are claimed on-chain automatically; the
- * payout shows as +$amount on the winner's row.
+ * Final standings. Paid places are claimed on-chain automatically; the
+ * payout shows as +$amount on that player's row.
  */
 export function MatchResult({
     finished,
@@ -81,11 +78,8 @@ export function MatchResult({
         })
     }, [finished.standings, finished.winners, players])
 
-    const myClaim = finished.claims?.find(
-        (claim) =>
-            claim.userId === selfUserId &&
-            claim.amountMicro > 0 &&
-            claim.role !== "refund"
+    const myClaim = finished.claims?.find((claim) =>
+        isMyPlaceClaim(claim, selfUserId)
     )
 
     React.useEffect(() => {
@@ -131,21 +125,11 @@ export function MatchResult({
         claimStarted.current = true
 
         void (async () => {
-            await savePendingClaimAction({
+            const result = await claimMyVaultPayout({
                 lobbyId: finished.lobbyId,
                 lobbyPath: finished.lobbyPath,
-                amountMicro: myClaim.amountMicro,
-                nonce: myClaim.nonce,
-                devWallet: myClaim.devWallet,
-                devFee: myClaim.devFee,
-                devId: myClaim.devId,
-                devNeedsWallet: myClaim.devNeedsWallet,
-            }).catch(() => undefined)
-
-            const result = await settleVaultClaimsOnchain({
-                lobbyId: finished.lobbyId,
-                lobbyPath: finished.lobbyPath,
-                claims: [myClaim],
+                claim: myClaim,
+                selfUserId,
             })
             if (!result.ok) {
                 toast({
@@ -160,6 +144,7 @@ export function MatchResult({
         finished.lobbyId,
         finished.lobbyPath,
         myClaim,
+        selfUserId,
         toast,
     ])
 
@@ -184,8 +169,7 @@ export function MatchResult({
             <ol className="divide-y divide-border/50 overflow-hidden rounded-xl border border-border/60 bg-background/40">
                 {standings.map((player, index) => {
                     const rank = player.rank ?? index + 1
-                    // On-chain settle is winner-take-all (one claim intent). Never
-                    // paint that amount on every row — only the claim recipient.
+                    // Paid matches show the claim slice (70/30 or 50/30/20).
                     // Free / no-claim matches still use per-player prizeMicro.
                     const claimForPlayer = finished.claims?.find(
                         (c) =>

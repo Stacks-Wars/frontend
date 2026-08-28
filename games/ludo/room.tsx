@@ -253,10 +253,29 @@ export function LudoRoom({
         channel.send({ type: "selectDiceValue", diceValue: value })
     }
 
+    const autoPickedRef = React.useRef<string>("")
+    React.useEffect(() => {
+        if (!isMyTurn || phase !== "WaitingForMove") {
+            autoPickedRef.current = ""
+            return
+        }
+        if (selectedValue != null) return
+        if (playableValues.length !== 1) return
+        const key = String(playableValues[0])
+        if (autoPickedRef.current === key) return
+        autoPickedRef.current = key
+        setError(null)
+        channel.send({ type: "selectDiceValue", diceValue: playableValues[0] })
+    }, [isMyTurn, phase, playableValues, selectedValue, channel])
+
     function movePawn(pawnId: number) {
         setError(null)
         channel.send({ type: "movePawn", pawnId })
     }
+
+    const pickingMove = Boolean(
+        isMyTurn && phase === "WaitingForMove" && live
+    )
 
     const controls = (
         <div className="flex w-full flex-col items-center gap-3">
@@ -264,10 +283,30 @@ export function LudoRoom({
                 <Die
                     value={dice.dice1}
                     spent={dice.dice1 != null && !dice.dice1Remaining}
+                    playable={
+                        pickingMove &&
+                        dice.dice1 != null &&
+                        dice.dice1Remaining &&
+                        playableValues.includes(dice.dice1)
+                    }
+                    selected={
+                        dice.dice1 != null && selectedValue === dice.dice1
+                    }
+                    onPick={chooseValue}
                 />
                 <Die
                     value={dice.dice2}
                     spent={dice.dice2 != null && !dice.dice2Remaining}
+                    playable={
+                        pickingMove &&
+                        dice.dice2 != null &&
+                        dice.dice2Remaining &&
+                        playableValues.includes(dice.dice2)
+                    }
+                    selected={
+                        dice.dice2 != null && selectedValue === dice.dice2
+                    }
+                    onPick={chooseValue}
                 />
             </div>
 
@@ -288,7 +327,7 @@ export function LudoRoom({
                     <div className="flex flex-col items-center gap-2">
                         <p className="text-xs text-muted-foreground">
                             {selectedValue == null
-                                ? "Choose a value to play"
+                                ? "Tap a glowing die or a number, then a pawn"
                                 : "Tap a glowing pawn"}
                         </p>
                         <div className="flex flex-wrap justify-center gap-2">
@@ -303,6 +342,13 @@ export function LudoRoom({
                                         }
                                         disabled={!live}
                                         onClick={() => chooseValue(value)}
+                                        className={
+                                            selected
+                                                ? undefined
+                                                : selectedValue == null
+                                                  ? "animate-action-pulse"
+                                                  : undefined
+                                        }
                                     >
                                         Move {value}
                                     </Button>
@@ -338,7 +384,7 @@ export function LudoRoom({
                             ? phase === "WaitingForRoll"
                                 ? "Roll to start your turn"
                                 : selectedValue == null
-                                  ? "Play your dice"
+                                  ? "Tap a glowing die or a number"
                                   : "Tap a glowing pawn"
                             : undefined
                     }
@@ -398,6 +444,10 @@ export function LudoLobbyPanel({ rush }: { rush?: boolean }) {
             </p>
             <ul className="space-y-1.5 text-sm text-muted-foreground">
                 <li>
+                    Tap a glowing die (or the number under it) to pick a move,
+                    then tap a glowing pawn.
+                </li>
+                <li>
                     Two dice per turn — play each value separately or as a sum.
                 </li>
                 <li>Only a single die can bring a pawn out of the yard.</li>
@@ -406,8 +456,8 @@ export function LudoLobbyPanel({ rush }: { rush?: boolean }) {
                 </li>
                 <li>
                     {rush
-                        ? "Shorter track, faster finishes."
-                        : "First to walk all four pawns home wins."}
+                        ? "Shorter track, faster finishes. First, second, and third still pay out as they finish."
+                        : "The race continues after first place so second and third can finish."}
                 </li>
             </ul>
         </div>

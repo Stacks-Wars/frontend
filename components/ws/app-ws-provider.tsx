@@ -4,6 +4,7 @@ import * as React from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { playSfx } from "@/lib/audio/play-sound"
+import { claimMyVaultPayout } from "@/lib/vault/claim-payout"
 import { appSocket } from "@/lib/ws/app-socket"
 import { emitGameEvent } from "@/lib/ws/game-bus"
 import {
@@ -15,6 +16,7 @@ import {
     payloadAs,
     userTopic,
     type GameActivityPayload,
+    type LobbyPayoutPayload,
     type LobbyFinishedPayload,
     type LobbyNoticePayload,
     type LobbyPresencePayload,
@@ -109,7 +111,17 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
 
             switch (message.kind) {
                 case "lobby.snapshot": {
-                    live.applySnapshot(payloadAs<LobbySnapshotPayload>(message))
+                    const snapshot = payloadAs<LobbySnapshotPayload>(message)
+                    live.applySnapshot(snapshot)
+                    const me = useSessionStore.getState().user?.id ?? null
+                    for (const claim of snapshot.pendingPayouts ?? []) {
+                        void claimMyVaultPayout({
+                            lobbyId: snapshot.lobby.id,
+                            lobbyPath: snapshot.lobby.path,
+                            claim,
+                            selfUserId: me,
+                        })
+                    }
                     break
                 }
                 case "lobby.state": {
@@ -151,6 +163,25 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     notify.push({
                         title: "Match finished",
                         href: `/room/${payload.lobbyPath}`,
+                    })
+                    break
+                }
+                case "lobby.payout": {
+                    const payload = payloadAs<LobbyPayoutPayload>(message)
+                    const me = useSessionStore.getState().user?.id ?? null
+                    void claimMyVaultPayout({
+                        lobbyId: payload.lobbyId,
+                        lobbyPath: payload.lobbyPath,
+                        claim: payload.claim,
+                        selfUserId: me,
+                    }).then((result) => {
+                        if (!result.ok) {
+                            notify.toast({
+                                title: "Could not claim prize automatically",
+                                body: `${result.error} Retry from Wallet → Pending wins.`,
+                                tone: "danger",
+                            })
+                        }
                     })
                     break
                 }

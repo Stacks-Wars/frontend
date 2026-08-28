@@ -56,6 +56,7 @@ export type ServerKind =
     | "lobby.notice"
     | "lobby.event"
     | "lobby.finished"
+    | "lobby.payout"
     // global feed
     | "lobby.created"
     | "lobby.updated"
@@ -108,6 +109,8 @@ export type LobbySnapshotPayload = {
     game: GameSnapshot | null
     /** Restored on revisit when the lobby has already settled. */
     finished?: LobbyFinishedPayload | null
+    /** Mid-match place claims already issued. Reconnects retry auto-claim. */
+    pendingPayouts?: VaultClaimIntent[]
 }
 
 export type LobbyStatePayload = {
@@ -148,6 +151,12 @@ export type LobbyFinishedPayload = {
     claims: VaultClaimIntent[]
     /** Ordered final standings; present on new finishes, optional on older Redis payloads. */
     standings?: FinishedStanding[]
+}
+
+export type LobbyPayoutPayload = {
+    lobbyId: string
+    lobbyPath: string
+    claim: VaultClaimIntent
 }
 
 export type GameActivityPayload = {
