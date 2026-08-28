@@ -3,22 +3,14 @@ import type { Metadata } from "next"
 import { PageContainer } from "@/components/common/page-container"
 import { RoomView } from "@/components/room/room-view"
 import { getLobbyByPath, listGames } from "@/lib/api/server"
-import { SITE_NAME, siteOrigin } from "@/lib/seo"
+import {
+    SITE_NAME,
+    siteOgImages,
+    siteOrigin,
+    siteTwitterImages,
+} from "@/lib/seo"
 
 type Params = { params: Promise<{ path: string }> }
-
-function appOrigin(): string {
-    return siteOrigin()
-}
-
-/** Prefer game-specific art; OG crawlers get an absolute URL. */
-function gameOgImage(gameId: string | undefined): string {
-    const origin = appOrigin()
-    if (gameId) {
-        return `${origin}/games/${gameId}.png`
-    }
-    return `${origin}/opengraph-image`
-}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
     const { path } = await params
@@ -39,8 +31,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
           }`
         : "Onchain game lobby."
 
-    const image = gameOgImage(lobby?.gameId)
-
     return {
         title,
         description,
@@ -48,15 +38,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
         openGraph: {
             title,
             description,
-            url: `${appOrigin()}/room/${path}`,
+            url: `${siteOrigin()}/room/${path}`,
             type: "website",
-            images: [{ url: image, alt: gameName ?? SITE_NAME }],
+            images: siteOgImages(gameName ?? SITE_NAME),
         },
         twitter: {
             card: "summary_large_image",
             title,
             description,
-            images: [image],
+            images: siteTwitterImages(),
         },
     }
 }

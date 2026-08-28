@@ -9,7 +9,12 @@ import { LeaderboardPreview } from "@/components/landing/leaderboard-preview"
 import { LiveMatches } from "@/components/landing/live-matches"
 import { RecentResults } from "@/components/landing/recent-results"
 import { lobbyListChainForSession } from "@/lib/chain/server"
-import { HOME_DESCRIPTION, HOME_TITLE } from "@/lib/seo"
+import {
+    HOME_DESCRIPTION,
+    HOME_TITLE,
+    siteOgImages,
+    siteTwitterImages,
+} from "@/lib/seo"
 import {
     getLeaderboard,
     listGameActivity,
@@ -27,10 +32,13 @@ export const metadata: Metadata = {
         title: HOME_TITLE,
         description: HOME_DESCRIPTION,
         url: "/",
+        images: siteOgImages(),
     },
     twitter: {
+        card: "summary_large_image",
         title: HOME_TITLE,
         description: HOME_DESCRIPTION,
+        images: siteTwitterImages(),
     },
     alternates: { canonical: "/" },
 }
