@@ -6,6 +6,7 @@
 @theme inline {
     --font-sans: var(--font-neue), ui-sans-serif, system-ui, sans-serif;
     --font-display: var(--font-neue), ui-sans-serif, system-ui, sans-serif;
+    --font-brand: var(--font-oxanium), ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
     --color-background: var(--background);
@@ -146,11 +147,7 @@
 /* Card surface with a hairline top highlight. */
 @utility surface-raised {
     background:
-        linear-gradient(
-            to bottom,
-            oklch(1 0 0 / 0.04),
-            transparent 40%
-        ),
+        linear-gradient(to bottom, oklch(1 0 0 / 0.04), transparent 40%),
         var(--card);
 }
 
