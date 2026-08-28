@@ -11,7 +11,8 @@ import {
     breadcrumbJsonLd,
     gameMetaDescription,
     SITE_NAME,
-    siteOrigin,
+    siteOgImages,
+    siteTwitterImages,
     videoGameJsonLd,
 } from "@/lib/seo"
 
@@ -32,15 +33,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
             description,
             url,
             type: "website",
-            images: [
-                { url: `${siteOrigin()}/games/${gameId}.png`, alt: game.name },
-            ],
+            images: siteOgImages(game.name),
         },
         twitter: {
             card: "summary_large_image",
             title: `${game.name} · ${SITE_NAME}`,
             description,
-            images: [`${siteOrigin()}/games/${gameId}.png`],
+            images: siteTwitterImages(),
         },
     }
 }

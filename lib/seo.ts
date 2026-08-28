@@ -1,3 +1,5 @@
+import type { Metadata } from "next"
+
 import type { GameMetadata } from "@/lib/api/types"
 import { LEGAL_SITE, LEGAL_TELEGRAM } from "@/lib/legal"
 
@@ -14,10 +16,45 @@ export const HOME_DESCRIPTION =
 
 export const DOCS_URL = "https://docs.stackswars.com"
 
+/**
+ * Public origin used for canonicals, sitemap, JSON-LD, and OG image URLs.
+ *
+ * Production apex (`stackswars.com`) 307s to `www`. Facebook, Telegram, Slack,
+ * and X often refuse to follow that redirect on `og:image`, so metadata must
+ * point at the host that actually 200s.
+ */
 export function siteOrigin(): string {
-    return (
+    const raw =
         process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || LEGAL_SITE
-    )
+    try {
+        const url = new URL(raw)
+        if (url.hostname === "stackswars.com") {
+            url.hostname = "www.stackswars.com"
+            return url.origin
+        }
+    } catch {
+        /* invalid env — use as-is */
+    }
+    return raw
+}
+
+/** Default OG/Twitter image. Relative so `metadataBase` resolves it. */
+export const OG_IMAGE_PATH = "/opengraph-image"
+
+export function siteOgImages(alt = SITE_NAME) {
+    return [
+        {
+            url: OG_IMAGE_PATH,
+            width: 1200,
+            height: 630,
+            alt,
+            type: "image/png",
+        },
+    ] satisfies NonNullable<Metadata["openGraph"]>["images"]
+}
+
+export function siteTwitterImages() {
+    return [OG_IMAGE_PATH]
 }
 
 export function organizationJsonLd() {
@@ -68,7 +105,7 @@ export function videoGameJsonLd(game: GameMetadata) {
         name: game.name,
         description: game.description,
         url: `${origin}/games/${game.id}`,
-        image: `${origin}/games/${game.id}.png`,
+        image: `${origin}${OG_IMAGE_PATH}`,
         playMode: "MultiPlayer",
         publisher: {
             "@type": "Organization",

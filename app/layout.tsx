@@ -8,7 +8,9 @@ import {
     organizationJsonLd,
     SITE_DESCRIPTION,
     SITE_NAME,
+    siteOgImages,
     siteOrigin,
+    siteTwitterImages,
 } from "@/lib/seo"
 import { APP_BACKGROUND } from "@/lib/theme"
 
@@ -85,11 +87,13 @@ export const metadata: Metadata = {
         description: SITE_DESCRIPTION,
         url: appOrigin,
         locale: "en_US",
+        images: siteOgImages(),
     },
     twitter: {
         card: "summary_large_image",
         title: SITE_NAME,
         description: SITE_DESCRIPTION,
+        images: siteTwitterImages(),
     },
 }
 
