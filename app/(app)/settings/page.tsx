@@ -9,7 +9,8 @@ import { DeleteAccountCard } from "@/components/settings/delete-account-card"
 import { NotificationPreferences } from "@/components/settings/notification-preferences"
 import { ProfileForm } from "@/components/settings/profile-form"
 import { SoundPreferences } from "@/components/settings/sound-preferences"
-import { ButtonLink, EmptyState, Skeleton } from "@/components/ui"
+import { SettingsPageSkeleton } from "@/components/common/list-skeleton"
+import { ButtonLink, EmptyState } from "@/components/ui"
 import { useSessionLoading, useSessionUser } from "@/stores/session"
 
 export default function SettingsPage() {
@@ -26,10 +27,7 @@ export default function SettingsPage() {
 
             {!user ? (
                 loading ? (
-                    <div className="space-y-4">
-                        <Skeleton className="h-72 rounded-2xl" />
-                        <Skeleton className="h-56 rounded-2xl" />
-                    </div>
+                    <SettingsPageSkeleton header={false} />
                 ) : (
                     <EmptyState
                         icon={<RiShieldUserLine />}

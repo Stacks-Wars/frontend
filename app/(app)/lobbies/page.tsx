@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 
+import { LobbyBrowserSkeleton } from "@/components/common/list-skeleton"
 import { PageContainer } from "@/components/common/page-container"
 import { PageHeader } from "@/components/common/section"
 import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
 import { LobbyBrowser } from "@/components/lobbies/lobby-browser"
-import { Skeleton } from "@/components/ui"
 import { listGames, listLobbies } from "@/lib/api/server"
 import { lobbyListChainForSession } from "@/lib/chain/server"
 
@@ -33,22 +33,9 @@ export default async function LobbiesPage() {
                 description="Lobbies appear, fill, and disappear here in real time, on the chain you picked."
                 action={<CreateLobbyButton>Create lobby</CreateLobbyButton>}
             />
-            <Suspense fallback={<BrowserSkeleton />}>
+            <Suspense fallback={<LobbyBrowserSkeleton />}>
                 <LobbyBrowser initialLobbies={lobbies} games={games} />
             </Suspense>
         </PageContainer>
-    )
-}
-
-function BrowserSkeleton() {
-    return (
-        <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-            <Skeleton className="hidden h-96 rounded-2xl lg:block" />
-            <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, index) => (
-                    <Skeleton key={index} className="h-56 rounded-2xl" />
-                ))}
-            </div>
-        </div>
     )
 }

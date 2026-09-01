@@ -13,11 +13,28 @@ import {
     SelectValue,
 } from "@/components/ui"
 import { useLeaderboard } from "@/hooks/use-leaderboard"
-import type { GameMetadata, LeaderboardPage, Season } from "@/lib/api/types"
+import type {
+    GameMetadata,
+    LeaderboardBoard,
+    LeaderboardPage,
+    Season,
+} from "@/lib/api/types"
 import { formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 type ScopeTab = "season" | "all-time"
+
+const BOARDS: { id: LeaderboardBoard; label: string }[] = [
+    { id: "game", label: "Game" },
+    { id: "quests", label: "Quests" },
+    { id: "all", label: "All" },
+]
+
+const BOARD_COPY: Record<LeaderboardBoard, string> = {
+    game: "Points land when a game settles.",
+    quests: "Points from claimed quests this season.",
+    all: "Game and quest Wars Points this season.",
+}
 
 export function LeaderboardView({
     initial,
@@ -30,6 +47,8 @@ export function LeaderboardView({
     games: GameMetadata[]
     currentSeasonId: number | null
 }) {
+    const [boardKind, setBoardKind] =
+        React.useState<LeaderboardBoard>("game")
     const [tab, setTab] = React.useState<ScopeTab>(
         currentSeasonId != null ? "season" : "all-time"
     )
@@ -38,21 +57,33 @@ export function LeaderboardView({
     )
     const [gameId, setGameId] = React.useState<string>("all")
 
+    const seasonOnly = boardKind !== "game"
+    const showGameFilter = boardKind === "game"
+    const showAllTime = boardKind === "game"
+    const effectiveTab: ScopeTab = seasonOnly ? "season" : tab
+
     const scope = React.useMemo(
         () => ({
-            seasonId: tab === "season" && seasonId != null ? seasonId : undefined,
-            gameId: gameId === "all" ? undefined : gameId,
+            board: boardKind,
+            seasonId:
+                (effectiveTab === "season" || seasonOnly) && seasonId != null
+                    ? seasonId
+                    : undefined,
+            gameId:
+                showGameFilter && gameId !== "all" ? gameId : undefined,
         }),
-        [tab, seasonId, gameId]
+        [boardKind, effectiveTab, seasonId, gameId, seasonOnly, showGameFilter]
     )
 
     const untouched =
-        tab === "season" && seasonId === currentSeasonId && gameId === "all"
+        boardKind === "game" &&
+        effectiveTab === "season" &&
+        seasonId === currentSeasonId &&
+        gameId === "all"
 
     const board = useLeaderboard(scope, untouched ? initial : undefined)
     const season = seasons.find((item) => item.id === seasonId)
 
-    // Select triggers render the raw value unless the labels are declared here.
     const seasonLabels = React.useMemo<Record<string, string>>(
         () =>
             Object.fromEntries(
@@ -72,19 +103,14 @@ export function LeaderboardView({
         <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-3">
                 <div className="flex rounded-lg border border-border/70 p-0.5 surface-raised">
-                    {(
-                        [
-                            { id: "season", label: "Season" },
-                            { id: "all-time", label: "All time" },
-                        ] as const
-                    ).map((item) => (
+                    {BOARDS.map((item) => (
                         <button
                             key={item.id}
                             type="button"
-                            onClick={() => setTab(item.id)}
+                            onClick={() => setBoardKind(item.id)}
                             className={cn(
                                 "rounded-md px-3.5 py-1.5 text-sm transition-colors",
-                                tab === item.id
+                                boardKind === item.id
                                     ? "bg-primary text-primary-foreground"
                                     : "text-muted-foreground hover:text-foreground"
                             )}
@@ -94,11 +120,38 @@ export function LeaderboardView({
                     ))}
                 </div>
 
-                {tab === "season" && seasons.length > 0 ? (
+                {showAllTime ? (
+                    <div className="flex rounded-lg border border-border/70 p-0.5 surface-raised">
+                        {(
+                            [
+                                { id: "season", label: "Season" },
+                                { id: "all-time", label: "All time" },
+                            ] as const
+                        ).map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => setTab(item.id)}
+                                className={cn(
+                                    "rounded-md px-3.5 py-1.5 text-sm transition-colors",
+                                    effectiveTab === item.id
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                ) : null}
+
+                {(effectiveTab === "season" || seasonOnly) && seasons.length > 0 ? (
                     <Select
                         value={String(seasonId ?? "")}
                         onValueChange={(value) =>
-                            setSeasonId(value ? Number.parseInt(value, 10) : null)
+                            setSeasonId(
+                                value ? Number.parseInt(value, 10) : null
+                            )
                         }
                         items={seasonLabels}
                     >
@@ -118,31 +171,37 @@ export function LeaderboardView({
                     </Select>
                 ) : null}
 
-                <Select
-                    value={gameId}
-                    onValueChange={(value) => setGameId(value ?? "all")}
-                    items={gameLabels}
-                >
-                    <SelectTrigger className="w-44" aria-label="Game">
-                        <SelectValue placeholder="Game" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Every game</SelectItem>
-                        {games.map((game) => (
-                            <SelectItem key={game.id} value={game.id}>
-                                {game.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                {showGameFilter ? (
+                    <Select
+                        value={gameId}
+                        onValueChange={(value) => setGameId(value ?? "all")}
+                        items={gameLabels}
+                    >
+                        <SelectTrigger className="w-44" aria-label="Game">
+                            <SelectValue placeholder="Game" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Every game</SelectItem>
+                            {games.map((game) => (
+                                <SelectItem key={game.id} value={game.id}>
+                                    {game.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : null}
 
-                {season && tab === "season" ? (
+                {season && (effectiveTab === "season" || seasonOnly) ? (
                     <Badge variant="outline" className="ml-auto">
                         {formatDate(season.startsAt)} —{" "}
                         {formatDate(season.endsAt)}
                     </Badge>
                 ) : null}
             </div>
+
+            <p className="text-sm text-muted-foreground">
+                {BOARD_COPY[boardKind]}
+            </p>
 
             {board.page === 0 && board.items.length >= 3 ? (
                 <PodiumRow entries={board.items.slice(0, 3)} />
@@ -155,6 +214,17 @@ export function LeaderboardView({
                 page={board.page}
                 pageCount={board.pageCount}
                 onPage={board.setPage}
+                hideMatchStats={boardKind === "quests"}
+                emptyTitle={
+                    boardKind === "quests"
+                        ? "Nobody has claimed yet"
+                        : "Nobody has scored yet"
+                }
+                emptyDescription={
+                    boardKind === "quests"
+                        ? "Quest points show up here after a claim."
+                        : "Points land here as soon as the first match of this season settles."
+                }
             />
         </div>
     )

@@ -26,6 +26,7 @@ import { useSessionUser } from "@/stores/session"
 const NAV = [
     { href: "/games", label: "Games" },
     { href: "/lobbies", label: "Lobbies" },
+    { href: "/quests", label: "Quests" },
     { href: "/leaderboard", label: "Leaderboard" },
 ]
 
@@ -42,10 +43,10 @@ export function AppHeader() {
 
     return (
         <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-            <div className="mx-auto flex h-16 w-full max-w-350 items-center gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="relative mx-auto flex h-16 w-full max-w-350 items-center gap-4 px-4 sm:px-6 lg:px-8">
                 <Brand hideName />
 
-                <nav className="hidden items-center gap-1 lg:flex">
+                <nav className="absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-1 lg:flex">
                     {NAV.map((item) => (
                         <ButtonLink
                             key={item.href}

@@ -4,10 +4,18 @@ import { useQuery } from "@tanstack/react-query"
 import * as React from "react"
 
 import { getLeaderboardAction } from "@/actions/games"
-import type { LeaderboardEntry, LeaderboardPage } from "@/lib/api/types"
+import type {
+    LeaderboardBoard,
+    LeaderboardEntry,
+    LeaderboardPage,
+} from "@/lib/api/types"
 import { useLeaderboardVersion } from "@/stores/live"
 
-export type Scope = { seasonId?: number; gameId?: string }
+export type Scope = {
+    seasonId?: number
+    gameId?: string
+    board?: LeaderboardBoard
+}
 
 export type RankedEntry = LeaderboardEntry & {
     /** Positions gained since the last fetch. Negative means dropped. */
@@ -24,7 +32,7 @@ const PAGE_SIZE = 25
 const lastRanks = new Map<string, Map<string, number>>()
 
 function scopeKey(scope: Scope): string {
-    return `${scope.seasonId ?? "all"}:${scope.gameId ?? "all"}`
+    return `${scope.board ?? "game"}:${scope.seasonId ?? "all"}:${scope.gameId ?? "all"}`
 }
 
 function withMovement(key: string, items: LeaderboardEntry[]): RankedEntry[] {

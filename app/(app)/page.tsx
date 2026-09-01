@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { PageContainer } from "@/components/common/page-container"
 import { ClosingCta } from "@/components/landing/closing-cta"
 import { FeaturedGames } from "@/components/landing/featured-games"
+import { GettingStartedRail } from "@/components/quests/getting-started-rail"
 import { Hero } from "@/components/landing/hero"
 import { HowItWorks } from "@/components/landing/how-it-works"
 import { LeaderboardPreview } from "@/components/landing/leaderboard-preview"
@@ -86,6 +87,7 @@ export default async function LandingPage() {
     return (
         <PageContainer size="wide" className="space-y-16 pb-8">
             <Hero activity={activity} games={games} initialLobbies={lobbies} />
+            <GettingStartedRail />
             <FeaturedGames games={games} activity={activity} />
             <LiveMatches initialLobbies={lobbies} games={games} />
 

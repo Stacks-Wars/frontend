@@ -185,12 +185,25 @@ export default function ResetPasswordPage() {
     return (
         <React.Suspense
             fallback={
-                <div className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-lg items-center px-4 py-8">
-                    <div className="w-full space-y-4 rounded-3xl border border-border/60 bg-background p-6">
-                        <Skeleton className="h-7 w-40" />
-                        <Skeleton className="h-4 w-56" />
-                        <Skeleton className="h-10 w-full rounded-xl" />
-                    </div>
+                <div className="w-full">
+                    <Card className="w-full">
+                        <CardHeader className="space-y-2">
+                            <Skeleton className="h-7 w-44" />
+                            <Skeleton className="h-4 w-full" />
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-2">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-10 w-full rounded-lg" />
+                            </div>
+                            <div className="grid gap-2">
+                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-10 w-full rounded-lg" />
+                            </div>
+                            <Skeleton className="h-10 w-full rounded-lg" />
+                            <Skeleton className="mx-auto h-4 w-24" />
+                        </CardContent>
+                    </Card>
                 </div>
             }
         >

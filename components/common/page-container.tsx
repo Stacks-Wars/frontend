@@ -13,8 +13,8 @@ export function PageContainer({
         <div
             className={cn(
                 "mx-auto w-full px-4 py-8 sm:px-6 lg:px-8",
-                size === "wide" && "max-w-[1400px]",
-                size === "default" && "max-w-[1200px]",
+                size === "wide" && "max-w-350",
+                size === "default" && "max-w-300",
                 size === "narrow" && "max-w-3xl",
                 className
             )}

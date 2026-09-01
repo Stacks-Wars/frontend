@@ -11,6 +11,9 @@ export type AppUser = {
     currentChain?: import("@/lib/chain").ChainId
     legalAcceptedAt?: string | null
     legalVersion?: string | null
+    referralPromptStatus?: "pending" | "set" | "skipped"
+    questIntroSeenAt?: string | null
+    gettingStartedCompletedAt?: string | null
     createdAt: string
     updatedAt: string
 }
@@ -281,8 +284,86 @@ export type LeaderboardPage = {
 export type LeaderboardQuery = {
     seasonId?: number
     gameId?: string
+    board?: LeaderboardBoard
     limit?: number
     offset?: number
+}
+
+export type LeaderboardBoard = "game" | "quests" | "all"
+
+/* ------------------------------------------------------------------ */
+/* Quests                                                              */
+/* ------------------------------------------------------------------ */
+
+export type QuestCategory =
+    | "gettingStarted"
+    | "daily"
+    | "weekly"
+    | "monthly"
+    | "seasonal"
+    | "paidLadder"
+
+export type QuestState = "locked" | "active" | "claimable" | "claimed"
+
+export type QuestCta = {
+    href: string
+    label: string
+}
+
+export type QuestView = {
+    id: string
+    title: string
+    description: string
+    category: QuestCategory
+    progress: number
+    target: number
+    state: QuestState
+    rewardPoints: number
+    cta: QuestCta
+    periodId: string
+    resetsAt: string | null
+}
+
+export type QuestPeriodView = {
+    kind: QuestCategory
+    id: string
+    startsAt: string
+    resetsAt: string | null
+    resetsLabel: string
+}
+
+export type BonusMissionView = QuestView & {
+    stageIndex: number
+    stageCount: number
+    dollars: number
+}
+
+export type QuestMe = {
+    catalogVersion: number
+    now: string
+    periods: QuestPeriodView[]
+    streak: {
+        current: number
+        longest: number
+        lastActiveDate: string | null
+    }
+    gettingStartedCompleted: boolean
+    gettingStartedCompletedAt: string | null
+    referralPromptStatus: "pending" | "set" | "skipped"
+    questIntroSeenAt: string | null
+    successfulReferrals: number
+    seasonQuestPoints: number
+    quests: QuestView[]
+    bonusMission: BonusMissionView | null
+}
+
+export type QuestClaimResult = {
+    id: string
+    questId: string
+    periodId: string
+    rewardPoints: number
+    claimedAt: string
+    alreadyClaimed: boolean
 }
 
 /* ------------------------------------------------------------------ */

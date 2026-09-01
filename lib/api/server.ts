@@ -16,6 +16,8 @@ import type {
     LobbyDetail,
     LobbyQuery,
     MatchHistoryItem,
+    QuestClaimResult,
+    QuestMe,
     RecentMatch,
     Season,
     UpdateProfilePayload,
@@ -816,6 +818,7 @@ export async function getLeaderboard(
     const params = new URLSearchParams()
     if (query.seasonId != null) params.set("seasonId", String(query.seasonId))
     if (query.gameId) params.set("gameId", query.gameId)
+    if (query.board && query.board !== "game") params.set("board", query.board)
     if (query.limit != null) params.set("limit", String(query.limit))
     if (query.offset != null) params.set("offset", String(query.offset))
     const qs = params.toString()
@@ -1198,4 +1201,85 @@ export async function deleteAppAccount(): Promise<void> {
             body?.error ?? `Failed to delete account (${response.status})`
         )
     }
+}
+
+async function readApiError(response: Response, fallback: string) {
+    const body = (await response.json().catch(() => null)) as {
+        error?: string
+        code?: string
+    } | null
+    return body?.error ?? fallback
+}
+
+export async function getMyQuests(): Promise<QuestMe> {
+    const response = await fetch(`${getApiBaseUrl()}/quests/me`, {
+        method: "GET",
+        headers: await authHeaders(),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        throw new Error(
+            await readApiError(
+                response,
+                `Failed to load quests (${response.status})`
+            )
+        )
+    }
+    return response.json()
+}
+
+export async function claimQuest(questId: string): Promise<QuestClaimResult> {
+    const response = await fetch(`${getApiBaseUrl()}/quests/claims`, {
+        method: "POST",
+        headers: await authHeaders(),
+        body: JSON.stringify({ questId }),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        throw new Error(
+            await readApiError(
+                response,
+                `Failed to claim quest (${response.status})`
+            )
+        )
+    }
+    return response.json()
+}
+
+export async function submitReferral(payload: {
+    username?: string
+    skip?: boolean
+}): Promise<AppUser> {
+    const response = await fetch(`${getApiBaseUrl()}/users/me/referral`, {
+        method: "POST",
+        headers: await authHeaders(),
+        body: JSON.stringify(payload),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        throw new Error(
+            await readApiError(
+                response,
+                `Failed to save referral (${response.status})`
+            )
+        )
+    }
+    return response.json()
+}
+
+export async function markQuestIntroSeen(): Promise<AppUser> {
+    const response = await fetch(`${getApiBaseUrl()}/users/me/quest-intro`, {
+        method: "POST",
+        headers: await authHeaders(),
+        cache: "no-store",
+    })
+    if (!response.ok) {
+        throw new Error(
+            await readApiError(
+                response,
+                `Failed to save intro (${response.status})`
+            )
+        )
+    }
+    return response.json()
 }

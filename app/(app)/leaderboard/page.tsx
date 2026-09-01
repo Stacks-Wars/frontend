@@ -9,7 +9,7 @@ import type { LeaderboardPage, Season } from "@/lib/api/types"
 export const metadata: Metadata = {
     title: "Leaderboard",
     description:
-        "Season standings for onchain matches. Points land when a game settles.",
+        "Game, quest, and combined Wars Points standings for the season.",
     alternates: { canonical: "/leaderboard" },
 }
 
@@ -45,7 +45,7 @@ export default async function LeaderboardPageRoute() {
         <PageContainer className="space-y-8">
             <PageHeader
                 title="Leaderboard"
-                description="Points come from finishing position. Every settled match moves the board."
+                description="Game board is match results. Quests is claimed quest points. All adds them together."
             />
             <LeaderboardView
                 initial={initial}

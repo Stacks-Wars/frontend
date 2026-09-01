@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui"
 const LINKS = [
     { href: "/games", label: "Games" },
     { href: "/lobbies", label: "Lobbies" },
+    { href: "/quests", label: "Quests" },
     { href: "/leaderboard", label: "Leaderboard" },
     { href: "/terms", label: "Terms" },
     { href: "/privacy", label: "Privacy" },
