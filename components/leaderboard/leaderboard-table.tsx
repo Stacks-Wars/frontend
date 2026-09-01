@@ -10,7 +10,8 @@ import {
 
 import { RankBadge } from "@/components/leaderboard/rank-badge"
 import { UserChip } from "@/components/common/user-chip"
-import { Button, EmptyState, Skeleton } from "@/components/ui"
+import { LeaderboardTableSkeleton } from "@/components/common/list-skeleton"
+import { Button, EmptyState } from "@/components/ui"
 import type { RankedEntry } from "@/hooks/use-leaderboard"
 import { formatUsdc, compact } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -23,6 +24,9 @@ export function LeaderboardTable({
     page,
     pageCount,
     onPage,
+    hideMatchStats = false,
+    emptyTitle = "Nobody has scored yet",
+    emptyDescription = "Points land here as soon as the first match of this season settles.",
 }: {
     items: RankedEntry[]
     loading: boolean
@@ -30,24 +34,21 @@ export function LeaderboardTable({
     page: number
     pageCount: number
     onPage: (page: number) => void
+    hideMatchStats?: boolean
+    emptyTitle?: string
+    emptyDescription?: string
 }) {
     const selfId = useSessionUser()?.id ?? null
 
     if (loading) {
-        return (
-            <div className="space-y-2">
-                {Array.from({ length: 8 }).map((_, index) => (
-                    <Skeleton key={index} className="h-14 rounded-xl" />
-                ))}
-            </div>
-        )
+        return <LeaderboardTableSkeleton />
     }
 
     if (items.length === 0) {
         return (
             <EmptyState
-                title="Nobody has scored yet"
-                description="Points land here as soon as the first match of this season settles."
+                title={emptyTitle}
+                description={emptyDescription}
             />
         )
     }
@@ -63,9 +64,19 @@ export function LeaderboardTable({
                 <div className="hidden grid-cols-[3rem_minmax(0,1fr)_5rem_5rem_6rem_6rem] gap-3 border-b border-border/60 px-4 py-2.5 text-[11px] tracking-wide text-muted-foreground uppercase sm:grid">
                     <span>#</span>
                     <span>Player</span>
-                    <span className="text-right">Played</span>
-                    <span className="text-right">Wins</span>
-                    <span className="text-right">Net</span>
+                    {hideMatchStats ? (
+                        <>
+                            <span />
+                            <span />
+                            <span />
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-right">Played</span>
+                            <span className="text-right">Wins</span>
+                            <span className="text-right">Net</span>
+                        </>
+                    )}
                     <span className="text-right">Points</span>
                 </div>
 
@@ -92,6 +103,14 @@ export function LeaderboardTable({
                                 }
                             />
 
+                            {hideMatchStats ? (
+                                <>
+                                    <span className="hidden sm:block" />
+                                    <span className="hidden sm:block" />
+                                    <span className="hidden sm:block" />
+                                </>
+                            ) : (
+                                <>
                             <span className="tnum hidden text-right text-sm text-muted-foreground sm:block">
                                 {compact(entry.totalMatches)}
                             </span>
@@ -110,6 +129,8 @@ export function LeaderboardTable({
                             >
                                 {formatUsdc(entry.totalPnl, { sign: true })}
                             </span>
+                                </>
+                            )}
                             <span className="tnum text-right font-display text-base text-gold">
                                 {compact(entry.points)}
                             </span>

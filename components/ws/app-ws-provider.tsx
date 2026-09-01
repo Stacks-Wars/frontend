@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
+import { QUESTS_ME_KEY } from "@/hooks/use-quests-me"
 import { playSfx } from "@/lib/audio/play-sound"
 import { claimMyVaultPayout } from "@/lib/vault/claim-payout"
 import { appSocket } from "@/lib/ws/app-socket"
@@ -209,6 +210,12 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                 }
                 case "leaderboard.updated": {
                     live.bumpLeaderboard()
+                    break
+                }
+                case "quest.updated": {
+                    void queryClient.invalidateQueries({
+                        queryKey: QUESTS_ME_KEY,
+                    })
                     break
                 }
                 case "match.finished": {

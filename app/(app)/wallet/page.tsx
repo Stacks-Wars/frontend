@@ -9,7 +9,8 @@ import { DepositPanel } from "@/components/wallet/deposit-panel"
 import { PendingWins } from "@/components/wallet/pending-wins"
 import { TransactionList } from "@/components/wallet/transaction-list"
 import { WithdrawForm } from "@/components/wallet/withdraw-form"
-import { ButtonLink, EmptyState, Skeleton } from "@/components/ui"
+import { WalletPageSkeleton } from "@/components/common/list-skeleton"
+import { ButtonLink, EmptyState } from "@/components/ui"
 import { chainAdapter } from "@/lib/chain"
 import {
     useSessionCurrentChain,
@@ -29,10 +30,7 @@ export default function WalletPage() {
 
             {!user ? (
                 loading ? (
-                    <div className="grid gap-4 lg:grid-cols-2">
-                        <Skeleton className="h-44 rounded-2xl" />
-                        <Skeleton className="h-44 rounded-2xl" />
-                    </div>
+                    <WalletPageSkeleton header={false} />
                 ) : (
                     <EmptyState
                         icon={<RiWallet3Line />}

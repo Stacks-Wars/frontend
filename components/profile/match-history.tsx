@@ -161,12 +161,16 @@ function MatchRow({
 function RowSkeleton() {
     return (
         <li className="flex items-center gap-3 px-3 py-2.5">
-            <Skeleton className="size-9 shrink-0" />
-            <div className="flex-1 space-y-1.5">
+            <Skeleton className="size-9 shrink-0 rounded-lg" />
+            <div className="min-w-0 flex-1 space-y-1.5">
                 <Skeleton className="h-3.5 w-32" />
                 <Skeleton className="h-3 w-24" />
             </div>
-            <Skeleton className="h-3.5 w-14 shrink-0" />
+            <div className="shrink-0 space-y-1.5 text-right">
+                <Skeleton className="ml-auto h-3.5 w-12" />
+                <Skeleton className="ml-auto h-3 w-10" />
+            </div>
+            <Skeleton className="h-3 w-16 shrink-0" />
         </li>
     )
 }

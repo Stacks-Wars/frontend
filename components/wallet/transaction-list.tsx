@@ -108,11 +108,21 @@ export function TransactionList() {
                         : "Could not load your transactions."}
                 </p>
             ) : isLoading ? (
-                <div className="space-y-2 rounded-2xl border border-border/70 p-4 surface-raised">
+                <ul className="divide-y divide-border/60 rounded-2xl border border-border/70 surface-raised">
                     {Array.from({ length: 5 }).map((_, index) => (
-                        <Skeleton key={index} className="h-12" />
+                        <li
+                            key={index}
+                            className="flex items-center justify-between gap-3 px-4 py-3"
+                        >
+                            <div className="min-w-0 flex-1 space-y-1.5">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-3 w-40" />
+                            </div>
+                            <Skeleton className="h-4 w-16" />
+                            <Skeleton className="h-5 w-16 rounded-md" />
+                        </li>
                     ))}
-                </div>
+                </ul>
             ) : items.length === 0 ? (
                 <EmptyState
                     icon={<RiHistoryLine />}

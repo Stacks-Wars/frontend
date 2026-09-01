@@ -63,6 +63,7 @@ export type ServerKind =
     | "lobby.removed"
     | "games.activity"
     | "leaderboard.updated"
+    | "quest.updated"
     | "match.finished"
     // private
     | "user.event"
