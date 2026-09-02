@@ -78,7 +78,9 @@ export function TransactionList() {
         const list = kinds
             ? (data ?? []).filter((item) => kinds.includes(item.kind))
             : (data ?? [])
-        return [...list].sort((a, b) => (b.blockTime ?? 0) - (a.blockTime ?? 0))
+        return [...list]
+            .filter((item) => item.amountMicro !== 0)
+            .sort((a, b) => (b.blockTime ?? 0) - (a.blockTime ?? 0))
     }, [data, filter])
 
     return (
