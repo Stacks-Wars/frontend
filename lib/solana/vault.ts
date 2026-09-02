@@ -27,6 +27,10 @@ import { getSolanaFeePayer } from "@/lib/solana/fee-payer"
 import { getSolanaUsdcMint } from "@/lib/solana/network"
 import { solanaRpc, solanaSender, waitForSolanaSignature } from "@/lib/solana/rpc"
 import { compileSponsoredTransaction } from "@/lib/solana/sponsor"
+import {
+    humanizeVaultTxError,
+    isIdempotentVaultSuccess,
+} from "@/lib/vault/tx-errors"
 
 const TOKEN_PROGRAM = address("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 const ASSOCIATED_TOKEN_PROGRAM = address(
@@ -108,7 +112,7 @@ async function ata(owner: Address, mint: Address) {
     return pda
 }
 
-/** Distinct dest owner used when dest fee is 0 so dest_usdc ≠ platform_usdc. */
+/** Distinct dest owner used when dest fee is 0 so dest_usdc is a unique ATA. */
 async function destFeeSkipDest(): Promise<Address> {
     const [pda] = await getProgramDerivedAddress({
         programAddress: programId(),
@@ -150,9 +154,51 @@ async function sendSponsored(instructions: Instruction[]) {
             lastValidBlockHeight: value.lastValidBlockHeight,
         },
     })
-    await solanaSender()(signed, { commitment: "confirmed" })
-    const signature = getSignatureFromTransaction(signed)
-    return waitForSolanaSignature(signature, value.lastValidBlockHeight)
+    try {
+        await solanaSender()(signed, { commitment: "confirmed" })
+        const signature = getSignatureFromTransaction(signed)
+        return await waitForSolanaSignature(
+            signature,
+            value.lastValidBlockHeight
+        )
+    } catch (error) {
+        const raw = error instanceof Error ? error.message : String(error)
+        throw new Error(humanizeVaultTxError(raw))
+    }
+}
+
+/** Join/claim retries after a confirmed tx: reuse that signature instead of failing. */
+async function latestSuccessfulSignature(
+    account: Address
+): Promise<string | null> {
+    try {
+        const rows = await solanaRpc()
+            .getSignaturesForAddress(account, { limit: 8 })
+            .send()
+        const list = Array.isArray(rows) ? rows : []
+        const hit = list.find((row) => row.err == null)
+        return hit?.signature ?? null
+    } catch {
+        return null
+    }
+}
+
+async function sendOrReuse(
+    account: Address,
+    run: () => Promise<string>
+): Promise<string> {
+    try {
+        return await run()
+    } catch (error) {
+        const raw = error instanceof Error ? error.message : String(error)
+        if (isIdempotentVaultSuccess(raw)) {
+            const existing = await latestSuccessfulSignature(account)
+            if (existing) return existing
+        }
+        throw error instanceof Error
+            ? error
+            : new Error(humanizeVaultTxError(raw))
+    }
 }
 
 /** One-time: deployer is platform, USDC mint is locked, platform ATA created. */
@@ -216,7 +262,12 @@ export async function solanaVaultJoin(input: {
         ),
     }
 
-    const signature = await sendSponsored([ix])
+    const signature = await sendOrReuse(seat, () =>
+        sendSponsored([
+            createAtaIx(payer, player.signer.address, playerUsdc, mint),
+            ix,
+        ])
+    )
     await player.persistV2IfNeeded()
     return signature
 }
@@ -285,11 +336,12 @@ export async function solanaVaultClaim(input: {
     }
     const platform = address(payer.address)
     const parsedDev = asSolanaAddress(input.devAddress)
-    // dest_usdc and platform_usdc are both mut TokenAccounts. Reusing the
-    // platform key (0% dest fee / Stacks SP remap) fails simulation.
+    // player_usdc, platform_usdc, and dest_usdc are all mut. Anchor rejects
+    // the same ATA twice (2040) when the winner is also the game developer.
     const payDest =
         parsedDev != null &&
         parsedDev !== platform &&
+        parsedDev !== player &&
         input.devFeePct > 0
     const dest = payDest ? parsedDev : await destFeeSkipDest()
     const devFeePct = payDest ? input.devFeePct : 0
@@ -324,9 +376,11 @@ export async function solanaVaultClaim(input: {
             Uint8Array.of(devFeePct & 0xff)
         ),
     }
-    return sendSponsored([
-        createAtaIx(payer, player, playerUsdc, mint),
-        createAtaIx(payer, dest, destUsdc, mint),
-        ix,
-    ])
+    return sendOrReuse(escrow, () =>
+        sendSponsored([
+            createAtaIx(payer, player, playerUsdc, mint),
+            createAtaIx(payer, dest, destUsdc, mint),
+            ix,
+        ])
+    )
 }
