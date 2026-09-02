@@ -4,6 +4,7 @@ import * as React from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { QUESTS_ME_KEY } from "@/hooks/use-quests-me"
+import { applyQuestNudge } from "@/lib/quest-nudge"
 import { playSfx } from "@/lib/audio/play-sound"
 import { claimMyVaultPayout } from "@/lib/vault/claim-payout"
 import { appSocket } from "@/lib/ws/app-socket"
@@ -26,6 +27,7 @@ import {
     type MatchFinishedPayload,
     type WalletBalancePayload,
     type WalletTxPayload,
+    type UserNoticePayload,
     type WsEnvelope,
 } from "@/lib/ws/protocol"
 import type { Lobby, LobbyChatMessage } from "@/lib/api/types"
@@ -216,6 +218,36 @@ export function AppWsProvider({ children }: { children?: React.ReactNode }) {
                     void queryClient.invalidateQueries({
                         queryKey: QUESTS_ME_KEY,
                     })
+                    break
+                }
+                case "user.notice": {
+                    const notice = payloadAs<UserNoticePayload>(message)
+                    if (
+                        typeof notice.title !== "string" ||
+                        !notice.title.trim()
+                    ) {
+                        break
+                    }
+                    const periodId = notice.tag?.startsWith("quest:daily:")
+                        ? notice.tag.slice("quest:daily:".length)
+                        : null
+                    if (periodId) {
+                        applyQuestNudge(periodId)
+                    } else {
+                        notify.push({
+                            title: notice.title,
+                            body: notice.body,
+                            href: notice.href,
+                            tag: notice.tag,
+                            id: notice.tag,
+                        })
+                        notify.toast({
+                            title: notice.title,
+                            body: notice.body,
+                            href: notice.href,
+                            cta: notice.href ? "Open" : undefined,
+                        })
+                    }
                     break
                 }
                 case "match.finished": {

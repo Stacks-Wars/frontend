@@ -8,6 +8,7 @@ import { AuthSync } from "@/components/auth/auth-sync"
 import { ChainOnboardingDialog } from "@/components/auth/chain-onboarding-dialog"
 import { LegalConsentGate } from "@/components/auth/legal-consent-gate"
 import { QuestOnboardingDialog } from "@/components/auth/quest-onboarding-dialog"
+import { QuestNudgeSync } from "@/components/quests/quest-nudge-sync"
 import { ToastHost } from "@/components/notifications/toast-host"
 import { OfflineBanner } from "@/components/pwa/offline-banner"
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register"
@@ -36,6 +37,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
                     <LegalConsentGate />
                     <ChainOnboardingDialog />
                     <QuestOnboardingDialog />
+                    <QuestNudgeSync />
                     <ToastHost />
                     {children}
                 </AudioProvider>

@@ -11,6 +11,7 @@ export type NotificationItem = {
     createdAt: number
     read: boolean
     href?: string
+    tag?: string
 }
 
 type ToastItem = {
@@ -20,6 +21,8 @@ type ToastItem = {
     tone?: "default" | "success" | "danger"
     /** Skip the default toast SFX (caller plays a custom cue). */
     silent?: boolean
+    href?: string
+    cta?: string
 }
 
 type NotificationsState = {
@@ -27,8 +30,11 @@ type NotificationsState = {
     toasts: ToastItem[]
     actions: {
         push: (
-            item: Omit<NotificationItem, "id" | "createdAt" | "read">
+            item: Omit<NotificationItem, "id" | "createdAt" | "read"> & {
+                id?: string
+            }
         ) => void
+        dismissByTag: (tag: string) => void
         markRead: (id: string) => void
         markAllRead: () => void
         toast: (toast: Omit<ToastItem, "id">) => void
@@ -45,16 +51,26 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
     toasts: [],
     actions: {
         push: (item) =>
+            set((state) => {
+                const nextId = item.id ?? item.tag ?? id()
+                const without = item.tag
+                    ? state.items.filter((n) => n.tag !== item.tag)
+                    : state.items.filter((n) => n.id !== nextId)
+                return {
+                    items: [
+                        {
+                            ...item,
+                            id: nextId,
+                            createdAt: Date.now(),
+                            read: false,
+                        },
+                        ...without,
+                    ].slice(0, 50),
+                }
+            }),
+        dismissByTag: (tag) =>
             set((state) => ({
-                items: [
-                    {
-                        ...item,
-                        id: id(),
-                        createdAt: Date.now(),
-                        read: false,
-                    },
-                    ...state.items,
-                ].slice(0, 50),
+                items: state.items.filter((n) => n.tag !== tag),
             })),
         markRead: (itemId) =>
             set((state) => ({
@@ -76,11 +92,14 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
             set((state) => ({
                 toasts: [...state.toasts, { ...toast, id: toastId }],
             }))
-            window.setTimeout(() => {
-                set((state) => ({
-                    toasts: state.toasts.filter((t) => t.id !== toastId),
-                }))
-            }, 4200)
+            window.setTimeout(
+                () => {
+                    set((state) => ({
+                        toasts: state.toasts.filter((t) => t.id !== toastId),
+                    }))
+                },
+                toast.href ? 7000 : 4200
+            )
         },
         dismissToast: (toastId) =>
             set((state) => ({

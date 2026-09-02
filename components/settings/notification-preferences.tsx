@@ -58,9 +58,9 @@ export function NotificationPreferences() {
                         Device notifications
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                        Match results and winnings on this browser, including
-                        desktop. On iPhone this only works after you add Stacks
-                        Wars to the Home Screen.
+                        Match results, quest reminders, and winnings on this
+                        browser, including desktop. On iPhone this only works
+                        after you add Stacks Wars to the Home Screen.
                     </p>
                 </div>
                 <Switch

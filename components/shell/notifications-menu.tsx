@@ -57,7 +57,8 @@ export function NotificationsMenu() {
                 <DropdownMenuSeparator className="mx-0 my-0" />
                 {items.length === 0 ? (
                     <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                        Nothing yet. Match results and payouts land here.
+                        Nothing yet. Match results, quests, and payouts land
+                        here.
                     </p>
                 ) : (
                     <div className="max-h-80 overflow-y-auto p-1">
@@ -80,6 +81,11 @@ export function NotificationsMenu() {
                                         {item.title}
                                     </span>
                                 </span>
+                                {item.body ? (
+                                    <span className="line-clamp-2 text-xs text-muted-foreground">
+                                        {item.body}
+                                    </span>
+                                ) : null}
                                 <span className="text-xs text-muted-foreground">
                                     {timeAgo(item.createdAt)}
                                 </span>

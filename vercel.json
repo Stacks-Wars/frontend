@@ -6,12 +6,19 @@
         },
         "app/api/cron/lobby-ttl/route.ts": {
             "maxDuration": 60
+        },
+        "app/api/cron/quest-nudge/route.ts": {
+            "maxDuration": 60
         }
     },
     "crons": [
         {
             "path": "/api/cron/lobby-ttl",
             "schedule": "0 0 * * *"
+        },
+        {
+            "path": "/api/cron/quest-nudge",
+            "schedule": "0 10 * * *"
         }
     ]
 }
