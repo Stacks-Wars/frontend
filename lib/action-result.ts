@@ -1,4 +1,5 @@
 import type { HostedLobbyRef } from "@/lib/api/types"
+import { humanizeVaultTxError } from "@/lib/vault/tx-errors"
 
 export type ActionResult<T> =
     | { ok: true; data: T }
@@ -42,9 +43,10 @@ export async function actionResult<T>(
         )
         const message = prefix ? raw.slice(prefix.length) : raw
         console.error("[action]", raw)
+        const friendly = humanizeVaultTxError(message)
         return {
             ok: false,
-            error: message.charAt(0).toUpperCase() + message.slice(1),
+            error: friendly.charAt(0).toUpperCase() + friendly.slice(1),
         }
     }
 }
