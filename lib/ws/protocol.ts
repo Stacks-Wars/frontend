@@ -66,6 +66,7 @@ export type ServerKind =
     | "quest.updated"
     | "match.finished"
     // private
+    | "user.notice"
     | "user.event"
     | "wallet.balance.updated"
     | "wallet.tx.updated"
@@ -197,6 +198,13 @@ export type WalletTxPayload = {
     status: ChainActivityItem["status"]
     kind?: ChainActivityItem["kind"]
     amountMicro?: number
+}
+
+export type UserNoticePayload = {
+    title: string
+    body?: string
+    href?: string
+    tag?: string
 }
 
 /**

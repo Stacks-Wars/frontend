@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import { useToasts, useNotificationActions } from "@/stores/notifications"
 import { cn } from "@/lib/utils"
 
@@ -11,27 +13,54 @@ export function ToastHost() {
 
     return (
         <div className="pointer-events-none fixed inset-x-0 top-16 z-50 flex flex-col items-center gap-2 px-4 md:top-4 md:items-end">
-            {toasts.map((t) => (
-                <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => dismiss(t.id)}
-                    className={cn(
-                        "pointer-events-auto w-full max-w-sm rounded-lg border px-4 py-3 text-left text-sm shadow-lg animate-hub-enter",
-                        t.tone === "success" &&
-                            "border-secondary/40 bg-card text-foreground",
-                        t.tone === "danger" &&
-                            "border-destructive/40 bg-card text-destructive",
-                        (!t.tone || t.tone === "default") &&
-                            "border-border bg-card text-foreground"
-                    )}
-                >
-                    <p className="font-medium">{t.title}</p>
-                    {t.body ? (
-                        <p className="mt-0.5 text-muted-foreground">{t.body}</p>
-                    ) : null}
-                </button>
-            ))}
+            {toasts.map((t) => {
+                const className = cn(
+                    "pointer-events-auto w-full max-w-sm rounded-lg border px-4 py-3 text-left text-sm shadow-lg animate-hub-enter",
+                    t.tone === "success" &&
+                        "border-secondary/40 bg-card text-foreground",
+                    t.tone === "danger" &&
+                        "border-destructive/40 bg-card text-destructive",
+                    (!t.tone || t.tone === "default") &&
+                        "border-border bg-card text-foreground"
+                )
+                const inner = (
+                    <>
+                        <p className="font-medium">{t.title}</p>
+                        {t.body ? (
+                            <p className="mt-0.5 text-muted-foreground">
+                                {t.body}
+                            </p>
+                        ) : null}
+                        {t.href && t.cta ? (
+                            <p className="mt-1.5 text-xs font-medium text-primary">
+                                {t.cta}
+                            </p>
+                        ) : null}
+                    </>
+                )
+                if (t.href) {
+                    return (
+                        <Link
+                            key={t.id}
+                            href={t.href}
+                            onClick={() => dismiss(t.id)}
+                            className={className}
+                        >
+                            {inner}
+                        </Link>
+                    )
+                }
+                return (
+                    <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => dismiss(t.id)}
+                        className={className}
+                    >
+                        {inner}
+                    </button>
+                )
+            })}
         </div>
     )
 }

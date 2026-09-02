@@ -15,19 +15,18 @@ self.addEventListener("push", (event) => {
                 return
             }
 
-            //const clients = await self.clients.matchAll({
-            //    type: "window",
-            //    includeUncontrolled: true,
-            //})
-            //if (clients.some((client) => client.focused)) return
-
-            await self.registration.showNotification(data.title, {
+            const options = {
                 body: data.body,
                 tag: data.tag,
                 icon: "/android-chrome-192x192.png",
                 badge: "/android-chrome-192x192.png",
                 data: { url: data.url || "/", tag: data.tag },
-            })
+            }
+            if (Array.isArray(data.actions) && data.actions.length > 0) {
+                options.actions = data.actions
+            }
+
+            await self.registration.showNotification(data.title, options)
         })()
     )
 })
