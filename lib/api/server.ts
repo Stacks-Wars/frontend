@@ -27,6 +27,8 @@ import type {
     VaultDraft,
     VaultDraftPayload,
     WalletBalance,
+    AnalyticsQuery,
+    AnalyticsReport,
 } from "@/lib/api/types"
 import { AccountDeleteError } from "@/lib/api/account-delete"
 import { parseChainId, type ChainId } from "@/lib/chain"
@@ -74,6 +76,24 @@ function internalHeaders(): HeadersInit {
         "content-type": "application/json",
         "x-internal-secret": secret,
     }
+}
+
+/** Public reads: no JWT. Forward the visitor IP so API rate limits are per-client. */
+async function visitorHeaders(): Promise<HeadersInit> {
+    const headers: Record<string, string> = {
+        "content-type": "application/json",
+    }
+    try {
+        const { headers: incoming } = await import("next/headers")
+        const requestHeaders = await incoming()
+        const forwarded =
+            requestHeaders.get("x-forwarded-for") ??
+            requestHeaders.get("x-real-ip")
+        if (forwarded) headers["x-forwarded-for"] = forwarded
+    } catch {
+        /* not in a request scope */
+    }
+    return headers
 }
 
 export async function listGames(): Promise<GameMetadata[]> {
@@ -1278,6 +1298,38 @@ export async function markQuestIntroSeen(): Promise<AppUser> {
             await readApiError(
                 response,
                 `Failed to save intro (${response.status})`
+            )
+        )
+    }
+    return response.json()
+}
+
+export async function getPlatformAnalytics(
+    query: AnalyticsQuery = {}
+): Promise<AnalyticsReport> {
+    const params = new URLSearchParams()
+    if (query.seasonId != null) params.set("seasonId", String(query.seasonId))
+    if (query.from) params.set("from", query.from)
+    if (query.to) params.set("to", query.to)
+    if (query.gameId) params.set("gameId", query.gameId)
+    if (query.chain) params.set("chain", query.chain)
+    const qs = params.toString()
+    const response = await fetch(
+        `${getApiBaseUrl()}/analytics${qs ? `?${qs}` : ""}`,
+        {
+            method: "GET",
+            headers: await visitorHeaders(),
+            cache: "no-store",
+        }
+    )
+    if (response.status === 429) {
+        throw new Error("Too many requests. Wait a minute and try again.")
+    }
+    if (!response.ok) {
+        throw new Error(
+            await readApiError(
+                response,
+                `Failed to load analytics (${response.status})`
             )
         )
     }

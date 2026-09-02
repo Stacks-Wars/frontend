@@ -432,3 +432,127 @@ export type UserProfile = {
     currentSeasonId: number | null
     currentSeasonRank: number | null
 }
+
+/* ------------------------------------------------------------------ */
+/* Platform analytics (admin)                                          */
+/* ------------------------------------------------------------------ */
+
+export type AnalyticsGrain = "day" | "week" | "month"
+export type AnalyticsScope = "overall" | "season" | "custom"
+
+export type AnalyticsQuery = {
+    seasonId?: number
+    from?: string
+    to?: string
+    gameId?: string
+    chain?: string
+}
+
+export type AnalyticsRange = {
+    from: string
+    to: string
+    grain: AnalyticsGrain
+    scope: AnalyticsScope
+    seasonId: number | null
+    gameId: string | null
+    chain: string | null
+    activityScoped: boolean
+}
+
+export type AnalyticsKpis = {
+    totalUsers: number
+    newUsers: number
+    gettingStartedCompleted: number
+    gettingStartedCompletionRate: number | null
+    activeUsers: number
+    returningUsers: number
+    gamesPlayed: number
+    totalLobbies: number
+    paidLobbiesCreated: number
+    paidLobbiesCompleted: number
+    totalVolumeMicro: number
+    platformFeesMicro: number
+}
+
+export type OnboardingFunnel = {
+    signups: number
+    started: number
+    completed: number
+    startRate: number | null
+    completeRate: number | null
+    completeOfStartedRate: number | null
+}
+
+export type RetentionSnapshot = {
+    activeUsers: number
+    reactivatedUsers: number
+    repeatUsers: number
+    usersWithPlay: number
+    repeatRate: number | null
+}
+
+export type QuestAnalytics = {
+    claims: number
+    uniqueClaimers: number
+    pointsAwarded: number
+    gettingStartedClaims: number
+    dailyClaims: number
+    weeklyClaims: number
+    monthlyClaims: number
+    seasonalClaims: number
+    paidLadderClaims: number
+}
+
+export type AnalyticsPoint = {
+    bucket: string
+    newUsers: number
+    activeUsers: number
+    returningUsers: number
+    gamesPlayed: number
+    paidLobbiesCreated: number
+    paidLobbiesCompleted: number
+    volumeMicro: number
+    platformFeesMicro: number
+}
+
+export type FeeBreakdown = {
+    key: string
+    paidMatches: number
+    volumeMicro: number
+    platformFeesMicro: number
+}
+
+export type SeasonComparisonRow = {
+    seasonId: number
+    name: string
+    startsAt: string
+    endsAt: string
+    newUsers: number
+    activeUsers: number
+    gamesPlayed: number
+    paidLobbiesCompleted: number
+    volumeMicro: number
+    platformFeesMicro: number
+}
+
+export type AnalyticsDefinitions = {
+    qualifyingMatch: string
+    platformFee: string
+    volume: string
+    activeUsers: string
+    returningUsers: string
+    gettingStarted: string
+}
+
+export type AnalyticsReport = {
+    range: AnalyticsRange
+    kpis: AnalyticsKpis
+    funnel: OnboardingFunnel
+    retention: RetentionSnapshot
+    quests: QuestAnalytics
+    series: AnalyticsPoint[]
+    feesByChain: FeeBreakdown[]
+    feesByGame: FeeBreakdown[]
+    seasonComparison: SeasonComparisonRow[]
+    definitions: AnalyticsDefinitions
+}
