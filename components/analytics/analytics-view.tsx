@@ -59,7 +59,10 @@ function formatBucket(value: string | number, grain: AnalyticsGrain): string {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return "—"
     if (grain === "month") {
-        return date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+        return date.toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+        })
     }
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
@@ -96,7 +99,9 @@ export function AnalyticsView({
                 (season) =>
                     Date.parse(season.startsAt) <= now &&
                     Date.parse(season.endsAt) >= now
-            ) ?? ordered[0] ?? null
+            ) ??
+            ordered[0] ??
+            null
         )
     }, [ordered])
 
@@ -124,7 +129,9 @@ export function AnalyticsView({
 
     const seasonLabels = React.useMemo(
         () =>
-            Object.fromEntries(ordered.map((item) => [String(item.id), item.name])),
+            Object.fromEntries(
+                ordered.map((item) => [String(item.id), item.name])
+            ),
         [ordered]
     )
     const gameLabels = React.useMemo(
@@ -174,7 +181,9 @@ export function AnalyticsView({
                             onClick={() => {
                                 setMode(item.id)
                                 if (item.id === "season" && seasonId == null) {
-                                    setSeasonId(current?.id ?? ordered[0]?.id ?? null)
+                                    setSeasonId(
+                                        current?.id ?? ordered[0]?.id ?? null
+                                    )
                                 }
                             }}
                             className={cn(
@@ -193,7 +202,9 @@ export function AnalyticsView({
                     <Select
                         value={String(seasonId ?? "")}
                         onValueChange={(value) =>
-                            setSeasonId(value ? Number.parseInt(value, 10) : null)
+                            setSeasonId(
+                                value ? Number.parseInt(value, 10) : null
+                            )
                         }
                         items={seasonLabels}
                     >
@@ -202,7 +213,10 @@ export function AnalyticsView({
                         </SelectTrigger>
                         <SelectContent>
                             {ordered.map((item) => (
-                                <SelectItem key={item.id} value={String(item.id)}>
+                                <SelectItem
+                                    key={item.id}
+                                    value={String(item.id)}
+                                >
                                     {item.name}
                                 </SelectItem>
                             ))}
@@ -213,7 +227,10 @@ export function AnalyticsView({
                 {mode === "custom" ? (
                     <div className="flex flex-wrap items-end gap-2">
                         <div className="space-y-1">
-                            <Label htmlFor="analytics-from" className="text-xs text-muted-foreground">
+                            <Label
+                                htmlFor="analytics-from"
+                                className="text-xs text-muted-foreground"
+                            >
                                 From
                             </Label>
                             <Input
@@ -230,7 +247,10 @@ export function AnalyticsView({
                             />
                         </div>
                         <div className="space-y-1">
-                            <Label htmlFor="analytics-to" className="text-xs text-muted-foreground">
+                            <Label
+                                htmlFor="analytics-to"
+                                className="text-xs text-muted-foreground"
+                            >
                                 To
                             </Label>
                             <Input
@@ -311,7 +331,7 @@ function Header({ action }: { action?: React.ReactNode }) {
     return (
         <PageHeader
             title="Platform analytics"
-            description="Growth, engagement, and protocol fees. Unlisted — share the URL directly."
+            description="Growth, engagement, and protocol fees."
             action={action}
         />
     )
@@ -328,7 +348,9 @@ function Dashboard({
 }) {
     const scoped = report.range.activityScoped
     const gameName = React.useMemo(() => {
-        const map = Object.fromEntries(games.map((game) => [game.id, game.name]))
+        const map = Object.fromEntries(
+            games.map((game) => [game.id, game.name])
+        )
         return (id: string) => map[id] ?? id
     }, [games])
 
@@ -556,7 +578,9 @@ function Dashboard({
                         <CardContent className="p-5">
                             <Stat
                                 label="Played this period"
-                                value={formatCount(report.retention.usersWithPlay)}
+                                value={formatCount(
+                                    report.retention.usersWithPlay
+                                )}
                             />
                         </CardContent>
                     </Card>
@@ -564,7 +588,9 @@ function Dashboard({
                         <CardContent className="p-5">
                             <Stat
                                 label="Came back this period"
-                                value={formatCount(report.retention.reactivatedUsers)}
+                                value={formatCount(
+                                    report.retention.reactivatedUsers
+                                )}
                                 hint="First qualifying match was before this window"
                             />
                         </CardContent>
@@ -573,7 +599,9 @@ function Dashboard({
                         <CardContent className="p-5">
                             <Stat
                                 label="Played on 2+ days"
-                                value={formatCount(report.retention.repeatUsers)}
+                                value={formatCount(
+                                    report.retention.repeatUsers
+                                )}
                                 hint={
                                     report.retention.repeatRate != null
                                         ? `${formatRate(report.retention.repeatRate)} of players this period`
@@ -635,7 +663,9 @@ function Dashboard({
                         <CardContent className="p-5">
                             <Stat
                                 label="Getting Started claims"
-                                value={formatCount(report.quests.gettingStartedClaims)}
+                                value={formatCount(
+                                    report.quests.gettingStartedClaims
+                                )}
                             />
                         </CardContent>
                     </Card>
@@ -664,7 +694,8 @@ function Dashboard({
             <p className="max-w-3xl text-xs leading-relaxed text-muted-foreground">
                 {report.definitions.qualifyingMatch} {report.definitions.volume}{" "}
                 Account metrics (users, Getting Started, quest claims) are
-                platform-wide and do not change when a chain or game is selected.
+                platform-wide and do not change when a chain or game is
+                selected.
             </p>
         </div>
     )
@@ -686,7 +717,9 @@ function ChartCard({
             <CardHeader className="pb-2">
                 <CardTitle className="text-base">{title}</CardTitle>
                 {description ? (
-                    <p className="text-xs text-muted-foreground">{description}</p>
+                    <p className="text-xs text-muted-foreground">
+                        {description}
+                    </p>
                 ) : null}
             </CardHeader>
             <CardContent>{children}</CardContent>
@@ -730,7 +763,8 @@ function Funnel({ report }: { report: AnalyticsReport }) {
                                 {formatCount(step.value)}
                                 <span className="ml-2 text-muted-foreground">
                                     {formatRate(step.rate)} of signups
-                                    {index === 2 && report.funnel.completeOfStartedRate != null
+                                    {index === 2 &&
+                                    report.funnel.completeOfStartedRate != null
                                         ? ` · ${formatRate(report.funnel.completeOfStartedRate)} of started`
                                         : null}
                                 </span>
@@ -773,9 +807,15 @@ function BreakdownTable({
                         <thead className="text-left text-xs tracking-wide text-muted-foreground uppercase">
                             <tr>
                                 <th className="pb-2 font-medium">Source</th>
-                                <th className="pb-2 text-right font-medium">Matches</th>
-                                <th className="pb-2 text-right font-medium">Volume</th>
-                                <th className="pb-2 text-right font-medium">Fees</th>
+                                <th className="pb-2 text-right font-medium">
+                                    Matches
+                                </th>
+                                <th className="pb-2 text-right font-medium">
+                                    Volume
+                                </th>
+                                <th className="pb-2 text-right font-medium">
+                                    Fees
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -812,12 +852,24 @@ function SeasonTable({ rows }: { rows: AnalyticsReport["seasonComparison"] }) {
                     <thead className="text-left text-xs tracking-wide text-muted-foreground uppercase">
                         <tr className="border-b border-border/60">
                             <th className="px-5 py-3 font-medium">Season</th>
-                            <th className="px-3 py-3 text-right font-medium">New users</th>
-                            <th className="px-3 py-3 text-right font-medium">Active</th>
-                            <th className="px-3 py-3 text-right font-medium">Games</th>
-                            <th className="px-3 py-3 text-right font-medium">Paid done</th>
-                            <th className="px-3 py-3 text-right font-medium">Volume</th>
-                            <th className="px-5 py-3 text-right font-medium">Fees</th>
+                            <th className="px-3 py-3 text-right font-medium">
+                                New users
+                            </th>
+                            <th className="px-3 py-3 text-right font-medium">
+                                Active
+                            </th>
+                            <th className="px-3 py-3 text-right font-medium">
+                                Games
+                            </th>
+                            <th className="px-3 py-3 text-right font-medium">
+                                Paid done
+                            </th>
+                            <th className="px-3 py-3 text-right font-medium">
+                                Volume
+                            </th>
+                            <th className="px-5 py-3 text-right font-medium">
+                                Fees
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -829,7 +881,8 @@ function SeasonTable({ rows }: { rows: AnalyticsReport["seasonComparison"] }) {
                                 <td className="px-5 py-3">
                                     <p>{row.name}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {formatDate(row.startsAt)} — {formatDate(row.endsAt)}
+                                        {formatDate(row.startsAt)} —{" "}
+                                        {formatDate(row.endsAt)}
                                     </p>
                                 </td>
                                 <td className="tnum px-3 py-3 text-right">
