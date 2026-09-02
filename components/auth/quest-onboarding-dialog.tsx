@@ -42,18 +42,17 @@ export function QuestOnboardingDialog() {
 
     const needsLegal = Boolean(
         user &&
-            (user.legalAcceptedAt == null ||
-                user.legalVersion !== LEGAL_VERSION)
+        (user.legalAcceptedAt == null || user.legalVersion !== LEGAL_VERSION)
     )
     const needsReferral = user?.referralPromptStatus === "pending"
     const onAuth = pathname.startsWith("/auth")
     const open = Boolean(
         user &&
-            !loading &&
-            !needsChain &&
-            !needsLegal &&
-            !onAuth &&
-            (needsReferral || forceIntro)
+        !loading &&
+        !needsChain &&
+        !needsLegal &&
+        !onAuth &&
+        (needsReferral || forceIntro)
     )
     const step: "invite" | "intro" = forceIntro ? "intro" : "invite"
 
@@ -128,9 +127,8 @@ export function QuestOnboardingDialog() {
                         <DialogHeader>
                             <DialogTitle>Who invited you?</DialogTitle>
                             <DialogDescription>
-                                Optional. They get credit once you finish
-                                Getting Started — a name, a hosted match, a
-                                joined match, and a win.
+                                Optional. Enter their username to give them
+                                credit.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-2">
@@ -145,7 +143,9 @@ export function QuestOnboardingDialog() {
                                 }
                             />
                             {error ? (
-                                <p className="text-sm text-destructive">{error}</p>
+                                <p className="text-sm text-destructive">
+                                    {error}
+                                </p>
                             ) : null}
                         </div>
                         <DialogFooter className="gap-2 sm:justify-between">
