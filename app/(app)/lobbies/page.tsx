@@ -8,11 +8,13 @@ import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
 import { LobbyBrowser } from "@/components/lobbies/lobby-browser"
 import { listGames, listLobbies } from "@/lib/api/server"
 import { lobbyListChainForSession } from "@/lib/chain/server"
+import { SITE_KEYWORDS } from "@/lib/seo"
 
 export const metadata: Metadata = {
     title: "Lobbies",
     description:
         "Open and live multiplayer lobbies. Lobbies are grouped by the chain you are playing on.",
+    keywords: SITE_KEYWORDS,
     alternates: { canonical: "/lobbies" },
 }
 

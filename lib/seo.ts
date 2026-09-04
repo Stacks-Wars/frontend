@@ -14,6 +14,24 @@ export const HOME_TITLE = "Stacks Wars | Onchain gaming"
 export const HOME_DESCRIPTION =
     "Play competitive multiplayer games onchain. Join a lobby, stake, compete, and settle the pot on Stacks Wars."
 
+/** Search metadata only — not shown in titles or descriptions. */
+export const SITE_KEYWORDS = [
+    "Stacks Wars",
+    "gaming on solana",
+    "gaming on stacks",
+    "onchain gaming",
+    "blockchain gaming",
+    "web3 games",
+    "real-time multiplayer",
+    "competitive gaming",
+    "skill-based games",
+    "on-chain rewards",
+    "Stacks blockchain",
+    "Solana blockchain",
+    "play to compete",
+    "crypto gaming",
+]
+
 export const DOCS_URL = "https://docs.stackswars.com"
 
 /**
@@ -76,6 +94,7 @@ export function organizationJsonLd() {
                 name: SITE_NAME,
                 url: origin,
                 description: SITE_DESCRIPTION,
+                keywords: SITE_KEYWORDS.join(", "),
                 publisher: { "@id": `${origin}/#org` },
             },
         ],
@@ -107,6 +126,8 @@ export function videoGameJsonLd(game: GameMetadata) {
         url: `${origin}/games/${game.id}`,
         image: `${origin}${OG_IMAGE_PATH}`,
         playMode: "MultiPlayer",
+        gamePlatform: ["Solana", "Stacks"],
+        keywords: SITE_KEYWORDS.join(", "),
         publisher: {
             "@type": "Organization",
             name: SITE_NAME,
