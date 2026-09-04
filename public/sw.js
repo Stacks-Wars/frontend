@@ -15,12 +15,18 @@ self.addEventListener("push", (event) => {
                 return
             }
 
+            const silent = data.silent === true
             const options = {
                 body: data.body,
                 tag: data.tag,
                 icon: "/android-chrome-192x192.png",
                 badge: "/android-chrome-192x192.png",
+                silent,
+                renotify: Boolean(data.tag) && !silent,
                 data: { url: data.url || "/", tag: data.tag },
+            }
+            if (!silent) {
+                options.vibrate = [200, 100, 200]
             }
             if (Array.isArray(data.actions) && data.actions.length > 0) {
                 options.actions = data.actions

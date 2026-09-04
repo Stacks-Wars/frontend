@@ -6,12 +6,13 @@ import { GamesDirectory } from "@/components/games/games-directory"
 import { CreateLobbyButton } from "@/components/lobbies/create-lobby-provider"
 import { JsonLd } from "@/components/seo/json-ld"
 import { listGameActivity, listGames } from "@/lib/api/server"
-import { gamesItemListJsonLd } from "@/lib/seo"
+import { gamesItemListJsonLd, SITE_KEYWORDS } from "@/lib/seo"
 
 export const metadata: Metadata = {
     title: "Games",
     description:
         "Multiplayer onchain games on Stacks Wars, with live lobby and player counts.",
+    keywords: SITE_KEYWORDS,
     alternates: { canonical: "/games" },
 }
 

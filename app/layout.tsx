@@ -7,6 +7,7 @@ import { JsonLd } from "@/components/seo/json-ld"
 import {
     organizationJsonLd,
     SITE_DESCRIPTION,
+    SITE_KEYWORDS,
     SITE_NAME,
     siteOgImages,
     siteOrigin,
@@ -58,6 +59,7 @@ export const metadata: Metadata = {
         template: `%s · ${SITE_NAME}`,
     },
     description: SITE_DESCRIPTION,
+    keywords: SITE_KEYWORDS,
     applicationName: SITE_NAME,
     icons: {
         icon: [
