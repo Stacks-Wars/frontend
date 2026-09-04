@@ -7,16 +7,12 @@ import { compact, displayNameFor, formatDate, ordinal } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 export function ProfileHeader({ profile }: { profile: UserProfile }) {
-    const { user, lifetime, currentSeasonRank } = profile
+    const { user, lifetime, currentSeasonRank, currentSeasonPoints } = profile
     const name = displayNameFor(user)
     const winRate =
         lifetime.totalMatches > 0
             ? (lifetime.totalWins / lifetime.totalMatches) * 100
             : 0
-    // Rank and points must come from the same source as the leaderboard.
-    const seasonPoints = profile.statLines
-        .filter((line) => line.seasonId === profile.currentSeasonId)
-        .reduce((total, line) => total + line.points, 0)
 
     return (
         <header className="relative isolate animate-rise-in overflow-hidden rounded-2xl border border-border/70 surface-raised">
@@ -67,8 +63,8 @@ export function ProfileHeader({ profile }: { profile: UserProfile }) {
                         }
                     />
                     <Headline
-                        label="Season points"
-                        value={compact(seasonPoints)}
+                        label="Wars Points"
+                        value={compact(currentSeasonPoints)}
                     />
                     <Headline
                         label="Win rate"

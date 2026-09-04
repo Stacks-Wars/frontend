@@ -18,10 +18,10 @@ export function LeaderboardPreview({
     seasonName: string | null
 }) {
     const { items } = useLeaderboard(
-        { seasonId: seasonId ?? undefined },
+        { seasonId: seasonId ?? undefined, board: "all" },
         initial
     )
-    const top = items.slice(0, 8)
+    const top = items.slice(0, 10)
 
     return (
         <section className="space-y-4">
@@ -29,8 +29,8 @@ export function LeaderboardPreview({
                 title="Season standings"
                 description={
                     seasonName
-                        ? `${seasonName}. Updated the moment a match settles.`
-                        : "Updated the moment a match settles."
+                        ? `${seasonName}. Game and quest Wars Points.`
+                        : "Game and quest Wars Points this season."
                 }
                 action={
                     <ButtonLink href="/leaderboard" variant="ghost" size="sm">
@@ -42,7 +42,7 @@ export function LeaderboardPreview({
             {top.length === 0 ? (
                 <EmptyState
                     title="Season hasn't started"
-                    description="The first settled match puts someone at the top."
+                    description="The first settled match or claimed quest puts someone at the top."
                 />
             ) : (
                 <ol className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/70 surface-raised">
