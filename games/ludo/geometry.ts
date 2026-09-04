@@ -30,8 +30,10 @@ export const TRACK: Cell[] = [
 /** Track index each player enters the board on. Mirrors `PLAYER_STARTS`. */
 export const PLAYER_STARTS = [0, 13, 26, 39]
 
-/** Squares where pawns cannot be captured. Mirrors `SAFE_SQUARES`. */
+/** Squares where pawns cannot be captured. Mirrors Ludo `SAFE_SQUARES`. */
 export const SAFE_SQUARES = new Set([0, 8, 13, 21, 26, 34, 39, 47])
+
+export const RUSH_SAFE_SQUARES = new Set(PLAYER_STARTS)
 
 /** Five coloured cells leading from the track into each player's goal. */
 export const HOME_STRETCH: Cell[][] = [
