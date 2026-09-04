@@ -25,13 +25,13 @@ export function GettingStartedRail() {
                         <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
                             Getting Started
                         </p>
-                        <h2 className="font-display text-xl">Get on the board</h2>
+                        <h2 className="font-display text-xl">First things</h2>
                         <p className="text-sm text-muted-foreground">
-                            {done} of {gs.length} complete. Claim them on Quests.
+                            {done} of {gs.length} done. The rest is on Quests.
                         </p>
                     </div>
                     <ButtonLink href="/quests" size="sm">
-                        Open quests
+                        Start
                     </ButtonLink>
                 </div>
                 <Progress

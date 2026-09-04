@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
+import { RiCoinLine, RiFlagLine, RiTrophyLine } from "@remixicon/react"
 
 import {
     markQuestIntroSeenAction,
@@ -28,8 +29,27 @@ import {
     useSessionUser,
 } from "@/stores/session"
 
+const INTRO_BEATS = [
+    {
+        text: "Complete your first missions.",
+        icon: RiFlagLine,
+        tone: "bg-primary/15 text-primary",
+    },
+    {
+        text: "Earn Wars Points.",
+        icon: RiCoinLine,
+        tone: "bg-gold/15 text-gold",
+    },
+    {
+        text: "Start climbing the leaderboard.",
+        icon: RiTrophyLine,
+        tone: "bg-primary/15 text-primary",
+    },
+] as const
+
 export function QuestOnboardingDialog() {
     const pathname = usePathname()
+    const router = useRouter()
     const queryClient = useQueryClient()
     const user = useSessionUser()
     const loading = useSessionLoading()
@@ -69,7 +89,7 @@ export function QuestOnboardingDialog() {
             const next = await submitReferralAction({ skip: true })
             await persistUser(next)
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Could not skip.")
+            setError(err instanceof Error ? err.message : "Couldn't skip that.")
         } finally {
             setBusy(false)
         }
@@ -99,21 +119,24 @@ export function QuestOnboardingDialog() {
             const next = await submitReferralAction({ username: value })
             await persistUser(next)
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Could not save.")
+            setError(err instanceof Error ? err.message : "Couldn't save that.")
         } finally {
             setBusy(false)
         }
     }
 
-    async function finishIntro() {
+    async function finishIntro(goToQuests: boolean) {
         setBusy(true)
         setError(null)
         try {
             const next = await markQuestIntroSeenAction()
             await persistUser(next)
             setForceIntro(false)
+            if (goToQuests && pathname !== "/quests") {
+                router.push("/quests")
+            }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Could not save.")
+            setError(err instanceof Error ? err.message : "Couldn't save that.")
         } finally {
             setBusy(false)
         }
@@ -121,14 +144,20 @@ export function QuestOnboardingDialog() {
 
     return (
         <Dialog open={open} onOpenChange={() => {}} disablePointerDismissal>
-            <DialogContent showCloseButton={false} className="max-w-lg">
+            <DialogContent
+                showCloseButton={false}
+                className={cn(
+                    "max-w-lg overflow-hidden",
+                    step === "intro" && "border-primary/35"
+                )}
+            >
                 {step === "invite" ? (
                     <>
                         <DialogHeader>
                             <DialogTitle>Who invited you?</DialogTitle>
                             <DialogDescription>
-                                Optional. Enter their username to give them
-                                credit.
+                                If someone sent you, type their username so they
+                                get credit. Skip if it was just you.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-2">
@@ -166,41 +195,50 @@ export function QuestOnboardingDialog() {
                     </>
                 ) : (
                     <>
-                        <DialogHeader>
-                            <DialogTitle>Getting Started</DialogTitle>
-                            <DialogDescription>
-                                Four steps to get on the board: choose a
-                                username, host a match, join someone else, and
-                                win once. Claim them on Quests when you are
-                                ready.
+                        <DialogHeader className="pr-0">
+                            <DialogTitle>Your journey starts here.</DialogTitle>
+                            <DialogDescription className="sr-only">
+                                Complete your first missions. Earn Wars Points.
+                                Start climbing the leaderboard.
                             </DialogDescription>
                         </DialogHeader>
-                        <ul className="space-y-2 text-sm">
-                            {[
-                                "Choose your username",
-                                "Host your first match",
-                                "Join a match",
-                                "Win your first match",
-                            ].map((item) => (
+                        <ul className="space-y-3">
+                            {INTRO_BEATS.map((beat) => (
                                 <li
-                                    key={item}
-                                    className={cn(
-                                        "rounded-xl border border-border/60 px-3 py-2"
-                                    )}
+                                    key={beat.text}
+                                    className="flex items-center gap-3 text-sm"
                                 >
-                                    {item}
+                                    <span
+                                        className={cn(
+                                            "grid size-8 shrink-0 place-items-center rounded-lg",
+                                            beat.tone
+                                        )}
+                                    >
+                                        <beat.icon className="size-4" />
+                                    </span>
+                                    {beat.text}
                                 </li>
                             ))}
                         </ul>
                         {error ? (
                             <p className="text-sm text-destructive">{error}</p>
                         ) : null}
-                        <DialogFooter>
+                        <DialogFooter className="mt-8 flex flex-col gap-2 sm:flex-col sm:items-stretch">
                             <Button
+                                className="w-full"
+                                variant="primary"
                                 disabled={busy}
-                                onClick={() => void finishIntro()}
+                                onClick={() => void finishIntro(true)}
                             >
-                                Got it
+                                Start Quest
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                className="w-full text-muted-foreground"
+                                disabled={busy}
+                                onClick={() => void finishIntro(false)}
+                            >
+                                Later
                             </Button>
                         </DialogFooter>
                     </>

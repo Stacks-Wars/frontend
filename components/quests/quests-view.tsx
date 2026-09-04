@@ -58,7 +58,7 @@ function GettingStartedPath({ quests }: { quests: QuestView[] }) {
     if (allDone) {
         return (
             <p className="text-sm text-muted-foreground">
-                Getting Started is complete. You are on the board.
+                That&apos;s the lot. You&apos;re on the board.
             </p>
         )
     }
@@ -72,11 +72,10 @@ function GettingStartedPath({ quests }: { quests: QuestView[] }) {
                     Getting Started
                 </p>
                 <h2 className="font-display text-xl sm:text-2xl">
-                    Your way in
+                    First things
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    {done} of {quests.length} complete. This is how you arrive
-                    on Stacks Wars.
+                    {done} of {quests.length} done.
                 </p>
             </div>
             <ol className="ml-0.5">

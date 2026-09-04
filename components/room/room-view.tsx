@@ -11,14 +11,21 @@ import { PlayerList } from "@/components/room/player-list"
 import { RoomChat } from "@/components/room/room-chat"
 import { RoomControls } from "@/components/room/room-controls"
 import { RoomHeader } from "@/components/room/room-header"
+import { RoomChainDialog } from "@/components/room/room-chain-dialog"
 import { RoomSkeleton } from "@/components/room/room-skeleton"
 import { Button, EmptyState } from "@/components/ui"
 import { getGameModule } from "@/games/registry"
 import { useLobbyRoom } from "@/hooks/use-lobby-room"
 import type { GameMetadata } from "@/lib/api/types"
+import { isChainId } from "@/lib/chain"
 import { kickLobbyPlayerOnchain } from "@/lib/onchain"
 import { useNotificationActions } from "@/stores/notifications"
-import { useSessionUser } from "@/stores/session"
+import {
+    useSessionCurrentChain,
+    useSessionLoading,
+    useSessionNeedsChainPick,
+    useSessionUser,
+} from "@/stores/session"
 
 /**
  * The realtime hub.
@@ -38,6 +45,9 @@ export function RoomView({
     const { room, connection, stale, sendChat, resync, channel } =
         useLobbyRoom(path)
     const selfUserId = useSessionUser()?.id ?? null
+    const currentChain = useSessionCurrentChain()
+    const sessionLoading = useSessionLoading()
+    const needsChainPick = useSessionNeedsChainPick()
     const { toast } = useNotificationActions()
     const [kicking, setKicking] = React.useState<string | null>(null)
 
@@ -98,6 +108,21 @@ export function RoomView({
     }
 
     const { lobby, players, joinRequests, presence, chat, finished } = room
+    const lobbyChain =
+        lobby.chain && isChainId(lobby.chain) ? lobby.chain : null
+    if (
+        !sessionLoading &&
+        !needsChainPick &&
+        lobbyChain &&
+        lobbyChain !== currentChain
+    ) {
+        return (
+            <>
+                <RoomSkeleton />
+                <RoomChainDialog chain={lobbyChain} />
+            </>
+        )
+    }
     const isParticipant = players.some((p) => p.userId === selfUserId)
     const isCreator = selfUserId === lobby.creatorId
     const playing = lobby.status === "inProgress" || lobby.status === "starting"
