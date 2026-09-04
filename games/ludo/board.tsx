@@ -5,6 +5,7 @@ import {
     HOME_STRETCH,
     PLAYER_COLORS,
     PLAYER_STARTS,
+    RUSH_SAFE_SQUARES,
     SAFE_SQUARES,
     TRACK,
     YARDS,
@@ -43,14 +44,17 @@ export function LudoBoardView({
     myPlayerIndex,
     interactive,
     onMovePawn,
+    rush = false,
 }: {
     board: LudoBoard
     movablePawns: number[]
     myPlayerIndex: number | null
     interactive: boolean
     onMovePawn: (pawnId: number) => void
+    rush?: boolean
 }) {
     const movable = new Set(interactive ? movablePawns : [])
+    const safeSquares = rush ? RUSH_SAFE_SQUARES : SAFE_SQUARES
 
     // Pawns sharing a square get nudged apart so a stack stays readable.
     const occupancy = new Map<string, number>()
@@ -86,7 +90,7 @@ export function LudoBoardView({
                             background:
                                 startOwner >= 0
                                     ? `color-mix(in oklab, ${PLAYER_COLORS[startOwner]} 55%, transparent)`
-                                    : SAFE_SQUARES.has(index)
+                                    : safeSquares.has(index)
                                       ? "oklch(1 0 0 / 0.16)"
                                       : undefined,
                         }}

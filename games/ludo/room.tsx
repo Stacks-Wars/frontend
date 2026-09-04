@@ -49,12 +49,14 @@ function orderedPlayableValues(
 }
 
 export function LudoRoom({
+    lobby,
     players,
     selfUserId,
     initialState,
     channel,
     connection,
 }: GameRoomProps) {
+    const rush = lobby.gameId === "ludo-rush"
     const snapshot = initialState as LudoSnapshot | null
 
     const [board, setBoard] = React.useState<LudoBoard | null>(
@@ -399,6 +401,7 @@ export function LudoRoom({
                             myPlayerIndex={myPlayerIndex}
                             interactive={Boolean(isMyTurn) && live}
                             onMovePawn={movePawn}
+                            rush={rush}
                         />
                     ) : (
                         <div className="aspect-square w-full max-w-155 animate-pulse rounded-xl bg-muted/50" />
@@ -452,7 +455,9 @@ export function LudoLobbyPanel({ rush }: { rush?: boolean }) {
                 </li>
                 <li>Only a single die can bring a pawn out of the yard.</li>
                 <li>
-                    Land on an opponent off a safe square to send them home.
+                    {rush
+                        ? "Only the coloured home entries are safe. Land on anyone else to send them home."
+                        : "Land on an opponent off a safe square to send them home."}
                 </li>
                 <li>
                     {rush
