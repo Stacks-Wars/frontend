@@ -168,7 +168,9 @@ export function CreateLobbyDialog({
                 return
             }
             setError(
-                `${result.error} Your on-chain entry is saved — tap Continue to finish without paying again.`
+                incompleteDraft
+                    ? `${result.error} Your on-chain entry is saved — tap Continue to finish without paying again.`
+                    : result.error
             )
             return
         }

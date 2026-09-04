@@ -6,7 +6,7 @@ import {
     type Signature,
 } from "@solana/kit"
 
-import { getSolanaRpcUrl } from "@/lib/solana/network"
+import { getSolanaRpcUrl } from "@/lib/solana/helius"
 
 export function solanaRpc() {
     return createSolanaRpc(getSolanaRpcUrl())

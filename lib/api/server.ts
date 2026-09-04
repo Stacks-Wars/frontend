@@ -436,7 +436,10 @@ export async function getBalance(
         }
     )
     if (!response.ok) {
-        throw new Error(`Failed to load balance (${response.status})`)
+        const body = (await response.json().catch(() => null)) as {
+            error?: string
+        } | null
+        throw new Error(body?.error ?? `Failed to load balance (${response.status})`)
     }
     return response.json()
 }
@@ -454,7 +457,12 @@ export async function refreshBalance(
         }
     )
     if (!response.ok) {
-        throw new Error(`Failed to refresh balance (${response.status})`)
+        const body = (await response.json().catch(() => null)) as {
+            error?: string
+        } | null
+        throw new Error(
+            body?.error ?? `Failed to refresh balance (${response.status})`
+        )
     }
     return response.json()
 }

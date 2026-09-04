@@ -74,8 +74,21 @@ if (!mnemonic) {
     throw new Error("SOLANA_WARS_KEY is missing")
 }
 
-const rpcUrl =
-    process.env.SOLANA_RPC_URL?.trim() || "https://api.devnet.solana.com"
+const rpcUrl = (() => {
+    const key = process.env.HELIUS_API_KEY?.trim()
+    if (!key) throw new Error("HELIUS_API_KEY is missing")
+    const network = (process.env.SOLANA_NETWORK || "devnet").trim().toLowerCase()
+    const cluster =
+        network === "mainnet" || network === "mainnet-beta" ? "mainnet" : "devnet"
+    const raw = process.env.SOLANA_RPC_URL?.trim() || ""
+    const template =
+        !raw || raw.includes("api.devnet.solana.com")
+            ? "https://{network}.helius-rpc.com/"
+            : raw
+    const url = new URL(template.replaceAll("{network}", cluster))
+    url.searchParams.set("api-key", key)
+    return url.toString()
+})()
 const mint = address(process.env.SOLANA_USDC_MINT?.trim() || TEST_USDC)
 const program = address(
     process.env.SOLANA_VAULT_PROGRAM_ID?.trim() || PROGRAM_ID

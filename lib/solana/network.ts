@@ -1,4 +1,4 @@
-export type SolanaNetworkName = "mainnet-beta" | "devnet" | "testnet"
+export type SolanaNetworkName = "mainnet-beta" | "devnet"
 
 /** Platform-owned 6-decimal USDC on devnet. Mint authority is SOLANA_WARS_KEY. */
 export const SOLANA_TEST_USDC_MINT =
@@ -15,24 +15,10 @@ export const SOLANA_TEST_USDC_AMOUNT = BigInt(50_000_000)
 export function getSolanaNetworkName(): SolanaNetworkName {
     const raw = process.env.SOLANA_NETWORK?.trim().toLowerCase()
     if (raw === "mainnet" || raw === "mainnet-beta") return "mainnet-beta"
-    if (raw === "testnet") return "testnet"
     return "devnet"
 }
 
-export function getSolanaRpcUrl(): string {
-    const explicit = process.env.SOLANA_RPC_URL?.trim()
-    if (explicit) return explicit
-    switch (getSolanaNetworkName()) {
-        case "mainnet-beta":
-            return "https://api.mainnet-beta.solana.com"
-        case "testnet":
-            return "https://api.testnet.solana.com"
-        default:
-            return "https://api.devnet.solana.com"
-    }
-}
-
-/** True on devnet/testnet. Never mint test USDC on mainnet. */
+/** True on devnet. Never mint test USDC on mainnet. */
 export function isSolanaTestUsdcEnabled(): boolean {
     return getSolanaNetworkName() !== "mainnet-beta"
 }
