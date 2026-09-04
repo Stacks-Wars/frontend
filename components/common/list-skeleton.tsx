@@ -23,7 +23,7 @@ export function PageHeaderSkeleton({
 export function GameCardSkeleton() {
     return (
         <article className="flex flex-col overflow-hidden rounded-2xl border border-border/70 surface-raised">
-            <Skeleton className="aspect-[16/10] rounded-none" />
+            <Skeleton className="aspect-16/10 rounded-none" />
             <div className="flex flex-1 flex-col gap-4 p-4">
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-full" />
@@ -47,7 +47,11 @@ export function GameCardSkeleton() {
     )
 }
 
-export function LobbyCardSkeleton({ showThumb = true }: { showThumb?: boolean }) {
+export function LobbyCardSkeleton({
+    showThumb = true,
+}: {
+    showThumb?: boolean
+}) {
     return (
         <article className="flex flex-col gap-4 rounded-2xl border border-border/70 p-4 surface-raised">
             <div className="flex items-start justify-between gap-3">
@@ -171,54 +175,62 @@ export function LeaderboardPageSkeleton() {
                     <Skeleton className="h-10 w-44 rounded-lg" />
                 </div>
                 <Skeleton className="h-4 w-64" />
-                <div className="grid gap-3 sm:grid-cols-3">
-                    {Array.from({ length: 3 }).map((_, index) => (
-                        <div
-                            key={index}
-                            className={cn(
-                                "flex flex-col items-center gap-3 rounded-2xl border border-border/70 p-5",
-                                index === 1 && "sm:py-7"
-                            )}
-                        >
-                            <Skeleton className="size-12 rounded-full" />
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-3 w-32" />
-                            <Skeleton className="h-7 w-16" />
-                        </div>
-                    ))}
-                </div>
                 <LeaderboardTableSkeleton />
             </div>
         </div>
     )
 }
 
-export function LeaderboardTableSkeleton({ rows = 8 }: { rows?: number }) {
+export function LeaderboardTableSkeleton({
+    rows = 8,
+    hideMatchStats = false,
+}: {
+    rows?: number
+    hideMatchStats?: boolean
+}) {
+    const cols = hideMatchStats
+        ? "sm:grid-cols-[2.5rem_minmax(0,1fr)_5.5rem]"
+        : "sm:grid-cols-[2.5rem_minmax(0,1fr)_5.5rem_5.5rem_5.5rem]"
     return (
         <div className="overflow-hidden rounded-2xl border border-border/70 surface-raised">
-            <div className="hidden grid-cols-[3rem_minmax(0,1fr)_5rem_5rem_6rem_6rem] gap-3 border-b border-border/60 px-4 py-2.5 sm:grid">
+            <div
+                className={cn(
+                    "hidden gap-3 border-b border-border/60 px-4 py-2.5 sm:grid",
+                    cols
+                )}
+            >
                 <Skeleton className="h-3 w-4" />
                 <Skeleton className="h-3 w-14" />
-                <Skeleton className="ml-auto h-3 w-10" />
-                <Skeleton className="ml-auto h-3 w-8" />
-                <Skeleton className="ml-auto h-3 w-8" />
+                {hideMatchStats ? null : (
+                    <>
+                        <Skeleton className="ml-auto h-3 w-8" />
+                        <Skeleton className="ml-auto h-3 w-8" />
+                    </>
+                )}
                 <Skeleton className="ml-auto h-3 w-12" />
             </div>
             <div className="divide-y divide-border/50">
                 {Array.from({ length: rows }).map((_, index) => (
                     <div
                         key={index}
-                        className="grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:grid-cols-[3rem_minmax(0,1fr)_5rem_5rem_6rem_6rem]"
+                        className={cn(
+                            "grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1.5 px-4 py-3 sm:items-center",
+                            cols
+                        )}
                     >
-                        <Skeleton className="h-5 w-8" />
+                        <Skeleton className="h-5 w-8 self-center" />
                         <div className="flex items-center gap-2">
                             <Skeleton className="size-8 shrink-0 rounded-full" />
                             <Skeleton className="h-4 w-28" />
                         </div>
-                        <Skeleton className="hidden h-4 w-8 justify-self-end sm:block" />
-                        <Skeleton className="hidden h-4 w-10 justify-self-end sm:block" />
-                        <Skeleton className="hidden h-4 w-12 justify-self-end sm:block" />
                         <Skeleton className="h-5 w-12 justify-self-end" />
+                        {hideMatchStats ? null : (
+                            <>
+                                <Skeleton className="col-start-2 h-3 w-36 sm:hidden" />
+                                <Skeleton className="hidden h-4 w-8 justify-self-end sm:block" />
+                                <Skeleton className="hidden h-4 w-12 justify-self-end sm:block" />
+                            </>
+                        )}
                     </div>
                 ))}
             </div>

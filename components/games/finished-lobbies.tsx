@@ -11,7 +11,7 @@ import { formatUsdc, timeAgo } from "@/lib/format"
 import type { MatchFinishedPayload } from "@/lib/ws/protocol"
 import { useRecentResults } from "@/stores/live"
 
-const RECENT_LIMIT = 12
+const DEFAULT_LIMIT = 12
 
 type FinishedRow = {
     key: string
@@ -54,15 +54,18 @@ function fromLive(result: MatchFinishedPayload): FinishedRow {
 }
 
 /**
- * Finished lobbies for one game. Seeded from `GET /lobbies?status=finished`,
- * then prepended with `match.finished` events that land while the page is open.
+ * Finished lobbies, seeded from `GET /lobbies?status=finished`.
+ * Live `match.finished` events prepend while the page is open.
+ * Pass `gameId` to keep the list on one game.
  */
 export function FinishedLobbies({
     gameId,
     initial,
+    limit = DEFAULT_LIMIT,
 }: {
-    gameId: string
+    gameId?: string
     initial: Lobby[]
+    limit?: number
 }) {
     const live = useRecentResults()
 
@@ -70,12 +73,13 @@ export function FinishedLobbies({
         const seen = new Set(initial.map((lobby) => lobby.id))
         const fresh: FinishedRow[] = []
         for (const result of live) {
-            if (result.gameId !== gameId || seen.has(result.lobbyId)) continue
+            if (gameId && result.gameId !== gameId) continue
+            if (seen.has(result.lobbyId)) continue
             seen.add(result.lobbyId)
             fresh.push(fromLive(result))
         }
-        return [...fresh, ...initial.map(fromLobby)].slice(0, RECENT_LIMIT)
-    }, [gameId, initial, live])
+        return [...fresh, ...initial.map(fromLobby)].slice(0, limit)
+    }, [gameId, initial, live, limit])
 
     if (rows.length === 0) {
         return (

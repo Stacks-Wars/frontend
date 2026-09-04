@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils"
 
 const MEDALS: Record<number, string> = {
-    1: "border-gold/50 bg-gold/15 text-gold",
-    2: "border-border-strong bg-surface text-foreground",
-    3: "border-warning/40 bg-warning/10 text-warning",
+    1: "🥇",
+    2: "🥈",
+    3: "🥉",
 }
 
 export function RankBadge({
@@ -13,15 +13,17 @@ export function RankBadge({
     rank: number
     className?: string
 }) {
+    const medal = MEDALS[rank]
     return (
         <span
             className={cn(
-                "tnum grid size-8 shrink-0 place-items-center rounded-lg border font-display text-sm",
-                MEDALS[rank] ?? "border-border/60 text-muted-foreground",
+                "tnum grid size-8 shrink-0 place-items-center font-display text-sm",
+                medal ? "text-base" : "text-muted-foreground",
                 className
             )}
+            aria-label={`Rank ${rank}`}
         >
-            {rank}
+            {medal ?? rank}
         </span>
     )
 }

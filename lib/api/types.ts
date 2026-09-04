@@ -385,20 +385,6 @@ export type MatchHistoryItem = {
     warsPoint: number
 }
 
-export type RecentMatch = {
-    matchId: string
-    lobbyPath: string
-    gameId: string
-    potMicro: number
-    playerCount: number
-    finishedAt: string
-    winnerId: string | null
-    winnerUsername: string | null
-    winnerDisplayName: string | null
-    winnerAvatarUrl: string | null
-    winnerPrizeMicro: number
-}
-
 export type LifetimeTotals = {
     totalMatches: number
     totalWins: number
@@ -431,6 +417,7 @@ export type UserProfile = {
     statLines: UserStatLine[]
     currentSeasonId: number | null
     currentSeasonRank: number | null
+    currentSeasonPoints: number
 }
 
 /* ------------------------------------------------------------------ */

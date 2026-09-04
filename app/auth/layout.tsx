@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 }
 
 const POINTS = [
-    "Entry fees sit in an on-chain vault, not with us.",
-    "Leave before the start and the refund is automatic.",
-    "Season points update the moment a match settles.",
+    "Browse rooms that are already filling.",
+    "Jump into a match, or open your own.",
+    "Climb the leaderboard and earn rewards.",
 ]
 
 export default function AuthLayout({

@@ -18,7 +18,6 @@ import type {
     MatchHistoryItem,
     QuestClaimResult,
     QuestMe,
-    RecentMatch,
     Season,
     UpdateProfilePayload,
     UpsertUserPayload,
@@ -198,22 +197,6 @@ export async function listGameActivity(): Promise<GameActivity[]> {
     })
     if (!response.ok) {
         throw new Error(`Failed to load game activity (${response.status})`)
-    }
-    return response.json()
-}
-
-export async function listRecentMatches(options: {
-    limit?: number
-} = {}): Promise<RecentMatch[]> {
-    const params = new URLSearchParams()
-    if (options.limit != null) params.set("limit", String(options.limit))
-    const qs = params.toString()
-    const response = await fetch(
-        `${getApiBaseUrl()}/games/recent-matches${qs ? `?${qs}` : ""}`,
-        { method: "GET", cache: "no-store" }
-    )
-    if (!response.ok) {
-        throw new Error(`Failed to load recent matches (${response.status})`)
     }
     return response.json()
 }

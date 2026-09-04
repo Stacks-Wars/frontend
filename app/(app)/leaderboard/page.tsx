@@ -39,13 +39,14 @@ export default async function LeaderboardPageRoute() {
     const initial = await getLeaderboard({
         seasonId: current?.id,
         limit: 25,
+        board: "all",
     }).catch(() => EMPTY)
 
     return (
         <PageContainer className="space-y-8">
             <PageHeader
                 title="Leaderboard"
-                description="Game board is match results. Quests is claimed quest points. All adds them together."
+                description="Game points come from match results. Quest points come from completed quests. All combines both."
             />
             <LeaderboardView
                 initial={initial}

@@ -1,11 +1,8 @@
 "use client"
 
 import {
-    RiArrowDownSLine,
     RiArrowLeftSLine,
     RiArrowRightSLine,
-    RiArrowUpSLine,
-    RiSubtractLine,
 } from "@remixicon/react"
 
 import { RankBadge } from "@/components/leaderboard/rank-badge"
@@ -13,7 +10,7 @@ import { UserChip } from "@/components/common/user-chip"
 import { LeaderboardTableSkeleton } from "@/components/common/list-skeleton"
 import { Button, EmptyState } from "@/components/ui"
 import type { RankedEntry } from "@/hooks/use-leaderboard"
-import { formatUsdc, compact } from "@/lib/format"
+import { compact, formatPercent, formatUsdc } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useSessionUser } from "@/stores/session"
 
@@ -39,9 +36,12 @@ export function LeaderboardTable({
     emptyDescription?: string
 }) {
     const selfId = useSessionUser()?.id ?? null
+    const cols = hideMatchStats
+        ? "sm:grid-cols-[2.5rem_minmax(0,1fr)_5.5rem]"
+        : "sm:grid-cols-[2.5rem_minmax(0,1fr)_5.5rem_5.5rem_5.5rem]"
 
     if (loading) {
-        return <LeaderboardTableSkeleton />
+        return <LeaderboardTableSkeleton hideMatchStats={hideMatchStats} />
     }
 
     if (items.length === 0) {
@@ -61,18 +61,16 @@ export function LeaderboardTable({
                     fetching && "opacity-70"
                 )}
             >
-                <div className="hidden grid-cols-[3rem_minmax(0,1fr)_5rem_5rem_6rem_6rem] gap-3 border-b border-border/60 px-4 py-2.5 text-[11px] tracking-wide text-muted-foreground uppercase sm:grid">
+                <div
+                    className={cn(
+                        "hidden gap-3 border-b border-border/60 px-4 py-2.5 text-[11px] tracking-wide text-muted-foreground uppercase sm:grid",
+                        cols
+                    )}
+                >
                     <span>#</span>
                     <span>Player</span>
-                    {hideMatchStats ? (
+                    {hideMatchStats ? null : (
                         <>
-                            <span />
-                            <span />
-                            <span />
-                        </>
-                    ) : (
-                        <>
-                            <span className="text-right">Played</span>
                             <span className="text-right">Wins</span>
                             <span className="text-right">Net</span>
                         </>
@@ -85,55 +83,71 @@ export function LeaderboardTable({
                         <li
                             key={entry.userId}
                             className={cn(
-                                "stagger grid animate-rise-in grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition-colors sm:grid-cols-[3rem_minmax(0,1fr)_5rem_5rem_6rem_6rem]",
+                                "stagger grid animate-rise-in grid-cols-[2.5rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 px-4 py-3 transition-colors sm:items-center",
+                                cols,
                                 entry.userId === selfId && "bg-primary/10"
                             )}
                             style={{ "--index": index } as React.CSSProperties}
                         >
-                            <span className="flex items-center gap-1">
+                            <span className="col-start-1 row-start-1 row-span-2 self-center sm:row-span-1">
                                 <RankBadge rank={entry.rank} />
-                                <Movement value={entry.movement} />
                             </span>
 
-                            <UserChip
-                                user={entry}
-                                size="sm"
-                                subtitle={
-                                    entry.userId === selfId ? "You" : undefined
-                                }
-                            />
+                            <div className="col-start-2 row-start-1 min-w-0">
+                                <UserChip
+                                    user={entry}
+                                    size="sm"
+                                    subtitle={
+                                        entry.userId === selfId
+                                            ? "You"
+                                            : undefined
+                                    }
+                                />
+                            </div>
 
-                            {hideMatchStats ? (
-                                <>
-                                    <span className="hidden sm:block" />
-                                    <span className="hidden sm:block" />
-                                    <span className="hidden sm:block" />
-                                </>
-                            ) : (
-                                <>
-                            <span className="tnum hidden text-right text-sm text-muted-foreground sm:block">
-                                {compact(entry.totalMatches)}
-                            </span>
-                            <span className="tnum hidden text-right text-sm sm:block">
-                                {compact(entry.totalWins)}
-                                <span className="ml-1 text-xs text-muted-foreground">
-                                    {(entry.winRateBps / 100).toFixed(0)}%
-                                </span>
-                            </span>
                             <span
                                 className={cn(
-                                    "tnum hidden text-right text-sm sm:block",
-                                    entry.totalPnl > 0 && "text-success",
-                                    entry.totalPnl < 0 && "text-destructive"
+                                    "col-start-3 row-start-1 tnum text-right font-display text-base text-gold",
+                                    hideMatchStats
+                                        ? "sm:col-start-3"
+                                        : "sm:col-start-5"
                                 )}
                             >
-                                {formatUsdc(entry.totalPnl, { sign: true })}
+                                {compact(entry.points)}
+                                <span className="ml-1 text-xs font-sans text-gold/80 sm:hidden">
+                                    pts
+                                </span>
                             </span>
+
+                            {hideMatchStats ? null : (
+                                <>
+                                    <p className="col-start-2 row-start-2 col-span-2 pl-[2.625rem] text-xs text-muted-foreground sm:hidden">
+                                        {compact(entry.totalWins)} wins
+                                        {" · "}
+                                        {formatPercent(entry.winRateBps)} win
+                                        rate
+                                    </p>
+                                    <span className="tnum hidden text-right text-sm sm:col-start-3 sm:row-start-1 sm:block">
+                                        {compact(entry.totalWins)}
+                                        <span className="ml-1 text-xs text-muted-foreground">
+                                            {formatPercent(entry.winRateBps)}
+                                        </span>
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            "tnum hidden text-right text-sm sm:col-start-4 sm:row-start-1 sm:block",
+                                            entry.totalPnl > 0 &&
+                                                "text-success",
+                                            entry.totalPnl < 0 &&
+                                                "text-destructive"
+                                        )}
+                                    >
+                                        {formatUsdc(entry.totalPnl, {
+                                            sign: true,
+                                        })}
+                                    </span>
                                 </>
                             )}
-                            <span className="tnum text-right font-display text-base text-gold">
-                                {compact(entry.points)}
-                            </span>
                         </li>
                     ))}
                 </ol>
@@ -168,33 +182,5 @@ export function LeaderboardTable({
                 </div>
             ) : null}
         </div>
-    )
-}
-
-function Movement({ value }: { value: number }) {
-    if (value === 0) {
-        return (
-            <RiSubtractLine
-                className="size-3 text-muted-foreground/40"
-                aria-label="No change"
-            />
-        )
-    }
-    const up = value > 0
-    return (
-        <span
-            className={cn(
-                "tnum flex animate-pop-in items-center text-[10px]",
-                up ? "text-success" : "text-destructive"
-            )}
-            aria-label={`${up ? "Up" : "Down"} ${Math.abs(value)}`}
-        >
-            {up ? (
-                <RiArrowUpSLine className="size-3" />
-            ) : (
-                <RiArrowDownSLine className="size-3" />
-            )}
-            {Math.abs(value)}
-        </span>
     )
 }
