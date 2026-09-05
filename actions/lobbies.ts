@@ -26,7 +26,7 @@ import {
     startLobby as startLobbyApi,
 } from "@/lib/api/server"
 import type { JoinRequest, LobbyDetail } from "@/lib/api/types"
-import { auth } from "@/lib/auth/server"
+import { getServerSession } from "@/lib/auth/session"
 import { currentChainFromCookie } from "@/lib/chain/server"
 import {
     ACTIVE_HOST_STATUSES,
@@ -54,7 +54,7 @@ type SessionUser = {
 
 /** Resolves the signed-in app user, creating/refreshing the backend row. */
 async function requireUser() {
-    const { data: session } = await auth.getSession()
+    const session = await getServerSession()
     if (!session?.user?.email) {
         throw new Error("Sign in to continue.")
     }

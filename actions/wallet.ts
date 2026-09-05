@@ -11,7 +11,7 @@ import {
 import type { ChainActivityItem, CustodialWallet, WalletBalance } from "@/lib/api/types"
 import type { ChainId } from "@/lib/chain"
 import { currentChainFromCookie } from "@/lib/chain/server"
-import { auth } from "@/lib/auth/server"
+import { getServerSession } from "@/lib/auth/session"
 import { getCustodialWallet } from "@/lib/api/server"
 import {
     MAX_WITHDRAW_MICRO,
@@ -21,7 +21,7 @@ import { broadcastSolanaUsdcTransfer } from "@/lib/solana/withdraw-transfer"
 import { broadcastUsdcxTransfer } from "@/lib/wallet/withdraw-transfer"
 
 async function requireUser() {
-    const { data: session } = await auth.getSession()
+    const session = await getServerSession()
     if (!session?.user?.email || !(session.user as { id?: string }).id) {
         throw new Error("Sign in required.")
     }
