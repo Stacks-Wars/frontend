@@ -1,32 +1,22 @@
 "use server"
 
+import { headers } from "next/headers"
+
 import { auth } from "@/lib/auth/server"
 
 /**
- * Neon Auth JWT for Rust API / WS (EdDSA, ~15m expiry).
- * Prefer `auth.token()`; fall back to session.token from getSession.
+ * Better Auth JWT for Rust API / WS (EdDSA, ~15m expiry).
  */
 export async function getAccessToken(): Promise<string> {
-    const authApi = auth as typeof auth & {
-        token?: () => Promise<{
-            data?: { token?: string } | null
-            error?: { message?: string } | null
-        }>
-    }
+    const requestHeaders = await headers()
+    const result = await auth.api.getToken({
+        headers: requestHeaders,
+    })
 
-    if (typeof authApi.token === "function") {
-        const { data, error } = await authApi.token()
-        if (data?.token) return data.token
-        if (error?.message) {
-            throw new Error(error.message)
-        }
-    }
-
-    const { data: session } = await auth.getSession()
-    const token = (
-        session as { session?: { token?: string }; token?: string } | null
-    )?.session?.token
-        ?? (session as { token?: string } | null)?.token
+    const token =
+        result && typeof result === "object" && "token" in result
+            ? (result as { token?: string }).token
+            : undefined
 
     if (!token) {
         throw new Error("Sign in required (no JWT).")

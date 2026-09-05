@@ -16,9 +16,8 @@ export default function PrivacyPage() {
                 <h2>1. What we collect</h2>
                 <ul>
                     <li>
-                        Neon Auth identity (email, Google profile). Neon Auth is
-                        a managed Better Auth service, stored separately from
-                        app Postgres.
+                        Account identity (email, Google profile) stored in our
+                        Postgres via Better Auth.
                     </li>
                     <li>Profile fields: username, display name, avatar URL.</li>
                     <li>

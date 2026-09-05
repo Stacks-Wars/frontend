@@ -2,7 +2,7 @@
 
 import { listLobbies, listVaultDrafts, clearVaultDraft } from "@/lib/api/server"
 import type { HostedLobbyRef, VaultDraft } from "@/lib/api/types"
-import { auth } from "@/lib/auth/server"
+import { getServerSession } from "@/lib/auth/session"
 import {
     ACTIVE_HOST_STATUSES,
     toHostedLobbyRef,
@@ -13,7 +13,7 @@ import { isIdempotentVaultSuccess } from "@/lib/vault/tx-errors"
 export async function listVaultDraftsAction(
     kind?: string
 ): Promise<VaultDraft[]> {
-    const { data: session } = await auth.getSession()
+    const session = await getServerSession()
     if (!session?.user) return []
     return listVaultDrafts(kind).catch(() => [])
 }
@@ -43,7 +43,7 @@ export type CreateLobbyGate = {
  * plus the caller's unfinished hosted lobbies for the two-lobby cap.
  */
 export async function getIncompletePaidCreateDraftAction(): Promise<CreateLobbyGate> {
-    const { data: session } = await auth.getSession()
+    const session = await getServerSession()
     if (!session?.user) {
         return { draft: null, activeLobbies: [] }
     }

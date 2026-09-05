@@ -70,7 +70,7 @@ export default function SignUpPage() {
             return
         }
 
-        // Neon Verify-at-Sign-up (code): OTP is emailed; stay on this page until verified.
+        // Verify-at-sign-up: OTP is emailed; stay on this page until verified.
         if (data?.user && !data.user.emailVerified) {
             setPendingEmail(values.email)
             return

@@ -1,7 +1,7 @@
 "use server"
 
 import { upsertAppUser } from "@/lib/api/server"
-import { auth } from "@/lib/auth/server"
+import { getServerSession } from "@/lib/auth/session"
 import { AccountDeleteError, type DeleteAccountResult } from "@/lib/api/account-delete"
 import type { AppUser } from "@/lib/api/types"
 
@@ -31,10 +31,10 @@ function resolveEmailVerifiedAt(sessionUser: SessionUser) {
     return null
 }
 
-/** Sync Neon Auth identity (`sub` = users.id) and provision custodial wallet. */
+/** Sync Better Auth identity (`sub` = users.id) and provision custodial wallet. */
 export async function syncAuthUser(sessionUser: SessionUser): Promise<AppUser> {
     if (!sessionUser.id?.trim()) {
-        throw new Error("Neon Auth user id (sub) is required.")
+        throw new Error("Auth user id is required.")
     }
     const email = normalizeEmail(sessionUser.email)
     const displayName = sessionUser.name?.trim() || null
@@ -99,7 +99,7 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
 }
 
 export async function getCurrentUser() {
-    const { data: session } = await auth.getSession()
+    const session = await getServerSession()
 
     if (!session?.user?.email || !(session.user as { id?: string }).id) {
         throw new Error("You must be signed in.")

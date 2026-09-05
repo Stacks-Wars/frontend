@@ -13,7 +13,7 @@ import {
 import { chainAdapter, type ChainId } from "@/lib/chain"
 import type { CustodialWallet, WalletBalance } from "@/lib/api/types"
 import { syncAuthUser } from "@/actions/users"
-import { auth } from "@/lib/auth/server"
+import { getServerSession } from "@/lib/auth/session"
 import { fundSolanaTestUsdc } from "@/lib/solana/test-usdc"
 import {
     SOLANA_CLAIM_MIN_AMOUNT,
@@ -21,7 +21,7 @@ import {
 } from "@/lib/solana/network"
 
 async function requireUser() {
-    const { data: session } = await auth.getSession()
+    const session = await getServerSession()
     if (!session?.user?.email || !(session.user as { id?: string }).id) {
         throw new Error("Sign in required.")
     }

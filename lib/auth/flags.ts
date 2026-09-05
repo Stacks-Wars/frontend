@@ -9,7 +9,7 @@ export function isVerificationDisabled(): boolean {
     return raw === "1" || raw === "true" || raw === "yes"
 }
 
-/** Neon / Better Auth may surface verification as boolean, ISO string, or Date. */
+/** Better Auth may surface verification as boolean, ISO string, or Date. */
 export function isEmailVerified(
     value: boolean | string | Date | null | undefined
 ): boolean {

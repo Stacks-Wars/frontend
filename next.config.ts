@@ -15,7 +15,9 @@ const nextConfig: NextConfig = {
         "@stacks/encryption",
         "@stacks/wallet-sdk",
         "@google-cloud/kms",
+        "pg",
     ],
+    transpilePackages: ["better-auth", "@better-auth/core"],
     async headers() {
         return [
             {
