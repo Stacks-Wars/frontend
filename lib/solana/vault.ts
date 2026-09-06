@@ -323,7 +323,15 @@ async function solanaVaultRefund(
         ],
         data: discriminator(kind),
     }
-    return sendSponsored([ix])
+    // Leave/kick transfer USDC back into the player's ATA. Join created it,
+    // but an empty ATA can be closed for rent — recreate it before refund.
+    return sendOrReuse(seat, () =>
+        sendSponsored([
+            createAtaIx(payer, player, playerUsdc, mint),
+            createAtaIx(payer, escrow, vaultUsdc, mint),
+            ix,
+        ])
+    )
 }
 
 export async function solanaVaultClaim(input: {
