@@ -2,7 +2,7 @@
 
 /**
  * Build + broadcast sponsored sw-vault-v1 contract calls from custodial keys.
- * Player signs as tx-sender; STACKS_WARS_KEY pays the fee.
+ * Player signs as tx-sender; STACKS_KEY pays the fee.
  */
 
 import {
@@ -18,7 +18,7 @@ import {
 import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network"
 
 import { getSigningMaterial } from "@/lib/api/server"
-import { chainAdapter, parseChainId, type ChainId } from "@/lib/chain"
+import { chainAdapter, isChainId, type ChainId } from "@/lib/chain"
 import { provisionDestWallet } from "@/lib/custodial/provision-dest"
 import { unlockCustodialAccount } from "@/lib/custodial/unlock"
 import { waitForSolanaSignature } from "@/lib/solana/rpc"
@@ -29,7 +29,12 @@ import {
     solanaVaultLeave,
 } from "@/lib/solana/vault"
 import { getStacksNetworkName } from "@/lib/stacks/network"
-import { peekTx, waitForTx } from "@/lib/tx/wait-for-tx"
+import {
+    findSuccessfulVaultCall,
+    peekTx,
+    waitForTx,
+    type VaultCallLookup,
+} from "@/lib/tx/wait-for-tx"
 import { parseVaultContract, usdcxAsset } from "@/lib/vault/config"
 import {
     humanizeVaultTxError,
@@ -67,6 +72,47 @@ function stacksNetwork() {
     return getStacksNetworkName() === "mainnet" ? STACKS_MAINNET : STACKS_TESTNET
 }
 
+function requireVaultChain(chain?: ChainId): ChainId {
+    if (chain && isChainId(chain)) return chain
+    throw new Error("Vault operation is missing a chain")
+}
+
+function assertStacksVault(
+    chain: ChainId
+): asserts chain is Extract<ChainId, "stacks"> {
+    if (chain !== "stacks") {
+        throw new Error(`No vault on ${chain}`)
+    }
+}
+
+/** Prefer the explicit chain. 64-hex is Stacks; do not use parseChainId. */
+function resolveVaultWaitChain(
+    chain: ChainId | undefined,
+    txid: string
+): ChainId {
+    if (chain && isChainId(chain)) return chain
+    return /^[0-9a-fA-F]{64}$/.test(txid.trim()) ? "stacks" : "solana"
+}
+
+/** One sponsor account; parallel claims must not share a nonce. */
+let sponsorLock: Promise<void> = Promise.resolve()
+
+function withSponsorLock<T>(task: () => Promise<T>): Promise<T> {
+    const run = sponsorLock.then(task, task)
+    sponsorLock = run.then(
+        () => undefined,
+        () => undefined
+    )
+    return run
+}
+
+async function recoverVaultTx(
+    lookup: VaultCallLookup | undefined
+): Promise<string | null> {
+    if (!lookup) return null
+    return findSuccessfulVaultCall(lookup)
+}
+
 async function loadPlayerKey(userId: string) {
     return unlockCustodialAccount(await getSigningMaterial(userId, "stacks"))
 }
@@ -83,38 +129,40 @@ async function broadcastSponsored(params: {
      */
     postConditionMode?: PostConditionMode
 }) {
-    const { address, name } = parseVaultContract()
-    const network = stacksNetwork()
-    const unsigned = await makeContractCall({
-        contractAddress: address,
-        contractName: name,
-        functionName: params.functionName,
-        functionArgs: params.functionArgs,
-        senderKey: params.senderKey,
-        network,
-        sponsored: true,
-        fee: 0,
-        postConditionMode:
-            params.postConditionMode ?? PostConditionMode.Deny,
-        postConditions: params.postConditions,
+    return withSponsorLock(async () => {
+        const { address, name } = parseVaultContract()
+        const network = stacksNetwork()
+        const unsigned = await makeContractCall({
+            contractAddress: address,
+            contractName: name,
+            functionName: params.functionName,
+            functionArgs: params.functionArgs,
+            senderKey: params.senderKey,
+            network,
+            sponsored: true,
+            fee: 0,
+            postConditionMode:
+                params.postConditionMode ?? PostConditionMode.Deny,
+            postConditions: params.postConditions,
+        })
+        const sponsored = await sponsorTransaction({
+            transaction: unsigned,
+            sponsorPrivateKey: await getSponsorPrivateKey(),
+            fee: 10_000,
+            network,
+        })
+        const result = await broadcastTransaction({
+            transaction: sponsored,
+            network,
+        })
+        if (!("txid" in result) || !result.txid) {
+            const rejected = result as { error?: string; reason?: string }
+            throw new Error(
+                rejected.reason || rejected.error || "broadcast failed"
+            )
+        }
+        return String(result.txid)
     })
-    const sponsored = await sponsorTransaction({
-        transaction: unsigned,
-        sponsorPrivateKey: await getSponsorPrivateKey(),
-        fee: 10_000,
-        network,
-    })
-    const result = await broadcastTransaction({
-        transaction: sponsored,
-        network,
-    })
-    if (!("txid" in result) || !result.txid) {
-        const rejected = result as { error?: string; reason?: string }
-        throw new Error(
-            rejected.reason || rejected.error || "broadcast failed"
-        )
-    }
-    return String(result.txid)
 }
 
 /** Wait for a previously broadcast vault tx to confirm. */
@@ -124,17 +172,26 @@ export async function waitForVaultTx(
         discardDraftsOnFailure?: VaultDraftRef[]
         maxWaitMs?: number
         chain?: ChainId
+        recover?: VaultCallLookup
     }
 ): Promise<string> {
-    if (parseChainId(options?.chain) === "solana") {
-        return waitForSolanaSignature(txid, undefined, options?.maxWaitMs)
+    const chain = resolveVaultWaitChain(options?.chain, txid)
+    switch (chain) {
+        case "solana":
+            return waitForSolanaSignature(txid, undefined, options?.maxWaitMs)
+        case "stacks":
+            break
     }
     const wait = await waitForTx(txid, { maxWaitMs: options?.maxWaitMs })
     if (wait.status === "pending") {
+        const landed = await recoverVaultTx(options?.recover)
+        if (landed) return landed
         throw new VaultTxPendingError(txid)
     }
     if (wait.status === "failed") {
         if (isIdempotentVaultSuccess(wait.reason)) {
+            const landed = await recoverVaultTx(options?.recover)
+            if (landed) return landed
             return txid
         }
         if (shouldDiscardVaultDraftOnFailure(wait.reason)) {
@@ -153,25 +210,48 @@ export async function waitForVaultTx(
 export async function resumeVaultTxOrDiscard(input: {
     txid: string
     drafts: VaultDraftRef[]
+    chain?: ChainId
+    recover?: VaultCallLookup
 }): Promise<string | null> {
+    const chain = resolveVaultWaitChain(input.chain, input.txid)
+    if (chain === "solana") {
+        return waitForVaultTx(input.txid, {
+            discardDraftsOnFailure: input.drafts,
+            chain,
+        })
+    }
+    const landed = await recoverVaultTx(input.recover)
+    if (landed) return landed
     const peek = await peekTx(input.txid)
     if (peek.status === "confirmed") {
         return input.txid
     }
     if (peek.status === "failed") {
         if (isIdempotentVaultSuccess(peek.reason)) {
-            return input.txid
+            return (await recoverVaultTx(input.recover)) ?? input.txid
         }
         await discardDrafts(input.drafts)
         return null
     }
-    // pending / unknown — wait; discard if it ultimately aborts
+    // Hiro 404 — the draft txid never landed. Rebroadcast instead of
+    // waiting 50s and telling the player it is still processing.
+    if (peek.status === "unknown") {
+        await discardDrafts(input.drafts)
+        return null
+    }
     try {
         return await waitForVaultTx(input.txid, {
             discardDraftsOnFailure: input.drafts,
+            chain,
+            recover: input.recover,
         })
     } catch (error) {
-        // Drafts already cleared inside waitForVaultTx on terminal failure.
+        if (error instanceof VaultTxPendingError) {
+            const recovered = await recoverVaultTx(input.recover)
+            if (recovered) return recovered
+            await discardDrafts(input.drafts)
+            return null
+        }
         throw error
     }
 }
@@ -193,16 +273,17 @@ export async function vaultJoinOnChain(input: {
      */
     wait?: boolean
 }): Promise<string> {
-    if (input.resumeTxid) {
-        return waitForVaultTx(input.resumeTxid, {
-            discardDraftsOnFailure: [
-                { kind: "join", lobbyPath: input.lobbyPath },
-                { kind: "create", lobbyPath: input.lobbyPath },
-            ],
-            chain: input.chain,
-        })
-    }
-    if (parseChainId(input.chain) === "solana") {
+    const chain = requireVaultChain(input.chain)
+    if (chain === "solana") {
+        if (input.resumeTxid) {
+            return waitForVaultTx(input.resumeTxid, {
+                discardDraftsOnFailure: [
+                    { kind: "join", lobbyPath: input.lobbyPath },
+                    { kind: "create", lobbyPath: input.lobbyPath },
+                ],
+                chain,
+            })
+        }
         const txid = await solanaVaultJoin({
             userId: input.userId,
             lobbyPath: input.lobbyPath,
@@ -229,10 +310,28 @@ export async function vaultJoinOnChain(input: {
                 { kind: "join", lobbyPath: input.lobbyPath },
                 { kind: "create", lobbyPath: input.lobbyPath },
             ],
-            chain: "solana",
+            chain,
         })
     }
+    assertStacksVault(chain)
     const player = await loadPlayerKey(input.userId)
+    const recover: VaultCallLookup = {
+        sender: player.address,
+        functionName: "join",
+        lobbyPath: input.lobbyPath,
+    }
+    const already = await recoverVaultTx(recover)
+    if (already) return already
+    if (input.resumeTxid) {
+        return waitForVaultTx(input.resumeTxid, {
+            discardDraftsOnFailure: [
+                { kind: "join", lobbyPath: input.lobbyPath },
+                { kind: "create", lobbyPath: input.lobbyPath },
+            ],
+            chain: "stacks",
+            recover,
+        })
+    }
     const { contractId, tokenName } = usdcxAsset()
     const postConditions: PostCondition[] =
         input.transferMicro > 0
@@ -276,6 +375,8 @@ export async function vaultJoinOnChain(input: {
             { kind: "join", lobbyPath: input.lobbyPath },
             { kind: "create", lobbyPath: input.lobbyPath },
         ],
+        chain: "stacks",
+        recover,
     })
 }
 
@@ -290,18 +391,21 @@ export async function vaultLeaveOnChain(input: {
     /** When false, return after broadcast + draft persist. Default true. */
     wait?: boolean
 }): Promise<string> {
-    if (parseChainId(input.chain) === "solana") {
+    const chain = requireVaultChain(input.chain)
+    if (chain === "solana") {
         const material = await getSigningMaterial(input.userId, "solana")
         return solanaVaultLeave({
             lobbyPath: input.lobbyPath,
             playerAddress: material.address,
         })
     }
+    assertStacksVault(chain)
     if (input.resumeTxid) {
         return waitForVaultTx(input.resumeTxid, {
             discardDraftsOnFailure: [
                 { kind: "leave", lobbyPath: input.lobbyPath },
             ],
+            chain: "stacks",
         })
     }
     const player = await loadPlayerKey(input.userId)
@@ -353,6 +457,7 @@ export async function vaultLeaveOnChain(input: {
         discardDraftsOnFailure: [
             { kind: "leave", lobbyPath: input.lobbyPath },
         ],
+        chain: "stacks",
     })
 }
 
@@ -364,12 +469,14 @@ export async function vaultKickOnChain(input: {
     nonce: number
     chain?: ChainId
 }): Promise<string> {
-    if (parseChainId(input.chain) === "solana") {
+    const chain = requireVaultChain(input.chain)
+    if (chain === "solana") {
         return solanaVaultKick({
             lobbyPath: input.lobbyPath,
             playerAddress: input.targetAddress,
         })
     }
+    assertStacksVault(chain)
     const player = await loadPlayerKey(input.actorUserId)
     const txid = await broadcastKick({
         senderKey: player.senderKey,
@@ -379,7 +486,7 @@ export async function vaultKickOnChain(input: {
         nonce: input.nonce,
     })
     await player.persistV2IfNeeded()
-    return waitForVaultTx(txid)
+    return waitForVaultTx(txid, { chain: "stacks" })
 }
 
 /** Platform-sponsored kick for the 24h lobby TTL janitor (any sender works). */
@@ -390,12 +497,14 @@ export async function vaultKickAsPlatform(input: {
     nonce: number
     chain?: ChainId
 }): Promise<string> {
-    if (parseChainId(input.chain) === "solana") {
+    const chain = requireVaultChain(input.chain)
+    if (chain === "solana") {
         return solanaVaultKick({
             lobbyPath: input.lobbyPath,
             playerAddress: input.targetAddress,
         })
     }
+    assertStacksVault(chain)
     const platform = await getPlatformAccount()
     const txid = await broadcastKick({
         senderKey: platform.privateKey,
@@ -404,7 +513,7 @@ export async function vaultKickAsPlatform(input: {
         paidMicro: input.paidMicro,
         nonce: input.nonce,
     })
-    return waitForVaultTx(txid)
+    return waitForVaultTx(txid, { chain: "stacks" })
 }
 
 async function broadcastKick(input: {
@@ -452,21 +561,27 @@ async function resolveClaimDest(input: {
     devId?: string | null
     devNeedsWallet?: boolean
 }): Promise<{ devWallet: string; devFee: number }> {
-    const chain = parseChainId(input.chain)
+    const chain = requireVaultChain(input.chain)
     if (input.devNeedsWallet && input.devId) {
         try {
             const address = await provisionDestWallet(input.devId, chain)
-            return { devWallet: address, devFee: input.devFee }
+            const provisioned = chainAdapter(chain).parseAddress(address)
+            if (provisioned) {
+                return { devWallet: provisioned, devFee: input.devFee }
+            }
         } catch (error) {
             console.error("[vault] dev wallet provision failed", error)
-            return { devWallet: input.devWallet, devFee: 0 }
         }
     }
     const parsed = chainAdapter(chain).parseAddress(input.devWallet)
-    if (!parsed) {
-        return { devWallet: input.devWallet, devFee: 0 }
+    if (parsed && input.devFee > 0) {
+        return { devWallet: parsed, devFee: input.devFee }
     }
-    return { devWallet: parsed, devFee: input.devFee }
+    if (chain === "stacks") {
+        const platform = await getPlatformAccount()
+        return { devWallet: platform.address, devFee: 0 }
+    }
+    return { devWallet: parsed ?? input.devWallet, devFee: 0 }
 }
 
 export async function vaultClaimOnChain(input: {
@@ -483,7 +598,8 @@ export async function vaultClaimOnChain(input: {
     chain?: ChainId
 }): Promise<string> {
     const dest = await resolveClaimDest(input)
-    if (parseChainId(input.chain) === "solana") {
+    const chain = requireVaultChain(input.chain)
+    if (chain === "solana") {
         const material = await getSigningMaterial(input.userId, "solana")
         return solanaVaultClaim({
             lobbyPath: input.lobbyPath,
@@ -493,14 +609,22 @@ export async function vaultClaimOnChain(input: {
             devAddress: dest.devWallet,
         })
     }
+    assertStacksVault(chain)
+    const player = await loadPlayerKey(input.userId)
+    const recover: VaultCallLookup = {
+        sender: player.address,
+        functionName: "claim",
+        lobbyPath: input.lobbyPath,
+    }
     if (input.resumeTxid) {
         return waitForVaultTx(input.resumeTxid, {
             discardDraftsOnFailure: [
                 { kind: "claim", lobbyPath: input.lobbyPath },
             ],
+            chain: "stacks",
+            recover,
         })
     }
-    const player = await loadPlayerKey(input.userId)
     const signature = await signVaultClaimOracle({
         lobbyPath: input.lobbyPath,
         player: player.address,
@@ -549,5 +673,7 @@ export async function vaultClaimOnChain(input: {
         discardDraftsOnFailure: [
             { kind: "claim", lobbyPath: input.lobbyPath },
         ],
+        chain: "stacks",
+        recover,
     })
 }

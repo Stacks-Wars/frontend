@@ -20,6 +20,7 @@ import { useNotificationActions } from "@/stores/notifications"
 import {
     useSessionActions,
     useSessionBalance,
+    useSessionCurrentChain,
 } from "@/stores/session"
 
 export function ClaimTestUsdcDialog({
@@ -29,6 +30,7 @@ export function ClaimTestUsdcDialog({
     open: boolean
     onOpenChange: (open: boolean) => void
 }) {
+    const chain = useSessionCurrentChain()
     const balance = useSessionBalance()
     const { setBalance } = useSessionActions()
     const { toast } = useNotificationActions()
@@ -45,7 +47,7 @@ export function ClaimTestUsdcDialog({
         setBusy(true)
         setError(null)
         try {
-            const result = await claimTestUsdcOnchain()
+            const result = await claimTestUsdcOnchain(chain)
             if (!result.ok) {
                 setError(result.error)
                 return
@@ -56,14 +58,14 @@ export function ClaimTestUsdcDialog({
                 announceTestUsdc(result.data.amountMicro)
             } else {
                 toast({
-                    title: "You already have test USDC",
-                    body: "The claim is only for wallets under $1.",
+                    title: "Wallet is already funded",
+                    body: "Top-up is only for wallets under $1.",
                 })
             }
             onOpenChange(false)
         } catch (err) {
             setError(
-                err instanceof Error ? err.message : "Could not mint test USDC."
+                err instanceof Error ? err.message : "Could not top up."
             )
         } finally {
             setBusy(false)
@@ -74,10 +76,9 @@ export function ClaimTestUsdcDialog({
         <Dialog open={open && !tooFunded} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Claim $50 test USDC</DialogTitle>
+                    <DialogTitle>Top up play wallet</DialogTitle>
                     <DialogDescription>
-                        We mint $50 of our Devnet USDC into your play wallet.
-                        This is not Circle USDC and has no cash value.
+                        We’ll add play tokens so you can join a paid lobby.
                     </DialogDescription>
                 </DialogHeader>
                 {error ? (
@@ -101,7 +102,7 @@ export function ClaimTestUsdcDialog({
                         {busy ? (
                             <RiLoader4Line className="animate-spin" />
                         ) : null}
-                        {busy ? "Minting…" : "Claim $50"}
+                        {busy ? "Minting…" : "Top up"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

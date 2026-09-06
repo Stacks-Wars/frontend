@@ -1,6 +1,6 @@
 /**
  * One-shot: initialize sw-vault on the cluster. Payer + platform =
- * SOLANA_WARS_KEY. Mint = SOLANA_USDC_MINT or the platform test USDC.
+ * SOLANA_KEY. Mint = SOLANA_USDC_MINT or the platform test USDC.
  *
  *   cd frontend && node scripts/initialize-solana-vault.mjs
  */
@@ -69,18 +69,22 @@ function discriminator(name) {
 
 loadEnv(ENV_PATH)
 
-const mnemonic = process.env.SOLANA_WARS_KEY?.trim()
+const mnemonic = process.env.SOLANA_KEY?.trim()
 if (!mnemonic) {
-    throw new Error("SOLANA_WARS_KEY is missing")
+    throw new Error("SOLANA_KEY is missing")
 }
 
 const rpcUrl = (() => {
     const key = process.env.HELIUS_API_KEY?.trim()
-    if (!key) throw new Error("HELIUS_API_KEY is missing")
     const network = (process.env.SOLANA_NETWORK || "devnet").trim().toLowerCase()
     const cluster =
         network === "mainnet" || network === "mainnet-beta" ? "mainnet" : "devnet"
     const raw = process.env.SOLANA_RPC_URL?.trim() || ""
+    if (!key) {
+        return raw && !raw.includes("{network}")
+            ? raw
+            : "https://api.devnet.solana.com"
+    }
     const template =
         !raw || raw.includes("api.devnet.solana.com")
             ? "https://{network}.helius-rpc.com/"

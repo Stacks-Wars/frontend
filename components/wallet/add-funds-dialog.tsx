@@ -13,7 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui"
-import { chainAdapter } from "@/lib/chain"
+import { chainAdapter, mintsPlayTokens } from "@/lib/chain"
 import { formatUsdc } from "@/lib/format"
 import { useSessionCurrentChain } from "@/stores/session"
 
@@ -47,12 +47,12 @@ export function AddFundsDialog({
                     <DialogDescription>
                         {showShortfall
                             ? `You need ${formatUsdc(requiredMicro)} to join, but only have ${formatUsdc(availableMicro, { zero: "$0.00" })}. ${
-                                  chain === "solana"
-                                      ? "Claim $50 test USDC if you're under $1, then try again."
+                                  mintsPlayTokens(chain)
+                                      ? "Your play wallet will be topped up, then try again."
                                       : `Deposit at least ${formatUsdc(shortfall)} more, then try again.`
                               }`
-                            : chain === "solana"
-                              ? "Don't send tokens here. Claim our Devnet USDC if your balance is under $1."
+                            : mintsPlayTokens(chain)
+                              ? "Paid lobbies take entry from this play wallet."
                               : `Send ${token} to your custodial address to top up your balance.`}
                     </DialogDescription>
                 </DialogHeader>

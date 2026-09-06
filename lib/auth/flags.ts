@@ -4,9 +4,13 @@
  *
  * Exposed to the client via `next.config.ts` `env` mapping.
  */
+import { isDev } from "@/lib/config"
+
 export function isVerificationDisabled(): boolean {
     const raw = process.env.DISABLE_VERIFICATION?.trim().toLowerCase()
-    return raw === "1" || raw === "true" || raw === "yes"
+    if (raw === "0" || raw === "false" || raw === "no") return false
+    if (raw === "1" || raw === "true" || raw === "yes") return true
+    return isDev()
 }
 
 /** Better Auth may surface verification as boolean, ISO string, or Date. */

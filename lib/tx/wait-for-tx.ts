@@ -1,3 +1,5 @@
+import { hiroApiUrl } from "@/lib/config"
+
 export type TxUiStatus =
     "idle" | "initiating" | "pending" | "confirmed" | "failed"
 
@@ -25,13 +27,7 @@ type WaitOptions = {
 }
 
 function hiroBaseUrl(): string {
-    const network =
-        process.env.NEXT_PUBLIC_STACKS_NETWORK?.trim() ||
-        process.env.NEXT_PUBLIC_NETWORK?.trim() ||
-        "testnet"
-    const custom = process.env.NEXT_PUBLIC_HIRO_API_URL?.trim()
-    if (custom) return custom.replace(/\/$/, "")
-    return `https://api.${network}.hiro.so`
+    return hiroApiUrl().replace(/\/$/, "")
 }
 
 function hiroHeaders(): HeadersInit {
@@ -51,6 +47,57 @@ function reasonAllowed(
     return allowlist.some((a) => reason.includes(a))
 }
 
+export type VaultCallLookup = {
+    sender: string
+    functionName: string
+    lobbyPath: string
+}
+
+/**
+ * A later retry can abort with nonce-used (u212) after the first claim
+ * already paid the player. Confirm needs that successful txid, not the abort.
+ */
+export async function findSuccessfulVaultCall(
+    lookup: VaultCallLookup
+): Promise<string | null> {
+    try {
+        const res = await fetch(
+            `${hiroBaseUrl()}/extended/v1/address/${lookup.sender}/transactions?limit=50`,
+            { headers: hiroHeaders(), cache: "no-store" }
+        )
+        if (!res.ok) return null
+        const data = (await res.json()) as {
+            results?: Array<{
+                tx_id?: string
+                tx_status?: string
+                tx_type?: string
+                contract_call?: {
+                    function_name?: string
+                    function_args?: Array<{ name?: string; repr?: string }>
+                }
+            }>
+        }
+        const pathNeedle = `"${lookup.lobbyPath}"`
+        for (const tx of data.results ?? []) {
+            if (tx.tx_status !== "success" || tx.tx_type !== "contract_call") {
+                continue
+            }
+            if (tx.contract_call?.function_name !== lookup.functionName) {
+                continue
+            }
+            const pathArg = tx.contract_call.function_args?.find(
+                (arg) => arg.name === "lobby-path"
+            )
+            if (pathArg?.repr?.includes(pathNeedle) && tx.tx_id) {
+                return tx.tx_id.replace(/^0x/i, "")
+            }
+        }
+        return null
+    } catch {
+        return null
+    }
+}
+
 /** One-shot Hiro lookup — used to drop failed drafts before rebroadcast. */
 export async function peekTx(txId: string): Promise<PeekTxResult> {
     try {
@@ -58,7 +105,7 @@ export async function peekTx(txId: string): Promise<PeekTxResult> {
             headers: hiroHeaders(),
             cache: "no-store",
         })
-        if (res.status === 404) return { status: "pending" }
+        if (res.status === 404) return { status: "unknown" }
         if (!res.ok) return { status: "unknown" }
         const data = (await res.json()) as {
             tx_status?: string
@@ -144,6 +191,10 @@ export async function waitForTx(
                 return true
             }
             finish({ status: "failed", reason: reason ?? "aborted" })
+            return true
+        }
+        if (txStatus.startsWith("dropped_") || txStatus === "rejected") {
+            finish({ status: "failed", reason: reason ?? txStatus })
             return true
         }
         return false

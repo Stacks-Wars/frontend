@@ -2,12 +2,10 @@ import "server-only"
 
 import { randomSeedPhrase } from "@stacks/wallet-sdk"
 
-import type { ChainId } from "@/lib/chain"
+import { chainAdapter, type ChainId } from "@/lib/chain"
 import { encryptWithKms, mnemonicAad } from "@/lib/kms/envelope"
 import { deriveCustodialAccountFromMnemonic } from "@/lib/stacks/wallet-from-mnemonic"
-import { getStacksNetworkName } from "@/lib/stacks/network"
 import { deriveSolanaAccountFromMnemonic } from "@/lib/solana/wallet-from-mnemonic"
-import { getSolanaNetworkName } from "@/lib/solana/network"
 
 export type CustodialWalletMaterial = {
     address: string
@@ -21,7 +19,7 @@ export type CustodialWalletMaterial = {
 async function createStacksMaterial(
     userId: string
 ): Promise<CustodialWalletMaterial> {
-    const network = getStacksNetworkName()
+    const network = chainAdapter("stacks").playNetwork()
     const mnemonic = randomSeedPhrase(256)
     const account = await deriveCustodialAccountFromMnemonic(mnemonic)
     const encrypted = await encryptWithKms(
@@ -42,7 +40,7 @@ async function createStacksMaterial(
 async function createSolanaMaterial(
     userId: string
 ): Promise<CustodialWalletMaterial> {
-    const network = getSolanaNetworkName()
+    const network = chainAdapter("solana").playNetwork()
     const mnemonic = randomSeedPhrase(256)
     const account = await deriveSolanaAccountFromMnemonic(mnemonic)
     const encrypted = await encryptWithKms(
@@ -65,6 +63,10 @@ export async function createCustodialWalletMaterial(
     userId: string,
     chain: ChainId
 ): Promise<CustodialWalletMaterial> {
-    if (chain === "solana") return createSolanaMaterial(userId)
-    return createStacksMaterial(userId)
+    switch (chain) {
+        case "solana":
+            return createSolanaMaterial(userId)
+        case "stacks":
+            return createStacksMaterial(userId)
+    }
 }

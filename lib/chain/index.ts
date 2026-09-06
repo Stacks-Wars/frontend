@@ -1,4 +1,5 @@
-export { chainAdapter, explorerTxUrl, liveExplorerTxUrl } from "@/lib/chain/registry"
+export { chainAdapter, liveExplorerTxUrl } from "@/lib/chain/registry"
+export { mintsPlayTokens } from "@/lib/chain/play"
 export { CHAIN_COOKIE, readStoredChain, writeStoredChain } from "@/lib/chain/storage"
 export {
     CHAIN_IDS,
@@ -7,7 +8,6 @@ export {
     lobbyVisibleOnChain,
     parseChainId,
     type ChainAdapter,
-    type ChainAddress,
     type ChainId,
     type ChainNetwork,
 } from "@/lib/chain/types"

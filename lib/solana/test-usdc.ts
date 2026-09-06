@@ -19,8 +19,8 @@ import {
 
 import { getSolanaFeePayer } from "@/lib/solana/fee-payer"
 import {
+    getSolanaNetworkName,
     getSolanaUsdcMint,
-    isSolanaTestUsdcEnabled,
     SOLANA_CLAIM_MIN_AMOUNT,
     SOLANA_TEST_USDC_AMOUNT,
     SOLANA_USDC_DECIMALS,
@@ -44,7 +44,7 @@ async function tokenAmount(ata: Address): Promise<bigint> {
 export async function fundSolanaTestUsdc(
     ownerAddress: string
 ): Promise<string | null> {
-    if (!isSolanaTestUsdcEnabled()) return null
+    if (getSolanaNetworkName() === "mainnet-beta") return null
 
     const payer = await getSolanaFeePayer()
     const mint = address(getSolanaUsdcMint())

@@ -9,7 +9,7 @@ const STEPS = [
     {
         icon: RiWalletLine,
         title: "Fund the account",
-        body: "On Stacks, send USDCx to the address on your wallet page. On Solana we mint you $50 test USDC. Free lobbies skip this.",
+        body: "Paid lobbies take entry from your play wallet. Free lobbies skip this.",
     },
     {
         icon: RiGroupLine,

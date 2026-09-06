@@ -12,6 +12,7 @@ import {
     createLobby as createLobbyApi,
     getKickTargetAddress,
     getLobby,
+    getSigningMaterial,
     joinLobby as joinLobbyApi,
     kickLobbyPlayer as kickLobbyPlayerApi,
     leaveLobby as leaveLobbyApi,
@@ -161,6 +162,7 @@ export async function createLobbyAction(input: {
                         { kind: "create", lobbyPath: path },
                         { kind: "join", lobbyPath: path },
                     ],
+                    chain,
                 })
                 if (resumed) {
                     vaultTxid = resumed
@@ -278,11 +280,27 @@ export async function joinLobbyAction(
             if (needsOnChainVault(entry)) {
                 const drafts = await listVaultDrafts("join").catch(() => [])
                 const resume = drafts.find((draft) => draft.lobbyPath === path)
+                const stacksAddress =
+                    detail.lobby.chain === "solana"
+                        ? undefined
+                        : (
+                              await getSigningMaterial(user.id, "stacks").catch(
+                                  () => null
+                              )
+                          )?.address
                 let resumed: string | null = null
                 if (resume?.txid) {
                     resumed = await resumeVaultTxOrDiscard({
                         txid: resume.txid,
                         drafts: [{ kind: "join", lobbyPath: path }],
+                        chain: detail.lobby.chain,
+                        recover: stacksAddress
+                            ? {
+                                  sender: stacksAddress,
+                                  functionName: "join",
+                                  lobbyPath: path,
+                              }
+                            : undefined,
                     })
                 }
                 if (resumed) {
@@ -396,6 +414,7 @@ export async function leaveLobbyAction(
                 resumed = await resumeVaultTxOrDiscard({
                     txid: resume.txid,
                     drafts: [{ kind: "leave", lobbyPath: path }],
+                    chain: detail.lobby.chain,
                 })
             }
             if (resumed) {
@@ -417,6 +436,7 @@ export async function leaveLobbyAction(
                     discardDraftsOnFailure: [
                         { kind: "leave", lobbyPath: path },
                     ],
+                    chain: detail.lobby.chain,
                 })
             }
         }
@@ -528,11 +548,27 @@ export async function settleVaultClaimsAction(input: {
                     draft.lobbyPath === input.lobbyPath &&
                     Boolean(draft.txid?.trim())
             )
+            const stacksAddress =
+                detail.lobby.chain === "solana"
+                    ? undefined
+                    : (
+                          await getSigningMaterial(claim.userId, "stacks").catch(
+                              () => null
+                          )
+                      )?.address
             let resumeTxid: string | undefined
             if (resume?.txid) {
                 const kept = await resumeVaultTxOrDiscard({
                     txid: resume.txid,
                     drafts: [{ kind: "claim", lobbyPath: input.lobbyPath }],
+                    chain: detail.lobby.chain,
+                    recover: stacksAddress
+                        ? {
+                              sender: stacksAddress,
+                              functionName: "claim",
+                              lobbyPath: input.lobbyPath,
+                          }
+                        : undefined,
                 })
                 resumeTxid = kept ?? undefined
             }

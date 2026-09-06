@@ -1,9 +1,12 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-    // Expose local signup bypass to client components (OTP UI + fakeout).
     env: {
         DISABLE_VERIFICATION: process.env.DISABLE_VERIFICATION ?? "",
+        NETWORK: process.env.NETWORK ?? "",
+        API_URL: process.env.API_URL ?? "",
+        WS_URL: process.env.WS_URL ?? "",
+        APP_URL: process.env.APP_URL ?? "",
     },
     experimental: {
         useOffline: true,

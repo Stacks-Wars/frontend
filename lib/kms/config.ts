@@ -1,22 +1,14 @@
+const PROJECT_ID = "stacks-wars"
+const LOCATION = "global"
+const KEY_RING = "stacks-wars-keyring"
+const CRYPTO_KEY = "custodial-wallet-keys"
+
 export function getKmsConfig() {
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT
-    const location = process.env.KMS_LOCATION ?? "global"
-    const keyRing = process.env.KMS_KEY_RING
-    const cryptoKey = process.env.KMS_CRYPTO_KEY
-
-    if (!projectId || !keyRing || !cryptoKey) {
-        throw new Error(
-            "Google Cloud KMS is not configured. Set GOOGLE_CLOUD_PROJECT, KMS_KEY_RING, and KMS_CRYPTO_KEY."
-        )
-    }
-
-    const cryptoKeyName = `projects/${projectId}/locations/${location}/keyRings/${keyRing}/cryptoKeys/${cryptoKey}`
-
     return {
-        projectId,
-        location,
-        keyRing,
-        cryptoKey,
-        cryptoKeyName,
+        projectId: PROJECT_ID,
+        location: LOCATION,
+        keyRing: KEY_RING,
+        cryptoKey: CRYPTO_KEY,
+        cryptoKeyName: `projects/${PROJECT_ID}/locations/${LOCATION}/keyRings/${KEY_RING}/cryptoKeys/${CRYPTO_KEY}`,
     }
 }

@@ -10,15 +10,14 @@ import {
     sendPushNotice,
     updatePreferences,
 } from "@/lib/api/server"
-import { chainAdapter, type ChainId } from "@/lib/chain"
+import { chainAdapter, mintsPlayTokens, type ChainId } from "@/lib/chain"
 import type { CustodialWallet, WalletBalance } from "@/lib/api/types"
 import { syncAuthUser } from "@/actions/users"
 import { getServerSession } from "@/lib/auth/session"
+import { PLAY_CLAIM_MIN_MICRO, PLAY_MINT_MICRO } from "@/lib/chain/play"
 import { fundSolanaTestUsdc } from "@/lib/solana/test-usdc"
-import {
-    SOLANA_CLAIM_MIN_AMOUNT,
-    SOLANA_TEST_USDC_AMOUNT,
-} from "@/lib/solana/network"
+import { fundStacksTestUsdc } from "@/lib/stacks/test-usdc"
+import { waitForTx } from "@/lib/tx/wait-for-tx"
 
 async function requireUser() {
     const session = await getServerSession()
@@ -72,19 +71,28 @@ export type ClaimTestUsdcResult = {
     balance: WalletBalance
 }
 
-/**
- * Mint $50 of our Solana Devnet USDC when the wallet is under $1.
- * Waits for confirmation, refreshes balance, and fans out a web-push.
- */
-export async function claimSolanaTestUsdc(): Promise<ClaimTestUsdcResult> {
+/** Mint $50 play tokens when the wallet is under $1. */
+export async function claimTestUsdc(
+    chain: ChainId
+): Promise<ClaimTestUsdcResult> {
     const user = await requireUser()
-    const wallet = await getCustodialWallet(user.id, "solana")
+    const wallet = await getCustodialWallet(user.id, chain)
     if (!wallet) {
-        throw new Error("No Solana wallet on this account yet.")
+        throw new Error(
+            `No ${chainAdapter(chain).label} wallet on this account yet.`
+        )
     }
 
-    const before = await getBalance(user.id, "solana")
-    if (BigInt(Math.max(0, before.availableMicro)) >= SOLANA_CLAIM_MIN_AMOUNT) {
+    const before = await getBalance(user.id, chain)
+    if (BigInt(Math.max(0, before.availableMicro)) >= PLAY_CLAIM_MIN_MICRO) {
+        return {
+            minted: false,
+            signature: null,
+            amountMicro: 0,
+            balance: before,
+        }
+    }
+    if (!mintsPlayTokens(chain)) {
         return {
             minted: false,
             signature: null,
@@ -93,14 +101,26 @@ export async function claimSolanaTestUsdc(): Promise<ClaimTestUsdcResult> {
         }
     }
 
-    const signature = await fundSolanaTestUsdc(wallet.address)
-    const balance = await refreshBalance(user.id, "solana")
-    const amountMicro = Number(SOLANA_TEST_USDC_AMOUNT)
+    let signature: string | null = null
+    switch (chain) {
+        case "solana":
+            signature = await fundSolanaTestUsdc(wallet.address)
+            break
+        case "stacks":
+            signature = await fundStacksTestUsdc(wallet.address)
+            if (signature) {
+                await waitForTx(signature)
+            }
+            break
+    }
+
+    const balance = await refreshBalance(user.id, chain)
+    const amountMicro = Number(PLAY_MINT_MICRO)
     if (signature) {
         try {
             await sendPushNotice({
-                title: "$50 test USDC landed",
-                body: "It's in your Solana wallet.",
+                title: "Play wallet funded",
+                body: "It's in your play wallet.",
                 path: "/wallet",
             })
         } catch {
