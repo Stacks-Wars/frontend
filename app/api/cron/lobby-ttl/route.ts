@@ -137,11 +137,13 @@ export async function GET(request: Request) {
         }
     }
 
-    return NextResponse.json({
+    const summary = {
         scanned: stale.length,
         expired: results.filter((r) => r.ok).length,
         results,
-    })
+    }
+    console.info("[lobby-ttl]", JSON.stringify(summary))
+    return NextResponse.json(summary)
 }
 
 export async function POST(request: Request) {
