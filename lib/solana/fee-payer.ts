@@ -5,6 +5,7 @@ import {
     type TransactionSigner,
 } from "@solana/kit"
 
+import { DEV_SOLANA_MNEMONIC, env } from "@/lib/config"
 import { deriveSolanaAccountFromMnemonic } from "@/lib/solana/wallet-from-mnemonic"
 
 let cached: Promise<TransactionSigner> | null = null
@@ -13,7 +14,7 @@ let cached: Promise<TransactionSigner> | null = null
  * Platform fee-payer + remaining signer. Pays SOL so the player only signs
  * as USDC authority. Same key as `initialize` `platform` and leave/kick/claim.
  *
- * Set `SOLANA_WARS_KEY` (BIP39 mnemonic), same path as custodial Solana:
+ * Set `SOLANA_KEY` (BIP39 mnemonic), same path as custodial Solana:
  * `m/44'/501'/0'/0'`.
  */
 export async function getSolanaFeePayer(): Promise<TransactionSigner> {
@@ -24,12 +25,7 @@ export async function getSolanaFeePayer(): Promise<TransactionSigner> {
 }
 
 async function loadFeePayer(): Promise<TransactionSigner> {
-    const mnemonic = process.env.SOLANA_WARS_KEY?.trim()
-    if (!mnemonic) {
-        throw new Error(
-            "Solana fee payer is not configured. Set SOLANA_WARS_KEY (mnemonic)."
-        )
-    }
+    const mnemonic = env("SOLANA_KEY", DEV_SOLANA_MNEMONIC)
     const account = await deriveSolanaAccountFromMnemonic(mnemonic)
     return createKeyPairSignerFromPrivateKeyBytes(account.privateKeyBytes)
 }

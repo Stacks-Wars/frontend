@@ -77,11 +77,11 @@ export function withdrawOnchain(input: Parameters<typeof withdrawAction>[0]) {
     )
 }
 
-export function claimTestUsdcOnchain() {
+export function claimTestUsdcOnchain(chain?: import("@/lib/chain").ChainId) {
     return postOnchain<{
         minted: boolean
         signature: string | null
         amountMicro: number
         balance: WalletBalance
-    }>("claim-usdc", {})
+    }>("claim-usdc", { chain: chain ?? "solana" })
 }

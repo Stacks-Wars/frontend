@@ -93,26 +93,27 @@ export async function withdrawAction(input: {
         chain,
     })
 
-    try {
-        const txid =
-            chain === "solana"
-                ? await broadcastSolanaUsdcTransfer({
-                      userId: user.id,
-                      amountMicro: prepared.amountMicro,
-                      toAddress: prepared.toAddress,
-                  })
-                : await broadcastUsdcxTransfer({
-                      userId: user.id,
-                      amountMicro: prepared.amountMicro,
-                      toAddress: prepared.toAddress,
-                      usdcxContract: prepared.usdcxContract,
-                  })
-        const balance = await completeWithdrawal({
-            txid,
-            chain,
-        })
-        return { txid, balance }
-    } catch (err) {
-        throw err
+    let txid: string
+    switch (chain) {
+        case "solana":
+            txid = await broadcastSolanaUsdcTransfer({
+                userId: user.id,
+                amountMicro: prepared.amountMicro,
+                toAddress: prepared.toAddress,
+            })
+            break
+        case "stacks":
+            txid = await broadcastUsdcxTransfer({
+                userId: user.id,
+                amountMicro: prepared.amountMicro,
+                toAddress: prepared.toAddress,
+                usdcxContract: prepared.usdcxContract,
+            })
+            break
     }
+    const balance = await completeWithdrawal({
+        txid,
+        chain,
+    })
+    return { txid, balance }
 }

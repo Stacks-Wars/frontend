@@ -14,7 +14,12 @@ export async function currentChainFromCookie(): Promise<ChainId> {
  * returns paid lobbies on every settlement chain (free already list everywhere).
  */
 export async function lobbyListChainForSession(): Promise<ChainId | undefined> {
-    const session = await getServerSession()
-    if (!session?.user?.email) return undefined
-    return currentChainFromCookie()
+    try {
+        const session = await getServerSession()
+        if (!session?.user?.email) return undefined
+        return currentChainFromCookie()
+    } catch (error) {
+        console.error("lobbyListChainForSession", error)
+        return undefined
+    }
 }

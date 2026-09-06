@@ -1,8 +1,6 @@
 import { Resend } from "resend"
 
-const FROM =
-    process.env.EMAIL_FROM?.trim() ||
-    "Stacks Wars <noreply@mail.stackswars.com>"
+const FROM = "Stacks Wars <noreply@mail.stackswars.com>"
 
 function resend() {
     const key = process.env.RESEND_API_KEY?.trim()

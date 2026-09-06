@@ -16,6 +16,27 @@ export function solanaSender() {
     return sendTransactionWithoutConfirmingFactory({ rpc: solanaRpc() })
 }
 
+function jsonSafe(value: unknown): string {
+    return JSON.stringify(value, (_key, item) =>
+        typeof item === "bigint" ? item.toString() : item
+    )
+}
+
+export function solanaErrorText(error: unknown): string {
+    if (error instanceof Error) {
+        try {
+            return error.message
+        } catch {
+            return "Solana RPC error"
+        }
+    }
+    try {
+        return jsonSafe(error)
+    } catch {
+        return String(error)
+    }
+}
+
 export async function waitForSolanaSignature(
     signature: string,
     lastValidBlockHeight?: bigint,
@@ -30,7 +51,7 @@ export async function waitForSolanaSignature(
         const status = value[0]
         if (status?.err) {
             throw new Error(
-                `Solana transaction failed: ${JSON.stringify(status.err)}`
+                `Solana transaction failed: ${jsonSafe(status.err)}`
             )
         }
         if (

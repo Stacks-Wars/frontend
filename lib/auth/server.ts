@@ -6,11 +6,19 @@ import { Pool } from "pg"
 
 import { sendAuthEmail } from "@/lib/email/send"
 import { isVerificationDisabled } from "@/lib/auth/flags"
+import {
+    appUrl,
+    env,
+    isDev,
+    LOCAL_BETTER_AUTH_SECRET,
+    LOCAL_DATABASE_URL,
+} from "@/lib/config"
 
-const databaseUrl = process.env.DATABASE_URL
-if (!databaseUrl) {
-    throw new Error("DATABASE_URL must be set for Better Auth.")
-}
+const databaseUrl = env("DATABASE_URL", LOCAL_DATABASE_URL)
+const authSecret = env("BETTER_AUTH_SECRET", LOCAL_BETTER_AUTH_SECRET)
+const authUrl = appUrl()
+process.env.BETTER_AUTH_SECRET = authSecret
+process.env.BETTER_AUTH_URL = authUrl
 
 const skipVerification = isVerificationDisabled()
 
@@ -22,21 +30,24 @@ function queueEmail(task: () => Promise<unknown>) {
     })
 }
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim()
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim()
+
 export const auth = betterAuth({
     appName: "Stacks Wars",
+    secret: authSecret || undefined,
+    baseURL: authUrl || undefined,
     database: new Pool({ connectionString: databaseUrl }),
     trustedOrigins: [
         "http://localhost:3000",
         "https://www.stackswars.com",
         "https://stackswars.com",
-        ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
-        ...(process.env.NEXT_PUBLIC_APP_URL
-            ? [process.env.NEXT_PUBLIC_APP_URL]
-            : []),
+        ...(authUrl ? [authUrl] : []),
+        ...(appUrl() ? [appUrl()] : []),
     ],
     advanced: {
         database: {
-            generateId: "uuid",
+            generateId: () => crypto.randomUUID(),
         },
         useSecureCookies: process.env.NODE_ENV === "production",
     },
@@ -118,10 +129,14 @@ export const auth = betterAuth({
         sendOnSignIn: !skipVerification,
     },
     socialProviders: {
-        google: {
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        },
+        ...(googleClientId && googleClientSecret
+            ? {
+                  google: {
+                      clientId: googleClientId,
+                      clientSecret: googleClientSecret,
+                  },
+              }
+            : {}),
     },
     plugins: [
         emailOTP({
@@ -149,6 +164,9 @@ export const auth = betterAuth({
                         expiresAt: "expires_at",
                     },
                 },
+            },
+            jwks: {
+                disablePrivateKeyEncryption: isDev(),
             },
             jwt: {
                 definePayload: ({ user }) => ({

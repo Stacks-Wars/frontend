@@ -1,3 +1,4 @@
+import { wsUrl } from "@/lib/config"
 import {
     isWsEnvelope,
     type ClientMessage,
@@ -10,7 +11,6 @@ type MessageListener = (message: WsEnvelope) => void
 type StatusListener = (status: ConnectionStatus) => void
 type TokenProvider = () => Promise<string | null>
 
-const DEFAULT_WS_URL = "ws://127.0.0.1:8080/app"
 const MIN_BACKOFF_MS = 1_000
 const MAX_BACKOFF_MS = 8_000
 const HEARTBEAT_MS = 25_000
@@ -19,7 +19,7 @@ const MAX_AUTH_ATTEMPTS = 3
 const AUTH_RETRY_MS = 15_000
 
 function resolveWsUrl(): string {
-    return process.env.NEXT_PUBLIC_WS_URL?.trim() || DEFAULT_WS_URL
+    return wsUrl()
 }
 
 function isPrivateTopic(topic: string): boolean {

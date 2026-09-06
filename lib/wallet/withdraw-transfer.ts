@@ -20,7 +20,7 @@ import { getStacksNetworkName } from "@/lib/stacks/network"
 import { waitForTx } from "@/lib/tx/wait-for-tx"
 import { TX_PROCESSING_MESSAGE } from "@/lib/vault/tx-errors"
 import { getSponsorPrivateKey } from "@/lib/vault/sign"
-import { USDCX_ASSET_NAME, USDCX_CONTRACT } from "@/lib/vault/config"
+import { USDCX_ASSET_NAME, getUsdcxContract } from "@/lib/vault/config"
 
 function stacksNetwork() {
     return getStacksNetworkName() === "mainnet" ? STACKS_MAINNET : STACKS_TESTNET
@@ -36,10 +36,10 @@ export async function broadcastUsdcxTransfer(input: {
         await getSigningMaterial(input.userId, "stacks")
     )
     const tokenName = USDCX_ASSET_NAME
-    const contractId = USDCX_CONTRACT
-    const [contractAddress, contractName] = USDCX_CONTRACT.split(".")
+    const contractId = getUsdcxContract()
+    const [contractAddress, contractName] = contractId.split(".")
     if (!contractAddress || !contractName) {
-        throw new Error("Invalid hardcoded USDCX_CONTRACT")
+        throw new Error("Invalid USDCx contract")
     }
     const network = stacksNetwork()
 
@@ -61,7 +61,7 @@ export async function broadcastUsdcxTransfer(input: {
         postConditions: [
             Pc.principal(account.address)
                 .willSendEq(input.amountMicro)
-                .ft(contractId, tokenName),
+                .ft(contractId as `${string}.${string}`, tokenName),
         ],
     })
     const sponsored = await sponsorTransaction({

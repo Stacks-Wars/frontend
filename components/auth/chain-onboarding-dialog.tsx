@@ -26,8 +26,16 @@ import {
 } from "@/stores/session"
 
 const COPY: Record<ChainId, string> = {
-    solana: "Play with USDC on Solana. New wallets get $50 on Devnet.",
+    solana: "Play with USDC on Solana.",
     stacks: "Play with USDCx on Stacks.",
+}
+
+function networkBadge(chain: ChainId) {
+    const network = chainAdapter(chain).playNetwork()
+    if (network === "mainnet" || network === "mainnet-beta") {
+        return chainAdapter(chain).playToken
+    }
+    return network === "devnet" ? "Devnet" : "Testnet"
 }
 
 export function ChainOnboardingDialog() {
@@ -89,6 +97,9 @@ export function ChainOnboardingDialog() {
                 <div className="grid gap-2">
                     {CHAIN_IDS.map((id) => {
                         const active = selected === id
+                        const badge = networkBadge(id)
+                        const live =
+                            badge === chainAdapter(id).playToken
                         return (
                             <button
                                 key={id}
@@ -107,13 +118,11 @@ export function ChainOnboardingDialog() {
                                     <span className="font-display text-lg">
                                         {chainAdapter(id).label}
                                     </span>
-                                    {id === "solana" ? (
-                                        <Badge variant="warning">Devnet</Badge>
-                                    ) : (
-                                        <Badge variant="outline">
-                                            {chainAdapter(id).playToken}
-                                        </Badge>
-                                    )}
+                                    <Badge
+                                        variant={live ? "outline" : "warning"}
+                                    >
+                                        {badge}
+                                    </Badge>
                                 </span>
                                 <span className="mt-1 block text-sm text-muted-foreground">
                                     {COPY[id]}

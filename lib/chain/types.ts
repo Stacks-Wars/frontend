@@ -6,15 +6,12 @@ export const DEFAULT_CHAIN: ChainId = "solana"
 
 export type ChainNetwork = string
 
-export type ChainAddress = {
-    chain: ChainId
-    value: string
-}
-
 export type ChainAdapter = {
     id: ChainId
     label: string
     playToken: string
+    /** dest/test vs production cluster for this chain. */
+    playNetwork: () => ChainNetwork
     parseAddress: (raw: string) => string | null
     explorerTxUrl: (txid: string, network: ChainNetwork) => string
     explorerAccountUrl: (address: string, network: ChainNetwork) => string

@@ -2,7 +2,7 @@
 
 /**
  * Oracle signatures for sw-vault-v1 leave/kick/claim.
- * Uses STACKS_WARS_KEY (mnemonic) — same key baked as TRUSTED-PUBLIC-KEY on deploy.
+ * Local uses Clarinet wallet_1. Main uses STACKS_KEY — same key as TRUSTED-PUBLIC-KEY.
  */
 
 import { createHash } from "crypto"
@@ -17,38 +17,41 @@ import {
 } from "@stacks/transactions"
 import { generateWallet, type Wallet } from "@stacks/wallet-sdk"
 
+import {
+    DEV_STACKS_DEPLOYER_MNEMONIC,
+    DEV_STACKS_ORACLE_MNEMONIC,
+    env,
+    isDev,
+} from "@/lib/config"
+
 export type VaultSignAction = "leave" | "kick" | "claim"
 
 async function oraclePrivateKey(): Promise<string> {
-    const mnemonic = process.env.STACKS_WARS_KEY?.trim()
-    if (!mnemonic) {
-        throw new Error("STACKS_WARS_KEY is not configured")
-    }
+    const mnemonic = env("STACKS_KEY", DEV_STACKS_ORACLE_MNEMONIC)
     const wallet: Wallet = await generateWallet({
         secretKey: mnemonic,
         password: "",
     })
     const key = wallet.accounts[0]?.stxPrivateKey
     if (!key) {
-        throw new Error("Failed to derive STACKS_WARS_KEY account")
+        throw new Error("Failed to derive STACKS_KEY account")
     }
     return key
 }
 
-/** Fee-sponsor private key (same STACKS_WARS_KEY account). */
+/** Fee-sponsor private key (same STACKS_KEY account). */
 export async function getSponsorPrivateKey(): Promise<string> {
     return oraclePrivateKey()
 }
 
-/** Platform principal derived from STACKS_WARS_KEY (kick janitor sender). */
+/** Platform principal derived from STACKS_KEY (kick janitor sender). */
 export async function getPlatformAccount(): Promise<{
     address: string
     privateKey: string
 }> {
-    const mnemonic = process.env.STACKS_WARS_KEY?.trim()
-    if (!mnemonic) {
-        throw new Error("STACKS_WARS_KEY is not configured")
-    }
+    const mnemonic = isDev()
+        ? DEV_STACKS_DEPLOYER_MNEMONIC
+        : env("STACKS_KEY", DEV_STACKS_DEPLOYER_MNEMONIC)
     const { deriveCustodialAccountFromMnemonic } = await import(
         "@/lib/stacks/wallet-from-mnemonic"
     )

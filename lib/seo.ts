@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import type { GameMetadata } from "@/lib/api/types"
+import { appUrl } from "@/lib/config"
 import { LEGAL_SITE, LEGAL_TELEGRAM } from "@/lib/legal"
 
 export const SITE_NAME = "Stacks Wars"
@@ -42,8 +43,7 @@ export const DOCS_URL = "https://docs.stackswars.com"
  * point at the host that actually 200s.
  */
 export function siteOrigin(): string {
-    const raw =
-        process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || LEGAL_SITE
+    const raw = appUrl() || LEGAL_SITE
     try {
         const url = new URL(raw)
         if (url.hostname === "stackswars.com") {

@@ -21,11 +21,17 @@ import {
     type TransactionSigner,
 } from "@solana/kit"
 
+import { solanaProgram } from "@/lib/config"
 import { getSigningMaterial } from "@/lib/api/server"
 import { unlockCustodialSolana } from "@/lib/custodial/unlock"
 import { getSolanaFeePayer } from "@/lib/solana/fee-payer"
 import { getSolanaUsdcMint } from "@/lib/solana/network"
-import { solanaRpc, solanaSender, waitForSolanaSignature } from "@/lib/solana/rpc"
+import {
+    solanaErrorText,
+    solanaRpc,
+    solanaSender,
+    waitForSolanaSignature,
+} from "@/lib/solana/rpc"
 import { compileSponsoredTransaction } from "@/lib/solana/sponsor"
 import {
     humanizeVaultTxError,
@@ -39,10 +45,7 @@ const ASSOCIATED_TOKEN_PROGRAM = address(
 const SYSTEM_PROGRAM = address("11111111111111111111111111111111")
 
 function programId(): Address {
-    const raw =
-        process.env.SOLANA_VAULT_PROGRAM_ID?.trim() ||
-        "8NZHj9VH9JkqiAg19CK43ZLuK5hn5jXPBnLfbeKonqfy"
-    return address(raw)
+    return address(solanaProgram())
 }
 
 export function lobbyPathHash(path: string): Uint8Array {
@@ -162,8 +165,7 @@ async function sendSponsored(instructions: Instruction[]) {
             value.lastValidBlockHeight
         )
     } catch (error) {
-        const raw = error instanceof Error ? error.message : String(error)
-        throw new Error(humanizeVaultTxError(raw))
+        throw new Error(humanizeVaultTxError(solanaErrorText(error)))
     }
 }
 
@@ -190,8 +192,11 @@ async function sendOrReuse(
     try {
         return await run()
     } catch (error) {
-        const raw = error instanceof Error ? error.message : String(error)
-        if (isIdempotentVaultSuccess(raw)) {
+        const raw = solanaErrorText(error)
+        if (
+            isIdempotentVaultSuccess(raw) ||
+            /serialize a BigInt/i.test(raw)
+        ) {
             const existing = await latestSuccessfulSignature(account)
             if (existing) return existing
         }

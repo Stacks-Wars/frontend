@@ -30,7 +30,7 @@ import type {
     GameMetadata,
     Season,
 } from "@/lib/api/types"
-import { chainAdapter, type ChainId } from "@/lib/chain"
+import { CHAIN_IDS, chainAdapter, isChainId, type ChainId } from "@/lib/chain"
 import { formatDate, formatUsdc } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -38,8 +38,7 @@ type RangeMode = "overall" | "season" | "custom"
 
 const CHAINS: { id: "all" | ChainId; label: string }[] = [
     { id: "all", label: "All chains" },
-    { id: "solana", label: chainAdapter("solana").label },
-    { id: "stacks", label: chainAdapter("stacks").label },
+    ...CHAIN_IDS.map((id) => ({ id, label: chainAdapter(id).label })),
 ]
 
 function formatCount(value: number): string {
@@ -623,9 +622,7 @@ function Dashboard({
                         title="Fees by chain"
                         rows={report.feesByChain}
                         label={(key) =>
-                            key === "solana" || key === "stacks"
-                                ? chainAdapter(key).label
-                                : key
+                            isChainId(key) ? chainAdapter(key).label : key
                         }
                     />
                     <BreakdownTable

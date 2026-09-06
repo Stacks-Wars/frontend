@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 
 import { vaultKickAsPlatform } from "@/lib/vault/submit"
 import { vaultConfigured } from "@/lib/vault/config"
+import { isChainId } from "@/lib/chain"
+import { apiUrl, env, LOCAL_INTERNAL_API_SECRET } from "@/lib/config"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -19,21 +21,19 @@ type StaleLobby = {
         id: string
         path: string
         entryAmountMicro: number
+        chain: string
     }
     seats: StaleSeat[]
 }
 
 function apiBase() {
-    return (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8080").replace(
-        /\/$/,
-        ""
-    )
+    return apiUrl()
 }
 
 function cronAuthorized(request: Request): boolean {
     const secrets = [
         process.env.CRON_SECRET?.trim(),
-        process.env.INTERNAL_API_SECRET?.trim(),
+        env("INTERNAL_API_SECRET", LOCAL_INTERNAL_API_SECRET),
     ].filter((value): value is string => Boolean(value))
     if (secrets.length === 0) return false
     const header = request.headers.get("authorization")
@@ -46,7 +46,7 @@ function cronAuthorized(request: Request): boolean {
 }
 
 async function internalFetch(path: string, init?: RequestInit) {
-    const secret = process.env.INTERNAL_API_SECRET?.trim()
+    const secret = env("INTERNAL_API_SECRET", LOCAL_INTERNAL_API_SECRET)
     if (!secret) {
         throw new Error("INTERNAL_API_SECRET is not configured")
     }
@@ -94,11 +94,15 @@ export async function GET(request: Request) {
                             "vault not configured; cannot refund paid lobby"
                         )
                     }
+                    if (!isChainId(item.lobby.chain)) {
+                        throw new Error("stale lobby is missing a chain")
+                    }
                     vaultTxid = await vaultKickAsPlatform({
                         targetAddress: seat.address,
                         lobbyPath: item.lobby.path,
                         paidMicro: seat.paidMicro,
                         nonce: Date.now() + Math.floor(Math.random() * 1000),
+                        chain: item.lobby.chain,
                     })
                 }
                 await internalFetch(

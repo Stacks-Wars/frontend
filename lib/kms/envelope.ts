@@ -9,6 +9,7 @@ import {
 
 import { KeyManagementServiceClient } from "@google-cloud/kms"
 
+import { isDev, LOCAL_CUSTODIAL_SECRET, optional } from "@/lib/config"
 import { getKmsConfig } from "@/lib/kms/config"
 
 /** Prefix marks AES-GCM blobs sealed with `CUSTODIAL_DEV_SECRET` (local only). */
@@ -46,7 +47,7 @@ export type DecryptOptions = {
 }
 
 function getDevSecret(): string | null {
-    const secret = process.env.CUSTODIAL_DEV_SECRET?.trim()
+    const secret = optional("CUSTODIAL_DEV_SECRET") ?? (isDev() ? LOCAL_CUSTODIAL_SECRET : undefined)
     if (!secret) return null
     if (process.env.NODE_ENV === "production") {
         throw new Error(
@@ -146,12 +147,7 @@ function getServiceAccountCredentials() {
 }
 
 function requireKmsConfig() {
-    if (
-        !process.env.GOOGLE_CLOUD_PROJECT?.trim() ||
-        !process.env.KMS_KEY_RING?.trim() ||
-        !process.env.KMS_CRYPTO_KEY?.trim() ||
-        !process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim()
-    ) {
+    if (!process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim()) {
         throw new Error(
             "Custodial wallet encryption is not configured. For local development set CUSTODIAL_DEV_SECRET (openssl rand -base64 32)."
         )
@@ -236,7 +232,7 @@ export async function decryptWithKms(
 ) {
     const localBlob = ciphertextBase64.startsWith(DEV_CIPHER_PREFIX)
     if (localBlob || isLocalKeyVersion(options.kmsKeyVersion)) {
-        const secret = process.env.CUSTODIAL_DEV_SECRET?.trim()
+        const secret = optional("CUSTODIAL_DEV_SECRET") ?? (isDev() ? LOCAL_CUSTODIAL_SECRET : undefined)
         if (!secret) {
             throw new Error(
                 "This wallet was encrypted with CUSTODIAL_DEV_SECRET, but the secret is not set."

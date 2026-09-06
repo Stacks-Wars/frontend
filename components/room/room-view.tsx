@@ -17,7 +17,7 @@ import { Button, EmptyState } from "@/components/ui"
 import { getGameModule } from "@/games/registry"
 import { useLobbyRoom } from "@/hooks/use-lobby-room"
 import type { GameMetadata } from "@/lib/api/types"
-import { isChainId } from "@/lib/chain"
+import { isChainId, lobbyVisibleOnChain } from "@/lib/chain"
 import { kickLobbyPlayerOnchain } from "@/lib/onchain"
 import { useNotificationActions } from "@/stores/notifications"
 import {
@@ -114,7 +114,7 @@ export function RoomView({
         !sessionLoading &&
         !needsChainPick &&
         lobbyChain &&
-        lobbyChain !== currentChain
+        !lobbyVisibleOnChain(lobby, currentChain)
     ) {
         return (
             <>

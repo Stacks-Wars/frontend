@@ -7,7 +7,7 @@ import { RiCheckLine, RiFileCopyLine, RiLoader4Line } from "@remixicon/react"
 import { getMyDepositWallet, refreshMyBalance } from "@/actions/wallet"
 import { ClaimTestUsdcDialog } from "@/components/wallet/claim-test-usdc-dialog"
 import { Badge, Button, Skeleton } from "@/components/ui"
-import { chainAdapter } from "@/lib/chain"
+import { chainAdapter, mintsPlayTokens } from "@/lib/chain"
 import { MICRO } from "@/lib/format"
 import { useNotificationActions } from "@/stores/notifications"
 import {
@@ -71,23 +71,22 @@ export function DepositPanel() {
         const available = balance?.availableMicro ?? 0
         if (available >= MICRO) {
             toast({
-                title: "You already have test USDC",
-                body: "The claim is only for wallets under $1.",
+                title: "Wallet is already funded",
+                body: "Top-up is only for wallets under $1.",
             })
             return
         }
         setClaimOpen(true)
     }
 
-    if (chain === "solana") {
+    if (mintsPlayTokens(chain)) {
         return (
             <div className="space-y-4 rounded-2xl border border-border/70 p-5 surface-raised">
                 <p className="text-sm text-muted-foreground">
-                    Don&apos;t send any tokens here, including Circle USDC.
-                    Matches use our own minted USDC on Devnet.
+                    Paid lobbies take entry from this play wallet.
                 </p>
                 <Button type="button" variant="primary" onClick={onGetUsdc}>
-                    Get USDC for Stacks Wars Devnet
+                    Top up
                 </Button>
                 {wallet ? (
                     <p className="text-xs text-muted-foreground">

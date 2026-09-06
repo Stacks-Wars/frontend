@@ -1,4 +1,5 @@
 import type { ChainAdapter } from "@/lib/chain/types"
+import { getSolanaNetworkName } from "@/lib/solana/network"
 
 /** Base58 pubkey, 32–44 chars. Not a full ed25519 check — enough for forms. */
 const SOLANA_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
@@ -22,6 +23,7 @@ export const solanaAdapter: ChainAdapter = {
     id: "solana",
     label: "Solana",
     playToken: "USDC",
+    playNetwork: () => getSolanaNetworkName(),
     parseAddress: (raw) => {
         const value = raw.trim()
         if (looksLikeStacksPrincipal(value)) return null

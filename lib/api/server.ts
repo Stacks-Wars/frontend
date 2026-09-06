@@ -31,10 +31,10 @@ import type {
 } from "@/lib/api/types"
 import { AccountDeleteError } from "@/lib/api/account-delete"
 import { parseChainId, type ChainId } from "@/lib/chain"
+import { apiUrl, env, LOCAL_INTERNAL_API_SECRET } from "@/lib/config"
 
 function getApiBaseUrl() {
-    const url = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8080"
-    return url.replace(/\/$/, "")
+    return apiUrl()
 }
 
 function chainQuery(chain?: ChainId) {
@@ -67,7 +67,7 @@ async function authHeaders(): Promise<HeadersInit> {
 }
 
 function internalHeaders(): HeadersInit {
-    const secret = process.env.INTERNAL_API_SECRET?.trim()
+    const secret = env("INTERNAL_API_SECRET", LOCAL_INTERNAL_API_SECRET)
     if (!secret) {
         throw new Error("INTERNAL_API_SECRET is not configured")
     }

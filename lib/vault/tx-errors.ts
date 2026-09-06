@@ -169,6 +169,9 @@ export function humanizeVaultTxError(reason?: string): string {
     if (/Timed out waiting for the Solana/i.test(raw)) {
         return "Solana is taking longer than usual. Check pending wins, then retry if needed."
     }
+    if (/serialize a BigInt/i.test(raw)) {
+        return "The network took too long. Try again."
+    }
     if (/node is unhealthy|429|rate limit|too many requests/i.test(raw)) {
         return "Solana RPC is busy. Wait a few seconds and try again."
     }
@@ -193,8 +196,14 @@ export function humanizeVaultTxError(reason?: string): string {
     if (/\bu209\b/i.test(raw)) {
         return "Claims already started for this lobby."
     }
+    if (/dropped_replace_by_fee|replaced by fee/i.test(raw)) {
+        return "The previous join was replaced. Try again."
+    }
     if (/post.condition|abort_by_post_condition/i.test(raw)) {
-        return "Transaction blocked by a wallet post-condition. Try claiming again."
+        if (/\bu202\b/i.test(raw) || /already joined/i.test(raw)) {
+            return "You already joined this lobby on-chain."
+        }
+        return "The vault transfer didn't match. Try joining again."
     }
     if (/Solana error #-?\d+/i.test(raw) || /InstructionError/i.test(raw)) {
         return "The Solana vault transaction was rejected. Try again."
