@@ -1,0 +1,123 @@
+export const usdCxAbi = [
+    {
+        type: "function",
+        name: "mint",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "to", type: "address" },
+            { name: "amount", type: "uint256" },
+        ],
+        outputs: [],
+    },
+    {
+        type: "function",
+        name: "balanceOf",
+        stateMutability: "view",
+        inputs: [{ name: "account", type: "address" }],
+        outputs: [{ name: "", type: "uint256" }],
+    },
+    {
+        type: "function",
+        name: "nonces",
+        stateMutability: "view",
+        inputs: [{ name: "owner", type: "address" }],
+        outputs: [{ name: "", type: "uint256" }],
+    },
+    {
+        type: "function",
+        name: "name",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ name: "", type: "string" }],
+    },
+    {
+        type: "function",
+        name: "version",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ name: "", type: "string" }],
+    },
+    {
+        type: "function",
+        name: "transferWithAuthorization",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "from", type: "address" },
+            { name: "to", type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "validAfter", type: "uint256" },
+            { name: "validBefore", type: "uint256" },
+            { name: "nonce", type: "bytes32" },
+            { name: "v", type: "uint8" },
+            { name: "r", type: "bytes32" },
+            { name: "s", type: "bytes32" },
+        ],
+        outputs: [],
+    },
+    {
+        type: "function",
+        name: "transferWithPermit",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "from", type: "address" },
+            { name: "to", type: "address" },
+            { name: "amount", type: "uint256" },
+            { name: "deadline", type: "uint256" },
+            { name: "v", type: "uint8" },
+            { name: "r", type: "bytes32" },
+            { name: "s", type: "bytes32" },
+        ],
+        outputs: [],
+    },
+] as const
+
+export const swVaultAbi = [
+    {
+        type: "function",
+        name: "joinWithPermit",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "player", type: "address" },
+            { name: "lobbyPathHash", type: "bytes32" },
+            { name: "amount", type: "uint256" },
+            { name: "deadline", type: "uint256" },
+            { name: "v", type: "uint8" },
+            { name: "r", type: "bytes32" },
+            { name: "s", type: "bytes32" },
+        ],
+        outputs: [],
+    },
+    {
+        type: "function",
+        name: "leaveSeat",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "player", type: "address" },
+            { name: "lobbyPathHash", type: "bytes32" },
+        ],
+        outputs: [],
+    },
+    {
+        type: "function",
+        name: "kick",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "player", type: "address" },
+            { name: "lobbyPathHash", type: "bytes32" },
+        ],
+        outputs: [],
+    },
+    {
+        type: "function",
+        name: "claim",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "player", type: "address" },
+            { name: "lobbyPathHash", type: "bytes32" },
+            { name: "amount", type: "uint256" },
+            { name: "dest", type: "address" },
+            { name: "destFeePct", type: "uint8" },
+        ],
+        outputs: [],
+    },
+] as const

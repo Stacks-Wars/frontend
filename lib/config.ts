@@ -42,6 +42,18 @@ export const MAIN_WS_URL = "wss://api.stackswars.com/app"
 export const MAIN_VAULT_CONTRACT =
     "SP299MBHT7FPPP2SKEY73V4DHW67467SED87A4HH4.sw-vault-v0-0-1"
 
+/** Play deployer on Arbitrum Sepolia. Not the wars key. */
+export const DEV_ARBITRUM_MNEMONIC =
+    "same eagle end broccoli gauge exist unfair public sheriff bronze oyster claw"
+export const DEV_ARBITRUM_USDC =
+    "0x554fF14eaA5380a99e765a7748D6eb5A6B1AF8c7"
+export const DEV_ARBITRUM_VAULT =
+    "0xc704D03f4B09bc21d7cdb36C5FFF9ccB862d612F"
+export const MAIN_ARBITRUM_USDC =
+    "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+export const MAIN_ARBITRUM_VAULT =
+    "0x0B4379B27050048D868376aDBA6a03826bDd6e90"
+
 function isMain(): boolean {
     const network = process.env.NETWORK?.trim().toLowerCase()
     return process.env.NODE_ENV === "production" || network === "main"
@@ -124,4 +136,31 @@ export function solanaRpcUrl(): string {
     }
     if (isDev()) return DEV_SOLANA_RPC_URL
     throw new Error("HELIUS_API_KEY must be set")
+}
+
+function requireContract(id: string, name: string): string {
+    const value = id.trim()
+    if (!value || /^0x0+$/i.test(value)) {
+        throw new Error(`${name} is not deployed yet`)
+    }
+    return value
+}
+
+export function arbitrumUsdc(): string {
+    return requireContract(
+        isDev() ? DEV_ARBITRUM_USDC : MAIN_ARBITRUM_USDC,
+        "Arbitrum USDC"
+    )
+}
+
+export function arbitrumVault(): string {
+    return requireContract(
+        isDev() ? DEV_ARBITRUM_VAULT : MAIN_ARBITRUM_VAULT,
+        "Arbitrum vault"
+    )
+}
+
+/** Dest uses the play mnemonic. Main requires ARBITRUM_KEY (wars). */
+export function arbitrumKey(): string {
+    return env("ARBITRUM_KEY", DEV_ARBITRUM_MNEMONIC)
 }

@@ -506,6 +506,25 @@ export async function prepareWithdrawal(payload: {
     return response.json()
 }
 
+export async function abortWithdrawal(): Promise<void> {
+    const response = await fetch(
+        `${getApiBaseUrl()}/wallet/withdrawals/abort`,
+        {
+            method: "POST",
+            headers: await authHeaders(),
+            cache: "no-store",
+        }
+    )
+    if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+            error?: string
+        } | null
+        throw new Error(
+            body?.error ?? `Failed to abort withdraw (${response.status})`
+        )
+    }
+}
+
 export async function completeWithdrawal(payload: {
     txid: string
     chain?: ChainId

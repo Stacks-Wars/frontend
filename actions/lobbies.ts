@@ -281,13 +281,13 @@ export async function joinLobbyAction(
                 const drafts = await listVaultDrafts("join").catch(() => [])
                 const resume = drafts.find((draft) => draft.lobbyPath === path)
                 const stacksAddress =
-                    detail.lobby.chain === "solana"
-                        ? undefined
-                        : (
+                    detail.lobby.chain === "stacks"
+                        ? (
                               await getSigningMaterial(user.id, "stacks").catch(
                                   () => null
                               )
                           )?.address
+                        : undefined
                 let resumed: string | null = null
                 if (resume?.txid) {
                     resumed = await resumeVaultTxOrDiscard({
@@ -549,13 +549,13 @@ export async function settleVaultClaimsAction(input: {
                     Boolean(draft.txid?.trim())
             )
             const stacksAddress =
-                detail.lobby.chain === "solana"
-                    ? undefined
-                    : (
+                detail.lobby.chain === "stacks"
+                    ? (
                           await getSigningMaterial(claim.userId, "stacks").catch(
                               () => null
                           )
                       )?.address
+                    : undefined
             let resumeTxid: string | undefined
             if (resume?.txid) {
                 const kept = await resumeVaultTxOrDiscard({

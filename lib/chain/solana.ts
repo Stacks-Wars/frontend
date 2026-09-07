@@ -26,6 +26,7 @@ export const solanaAdapter: ChainAdapter = {
     playNetwork: () => getSolanaNetworkName(),
     parseAddress: (raw) => {
         const value = raw.trim()
+        if (/^0x[0-9a-fA-F]{40}$/.test(value)) return null
         if (looksLikeStacksPrincipal(value)) return null
         return SOLANA_ADDRESS.test(value) ? value : null
     },

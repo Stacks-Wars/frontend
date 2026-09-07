@@ -8,12 +8,14 @@ import {
     mnemonicAad,
     usesMnemonicAad,
 } from "@/lib/kms/envelope"
+import type { LocalAccount } from "viem/accounts"
 import {
     createKeyPairSignerFromPrivateKeyBytes,
     type TransactionSigner,
 } from "@solana/kit"
 
 import { parseChainId } from "@/lib/chain"
+import { deriveArbitrumAccountFromMnemonic } from "@/lib/arbitrum/wallet-from-mnemonic"
 import { deriveSolanaAccountFromMnemonic } from "@/lib/solana/wallet-from-mnemonic"
 import { deriveCustodialAccountFromMnemonic } from "@/lib/stacks/wallet-from-mnemonic"
 
@@ -119,6 +121,35 @@ export async function unlockCustodialSolana(
         signer: await createKeyPairSignerFromPrivateKeyBytes(
             account.privateKeyBytes
         ),
+        persistV2IfNeeded: persistV2(material, mnemonic, aad, withAad, chain),
+    }
+}
+
+export type UnlockedArbitrumAccount = {
+    address: string
+    account: LocalAccount
+    persistV2IfNeeded: () => Promise<void>
+}
+
+/** Open the custodial Arbitrum seed. Platform still pays ETH as fee payer. */
+export async function unlockCustodialArbitrum(
+    material: SigningMaterial
+): Promise<UnlockedArbitrumAccount> {
+    const { mnemonic, aad, withAad, chain } = await decryptMnemonic(material)
+    if (chain !== "arbitrum") {
+        throw new Error("This signing path is Arbitrum-only.")
+    }
+
+    const account = deriveArbitrumAccountFromMnemonic(mnemonic)
+    if (account.address.toLowerCase() !== material.address.toLowerCase()) {
+        throw new Error(
+            "Custodial mnemonic does not match this wallet address."
+        )
+    }
+
+    return {
+        address: account.address,
+        account,
         persistV2IfNeeded: persistV2(material, mnemonic, aad, withAad, chain),
     }
 }

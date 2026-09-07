@@ -20,6 +20,7 @@ export const SITE_KEYWORDS = [
     "Stacks Wars",
     "gaming on solana",
     "gaming on stacks",
+    "gaming on arbitrum",
     "onchain gaming",
     "blockchain gaming",
     "web3 games",
@@ -126,7 +127,7 @@ export function videoGameJsonLd(game: GameMetadata) {
         url: `${origin}/games/${game.id}`,
         image: `${origin}${OG_IMAGE_PATH}`,
         playMode: "MultiPlayer",
-        gamePlatform: ["Solana", "Stacks"],
+        gamePlatform: ["Solana", "Stacks", "Arbitrum"],
         keywords: SITE_KEYWORDS.join(", "),
         publisher: {
             "@type": "Organization",

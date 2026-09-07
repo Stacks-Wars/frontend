@@ -15,6 +15,7 @@ import type { CustodialWallet, WalletBalance } from "@/lib/api/types"
 import { syncAuthUser } from "@/actions/users"
 import { getServerSession } from "@/lib/auth/session"
 import { PLAY_CLAIM_MIN_MICRO, PLAY_MINT_MICRO } from "@/lib/chain/play"
+import { fundArbitrumTestUsdc } from "@/lib/arbitrum/test-usdc"
 import { fundSolanaTestUsdc } from "@/lib/solana/test-usdc"
 import { fundStacksTestUsdc } from "@/lib/stacks/test-usdc"
 import { waitForTx } from "@/lib/tx/wait-for-tx"
@@ -111,6 +112,9 @@ export async function claimTestUsdc(
             if (signature) {
                 await waitForTx(signature)
             }
+            break
+        case "arbitrum":
+            signature = await fundArbitrumTestUsdc(wallet.address)
             break
     }
 
