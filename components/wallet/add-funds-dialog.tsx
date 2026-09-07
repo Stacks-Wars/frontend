@@ -13,7 +13,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui"
-import { chainAdapter, mintsPlayTokens } from "@/lib/chain"
+import { mintsPlayTokens } from "@/lib/chain"
+import { depositFundsLead, depositFundsWarn } from "@/lib/wallet/deposit-copy"
 import { formatUsdc } from "@/lib/format"
 import { useSessionCurrentChain } from "@/stores/session"
 
@@ -32,7 +33,6 @@ export function AddFundsDialog({
     availableMicro = 0,
 }: AddFundsDialogProps) {
     const chain = useSessionCurrentChain()
-    const token = chainAdapter(chain).playToken
     const shortfall = Math.max(0, requiredMicro - availableMicro)
     const showShortfall = requiredMicro > 0 && shortfall > 0
 
@@ -53,7 +53,7 @@ export function AddFundsDialog({
                               }`
                             : mintsPlayTokens(chain)
                               ? "Paid lobbies take entry from this play wallet."
-                              : `Send ${token} to your custodial address to top up your balance.`}
+                              : `${depositFundsLead(chain)} ${depositFundsWarn(chain)}`}
                     </DialogDescription>
                 </DialogHeader>
 
