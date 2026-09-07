@@ -7,7 +7,12 @@ import { RiCheckLine, RiFileCopyLine, RiLoader4Line } from "@remixicon/react"
 import { getMyDepositWallet, refreshMyBalance } from "@/actions/wallet"
 import { ClaimTestUsdcDialog } from "@/components/wallet/claim-test-usdc-dialog"
 import { Badge, Button, Skeleton } from "@/components/ui"
-import { chainAdapter, mintsPlayTokens } from "@/lib/chain"
+import { mintsPlayTokens } from "@/lib/chain"
+import {
+    depositFundsLead,
+    depositFundsWarn,
+    depositNetworkLabel,
+} from "@/lib/wallet/deposit-copy"
 import { MICRO } from "@/lib/format"
 import { useNotificationActions } from "@/stores/notifications"
 import {
@@ -21,7 +26,6 @@ export function DepositPanel() {
     const { toast } = useNotificationActions()
     const chain = useSessionCurrentChain()
     const balance = useSessionBalance()
-    const token = chainAdapter(chain).playToken
     const [copied, setCopied] = React.useState(false)
     const [checking, setChecking] = React.useState(false)
     const [claimOpen, setClaimOpen] = React.useState(false)
@@ -117,10 +121,10 @@ export function DepositPanel() {
 
     return (
         <div className="space-y-4 rounded-2xl border border-border/70 p-5 surface-raised">
-            <p className="text-sm text-muted-foreground">
-                {token} sent to the address below credits this account. The
-                balance updates once the transfer confirms on-chain.
-            </p>
+            <div className="space-y-1.5 text-sm text-muted-foreground">
+                <p>{depositFundsLead(chain)}</p>
+                <p>{depositFundsWarn(chain)}</p>
+            </div>
 
             {isLoading ? (
                 <Skeleton className="h-16 rounded-xl" />
@@ -156,10 +160,9 @@ export function DepositPanel() {
                             ) : null}
                             I&apos;ve sent it
                         </Button>
-                        <Badge variant="outline">{wallet.network}</Badge>
-                        <span className="text-xs text-muted-foreground">
-                            {token} only. Other tokens are not credited.
-                        </span>
+                        <Badge variant="outline">
+                            {depositNetworkLabel(chain)}
+                        </Badge>
                     </div>
                 </>
             ) : (
