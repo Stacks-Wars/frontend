@@ -1,4 +1,4 @@
-export const CHAIN_IDS = ["solana", "stacks"] as const
+export const CHAIN_IDS = ["solana", "stacks", "arbitrum"] as const
 
 export type ChainId = (typeof CHAIN_IDS)[number]
 
@@ -24,6 +24,21 @@ export function isChainId(value: string): value is ChainId {
 export function parseChainId(value: string | null | undefined): ChainId {
     if (value && isChainId(value)) return value
     return DEFAULT_CHAIN
+}
+
+/** `0x` EOAs first so they are not mistaken for Solana pubkeys. */
+export function inferChainFromAddress(address: string): ChainId | null {
+    const value = address.trim()
+    if (/^0x[0-9a-fA-F]{40}$/.test(value)) return "arbitrum"
+    if (
+        (value.startsWith("SP") || value.startsWith("ST")) &&
+        value.length >= 39 &&
+        /^[0-9A-Z]+$/.test(value)
+    ) {
+        return "stacks"
+    }
+    if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) return "solana"
+    return null
 }
 
 /**

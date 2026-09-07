@@ -11,6 +11,7 @@ export function mintsPlayTokens(chain: ChainId): boolean {
         case "solana":
             return true
         case "stacks":
+        case "arbitrum":
             return isDev()
     }
 }

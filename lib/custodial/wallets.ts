@@ -4,6 +4,7 @@ import { randomSeedPhrase } from "@stacks/wallet-sdk"
 
 import { chainAdapter, type ChainId } from "@/lib/chain"
 import { encryptWithKms, mnemonicAad } from "@/lib/kms/envelope"
+import { deriveArbitrumWalletFromMnemonic } from "@/lib/arbitrum/wallet-from-mnemonic"
 import { deriveCustodialAccountFromMnemonic } from "@/lib/stacks/wallet-from-mnemonic"
 import { deriveSolanaAccountFromMnemonic } from "@/lib/solana/wallet-from-mnemonic"
 
@@ -58,6 +59,27 @@ async function createSolanaMaterial(
     }
 }
 
+async function createArbitrumMaterial(
+    userId: string
+): Promise<CustodialWalletMaterial> {
+    const network = chainAdapter("arbitrum").playNetwork()
+    const mnemonic = randomSeedPhrase(256)
+    const account = deriveArbitrumWalletFromMnemonic(mnemonic)
+    const encrypted = await encryptWithKms(
+        mnemonic,
+        mnemonicAad(userId, network, "arbitrum")
+    )
+
+    return {
+        address: account.address,
+        publicKey: account.publicKey,
+        encryptedSigningMaterial: encrypted.ciphertext,
+        kmsKeyVersion: encrypted.kmsKeyVersion,
+        network,
+        chain: "arbitrum",
+    }
+}
+
 /** Generate + encrypt a custodial wallet for one chain. Persistence is the API. */
 export async function createCustodialWalletMaterial(
     userId: string,
@@ -68,5 +90,7 @@ export async function createCustodialWalletMaterial(
             return createSolanaMaterial(userId)
         case "stacks":
             return createStacksMaterial(userId)
+        case "arbitrum":
+            return createArbitrumMaterial(userId)
     }
 }

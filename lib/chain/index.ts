@@ -4,6 +4,7 @@ export { CHAIN_COOKIE, readStoredChain, writeStoredChain } from "@/lib/chain/sto
 export {
     CHAIN_IDS,
     DEFAULT_CHAIN,
+    inferChainFromAddress,
     isChainId,
     lobbyVisibleOnChain,
     parseChainId,

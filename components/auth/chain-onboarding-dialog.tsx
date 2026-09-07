@@ -28,14 +28,21 @@ import {
 const COPY: Record<ChainId, string> = {
     solana: "Play with USDC on Solana.",
     stacks: "Play with USDCx on Stacks.",
+    arbitrum: "Play with USDC on Arbitrum One.",
 }
 
 function networkBadge(chain: ChainId) {
     const network = chainAdapter(chain).playNetwork()
-    if (network === "mainnet" || network === "mainnet-beta") {
+    if (
+        network === "mainnet" ||
+        network === "mainnet-beta" ||
+        network === "one"
+    ) {
         return chainAdapter(chain).playToken
     }
-    return network === "devnet" ? "Devnet" : "Testnet"
+    if (network === "devnet") return "Devnet"
+    if (network === "sepolia") return "Sepolia"
+    return "Testnet"
 }
 
 export function ChainOnboardingDialog() {
@@ -98,8 +105,7 @@ export function ChainOnboardingDialog() {
                     {CHAIN_IDS.map((id) => {
                         const active = selected === id
                         const badge = networkBadge(id)
-                        const live =
-                            badge === chainAdapter(id).playToken
+                        const live = badge === chainAdapter(id).playToken
                         return (
                             <button
                                 key={id}

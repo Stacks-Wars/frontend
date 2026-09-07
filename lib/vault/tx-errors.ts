@@ -111,7 +111,7 @@ export function humanizeVaultTxError(reason?: string): string {
     if (codes.includes(6008) || /ClaimsStarted/i.test(raw)) {
         return "Claims already started for this lobby."
     }
-    if (codes.includes(6002) || /EmptySeat/i.test(raw)) {
+    if (codes.includes(6002) || /EmptySeat|NotSeated/i.test(raw)) {
         return "You are not in this lobby on-chain."
     }
     if (codes.includes(6007) || /EntryMismatch/i.test(raw)) {
@@ -198,6 +198,18 @@ export function humanizeVaultTxError(reason?: string): string {
     }
     if (/dropped_replace_by_fee|replaced by fee/i.test(raw)) {
         return "The previous join was replaced. Try again."
+    }
+    if (
+        /nonce too low/i.test(raw) ||
+        (/nonce provided/i.test(raw) && /lower than/i.test(raw))
+    ) {
+        return "That transaction didn't land. Try again."
+    }
+    if (/exceeds allowance|insufficient allowance/i.test(raw)) {
+        return "That withdrawal didn't go through. Try again."
+    }
+    if (/already in progress/i.test(raw)) {
+        return "That withdrawal is still wrapping up. Try again in a moment."
     }
     if (/post.condition|abort_by_post_condition/i.test(raw)) {
         if (/\bu202\b/i.test(raw) || /already joined/i.test(raw)) {

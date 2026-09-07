@@ -50,7 +50,7 @@ export default function TermsPage() {
                     </li>
                     <li>
                         We are not a bank, broker, or investment adviser. Play
-                        tokens (USDCx on Stacks, USDC on Solana) are not a
+                        tokens (USDCx on Stacks, USDC on Solana and Arbitrum) are not a
                         deposit. Nothing here is investment advice.
                     </li>
                 </ul>

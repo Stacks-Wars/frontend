@@ -2,6 +2,7 @@
 
 import { syncAuthUser } from "@/actions/users"
 import {
+    abortWithdrawal,
     completeWithdrawal,
     getBalance,
     listWalletActivity,
@@ -17,6 +18,7 @@ import {
     MAX_WITHDRAW_MICRO,
     MIN_WITHDRAW_MICRO,
 } from "@/lib/vault/config"
+import { broadcastArbitrumUsdcTransfer } from "@/lib/arbitrum/withdraw-transfer"
 import { broadcastSolanaUsdcTransfer } from "@/lib/solana/withdraw-transfer"
 import { broadcastUsdcxTransfer } from "@/lib/wallet/withdraw-transfer"
 
@@ -93,27 +95,39 @@ export async function withdrawAction(input: {
         chain,
     })
 
-    let txid: string
-    switch (chain) {
-        case "solana":
-            txid = await broadcastSolanaUsdcTransfer({
-                userId: user.id,
-                amountMicro: prepared.amountMicro,
-                toAddress: prepared.toAddress,
-            })
-            break
-        case "stacks":
-            txid = await broadcastUsdcxTransfer({
-                userId: user.id,
-                amountMicro: prepared.amountMicro,
-                toAddress: prepared.toAddress,
-                usdcxContract: prepared.usdcxContract,
-            })
-            break
+    try {
+        let txid: string
+        switch (chain) {
+            case "solana":
+                txid = await broadcastSolanaUsdcTransfer({
+                    userId: user.id,
+                    amountMicro: prepared.amountMicro,
+                    toAddress: prepared.toAddress,
+                })
+                break
+            case "stacks":
+                txid = await broadcastUsdcxTransfer({
+                    userId: user.id,
+                    amountMicro: prepared.amountMicro,
+                    toAddress: prepared.toAddress,
+                    usdcxContract: prepared.usdcxContract,
+                })
+                break
+            case "arbitrum":
+                txid = await broadcastArbitrumUsdcTransfer({
+                    userId: user.id,
+                    amountMicro: prepared.amountMicro,
+                    toAddress: prepared.toAddress,
+                })
+                break
+        }
+        const balance = await completeWithdrawal({
+            txid,
+            chain,
+        })
+        return { txid, balance }
+    } catch (error) {
+        await abortWithdrawal().catch(() => undefined)
+        throw error
     }
-    const balance = await completeWithdrawal({
-        txid,
-        chain,
-    })
-    return { txid, balance }
 }

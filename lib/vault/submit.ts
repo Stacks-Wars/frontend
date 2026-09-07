@@ -21,6 +21,13 @@ import { getSigningMaterial } from "@/lib/api/server"
 import { chainAdapter, isChainId, type ChainId } from "@/lib/chain"
 import { provisionDestWallet } from "@/lib/custodial/provision-dest"
 import { unlockCustodialAccount } from "@/lib/custodial/unlock"
+import { waitForArbitrumTx } from "@/lib/arbitrum/rpc"
+import {
+    arbitrumVaultClaim,
+    arbitrumVaultJoin,
+    arbitrumVaultKick,
+    arbitrumVaultLeave,
+} from "@/lib/arbitrum/vault"
 import { waitForSolanaSignature } from "@/lib/solana/rpc"
 import {
     solanaVaultClaim,
@@ -77,21 +84,16 @@ function requireVaultChain(chain?: ChainId): ChainId {
     throw new Error("Vault operation is missing a chain")
 }
 
-function assertStacksVault(
-    chain: ChainId
-): asserts chain is Extract<ChainId, "stacks"> {
-    if (chain !== "stacks") {
-        throw new Error(`No vault on ${chain}`)
-    }
-}
-
-/** Prefer the explicit chain. 64-hex is Stacks; do not use parseChainId. */
+/** Prefer the explicit chain. 0x+64 hex is Arbitrum; bare 64-hex is Stacks. */
 function resolveVaultWaitChain(
     chain: ChainId | undefined,
     txid: string
 ): ChainId {
     if (chain && isChainId(chain)) return chain
-    return /^[0-9a-fA-F]{64}$/.test(txid.trim()) ? "stacks" : "solana"
+    const value = txid.trim()
+    if (/^0x[0-9a-fA-F]{64}$/.test(value)) return "arbitrum"
+    if (/^[0-9a-fA-F]{64}$/.test(value)) return "stacks"
+    return "solana"
 }
 
 /** One sponsor account; parallel claims must not share a nonce. */
@@ -179,6 +181,13 @@ export async function waitForVaultTx(
     switch (chain) {
         case "solana":
             return waitForSolanaSignature(txid, undefined, options?.maxWaitMs)
+        case "arbitrum": {
+            const hash = txid.startsWith("0x") ? txid : `0x${txid}`
+            return waitForArbitrumTx(
+                hash as `0x${string}`,
+                options?.maxWaitMs
+            )
+        }
         case "stacks":
             break
     }
@@ -214,7 +223,7 @@ export async function resumeVaultTxOrDiscard(input: {
     recover?: VaultCallLookup
 }): Promise<string | null> {
     const chain = resolveVaultWaitChain(input.chain, input.txid)
-    if (chain === "solana") {
+    if (chain === "solana" || chain === "arbitrum") {
         return waitForVaultTx(input.txid, {
             discardDraftsOnFailure: input.drafts,
             chain,
@@ -313,7 +322,45 @@ export async function vaultJoinOnChain(input: {
             chain,
         })
     }
-    assertStacksVault(chain)
+    if (chain === "arbitrum") {
+        if (input.resumeTxid) {
+            return waitForVaultTx(input.resumeTxid, {
+                discardDraftsOnFailure: [
+                    { kind: "join", lobbyPath: input.lobbyPath },
+                    { kind: "create", lobbyPath: input.lobbyPath },
+                ],
+                chain,
+            })
+        }
+        const txid = await arbitrumVaultJoin({
+            userId: input.userId,
+            lobbyPath: input.lobbyPath,
+            amountMicro: input.transferMicro || input.entryAmountMicro,
+        })
+        try {
+            const { saveVaultDraft } = await import("@/lib/api/server")
+            await saveVaultDraft({
+                kind: "join",
+                lobbyPath: input.lobbyPath,
+                txid,
+                entryAmountMicro: input.entryAmountMicro,
+                transferMicro: input.transferMicro,
+                sponsored: input.sponsored,
+            })
+        } catch (error) {
+            console.error("[vault] failed to persist join draft", error)
+        }
+        if (input.wait === false) {
+            return txid
+        }
+        return waitForVaultTx(txid, {
+            discardDraftsOnFailure: [
+                { kind: "join", lobbyPath: input.lobbyPath },
+                { kind: "create", lobbyPath: input.lobbyPath },
+            ],
+            chain,
+        })
+    }
     const player = await loadPlayerKey(input.userId)
     const recover: VaultCallLookup = {
         sender: player.address,
@@ -399,7 +446,13 @@ export async function vaultLeaveOnChain(input: {
             playerAddress: material.address,
         })
     }
-    assertStacksVault(chain)
+    if (chain === "arbitrum") {
+        const material = await getSigningMaterial(input.userId, "arbitrum")
+        return arbitrumVaultLeave({
+            lobbyPath: input.lobbyPath,
+            playerAddress: material.address,
+        })
+    }
     if (input.resumeTxid) {
         return waitForVaultTx(input.resumeTxid, {
             discardDraftsOnFailure: [
@@ -476,7 +529,12 @@ export async function vaultKickOnChain(input: {
             playerAddress: input.targetAddress,
         })
     }
-    assertStacksVault(chain)
+    if (chain === "arbitrum") {
+        return arbitrumVaultKick({
+            lobbyPath: input.lobbyPath,
+            playerAddress: input.targetAddress,
+        })
+    }
     const player = await loadPlayerKey(input.actorUserId)
     const txid = await broadcastKick({
         senderKey: player.senderKey,
@@ -504,7 +562,12 @@ export async function vaultKickAsPlatform(input: {
             playerAddress: input.targetAddress,
         })
     }
-    assertStacksVault(chain)
+    if (chain === "arbitrum") {
+        return arbitrumVaultKick({
+            lobbyPath: input.lobbyPath,
+            playerAddress: input.targetAddress,
+        })
+    }
     const platform = await getPlatformAccount()
     const txid = await broadcastKick({
         senderKey: platform.privateKey,
@@ -609,7 +672,16 @@ export async function vaultClaimOnChain(input: {
             devAddress: dest.devWallet,
         })
     }
-    assertStacksVault(chain)
+    if (chain === "arbitrum") {
+        const material = await getSigningMaterial(input.userId, "arbitrum")
+        return arbitrumVaultClaim({
+            lobbyPath: input.lobbyPath,
+            playerAddress: material.address,
+            amountMicro: input.amountMicro,
+            destFeePct: dest.devFee,
+            destAddress: dest.devWallet,
+        })
+    }
     const player = await loadPlayerKey(input.userId)
     const recover: VaultCallLookup = {
         sender: player.address,
