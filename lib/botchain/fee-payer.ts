@@ -3,17 +3,17 @@ import "server-only"
 import type { LocalAccount } from "viem/accounts"
 
 import { evmKey } from "@/lib/config"
-import { deriveArbitrumAccountFromMnemonic } from "@/lib/arbitrum/wallet-from-mnemonic"
+import { deriveBotchainAccountFromMnemonic } from "@/lib/botchain/wallet-from-mnemonic"
 
 let cached: LocalAccount | null = null
 
 /**
  * Platform gas payer + vault `msg.sender`. Dest uses the shared play
- * mnemonic; main uses EVM_KEY. Players never need Sepolia ETH.
+ * mnemonic; main uses EVM_KEY. Players never need BOT on dest.
  */
-export function getArbitrumFeePayer(): LocalAccount {
+export function getBotchainFeePayer(): LocalAccount {
     if (!cached) {
-        cached = deriveArbitrumAccountFromMnemonic(evmKey())
+        cached = deriveBotchainAccountFromMnemonic(evmKey())
     }
     return cached
 }

@@ -1,4 +1,4 @@
-export const CHAIN_IDS = ["solana", "stacks", "arbitrum"] as const
+export const CHAIN_IDS = ["solana", "stacks", "arbitrum", "botchain"] as const
 
 export type ChainId = (typeof CHAIN_IDS)[number]
 
@@ -21,12 +21,25 @@ export function isChainId(value: string): value is ChainId {
     return (CHAIN_IDS as readonly string[]).includes(value)
 }
 
+/** Arbitrum and BOT Chain share one signing key per dest/prod cluster. */
+export function isEvmChain(chain: ChainId): boolean {
+    switch (chain) {
+        case "arbitrum":
+        case "botchain":
+            return true
+        case "solana":
+        case "stacks":
+            return false
+    }
+}
+
 export function parseChainId(value: string | null | undefined): ChainId {
     if (value && isChainId(value)) return value
+    if (value?.trim().toLowerCase() === "bot") return "botchain"
     return DEFAULT_CHAIN
 }
 
-/** `0x` EOAs first so they are not mistaken for Solana pubkeys. */
+/** `0x` EOAs first so they are not mistaken for Solana pubkeys. Ambiguous EVM stays Arbitrum. */
 export function inferChainFromAddress(address: string): ChainId | null {
     const value = address.trim()
     if (/^0x[0-9a-fA-F]{40}$/.test(value)) return "arbitrum"
@@ -37,7 +50,9 @@ export function inferChainFromAddress(address: string): ChainId | null {
     ) {
         return "stacks"
     }
-    if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) return "solana"
+    if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) {
+        return "solana"
+    }
     return null
 }
 

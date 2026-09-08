@@ -1,6 +1,6 @@
 "use server"
 
-import { createCustodialWalletMaterial } from "@/lib/custodial/wallets"
+import { provisionCustodialWalletMaterial } from "@/lib/custodial/provision"
 import {
     createCustodialWallet,
     getBalance,
@@ -16,6 +16,7 @@ import { syncAuthUser } from "@/actions/users"
 import { getServerSession } from "@/lib/auth/session"
 import { PLAY_CLAIM_MIN_MICRO, PLAY_MINT_MICRO } from "@/lib/chain/play"
 import { fundArbitrumTestUsdc } from "@/lib/arbitrum/test-usdc"
+import { fundBotchainTestUsdt } from "@/lib/botchain/test-usdt"
 import { fundSolanaTestUsdc } from "@/lib/solana/test-usdc"
 import { fundStacksTestUsdc } from "@/lib/stacks/test-usdc"
 import { waitForTx } from "@/lib/tx/wait-for-tx"
@@ -52,7 +53,7 @@ export async function ensureChainWallet(
             ? existing.address
             : undefined
     if (!address) {
-        const material = await createCustodialWalletMaterial(user.id, chain)
+        const material = await provisionCustodialWalletMaterial(user.id, chain)
         await createCustodialWallet(user.id, material)
         address = material.address
     }
@@ -115,6 +116,9 @@ export async function claimTestUsdc(
             break
         case "arbitrum":
             signature = await fundArbitrumTestUsdc(wallet.address)
+            break
+        case "botchain":
+            signature = await fundBotchainTestUsdt(wallet.address)
             break
     }
 

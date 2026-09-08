@@ -42,8 +42,8 @@ export const MAIN_WS_URL = "wss://api.stackswars.com/app"
 export const MAIN_VAULT_CONTRACT =
     "SP299MBHT7FPPP2SKEY73V4DHW67467SED87A4HH4.sw-vault-v0-0-1"
 
-/** Play deployer on Arbitrum Sepolia. Not the wars key. */
-export const DEV_ARBITRUM_MNEMONIC =
+/** Shared dest play EOA. Same 0x on every dest EVM. Not the wars key. */
+export const DEV_EVM_MNEMONIC =
     "same eagle end broccoli gauge exist unfair public sheriff bronze oyster claw"
 export const DEV_ARBITRUM_USDC =
     "0x554fF14eaA5380a99e765a7748D6eb5A6B1AF8c7"
@@ -53,6 +53,17 @@ export const MAIN_ARBITRUM_USDC =
     "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
 export const MAIN_ARBITRUM_VAULT =
     "0x0B4379B27050048D868376aDBA6a03826bDd6e90"
+
+export const DEV_BOTCHAIN_USDT =
+    "0x5B161eebFE0352F510C2FDf6aFb58C034A99DBf1"
+export const DEV_BOTCHAIN_VAULT =
+    "0xBEa87817C05aB529E62BeAD046A151CdF46d1E19"
+export const MAIN_BOTCHAIN_USDT =
+    "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C"
+export const MAIN_BOTCHAIN_VAULT =
+    "0x9EbDA94b2DE11C001ea1120fA723e8C579376c9C"
+export const BOTCHAIN_PERMIT2 =
+    "0x000000000022D473030F116dDEE9F6B43aC78BA3"
 
 function isMain(): boolean {
     const network = process.env.NETWORK?.trim().toLowerCase()
@@ -160,7 +171,21 @@ export function arbitrumVault(): string {
     )
 }
 
-/** Dest uses the play mnemonic. Main requires ARBITRUM_KEY (wars). */
-export function arbitrumKey(): string {
-    return env("ARBITRUM_KEY", DEV_ARBITRUM_MNEMONIC)
+/** Dest uses the shared play mnemonic. Main requires EVM_KEY (wars). */
+export function evmKey(): string {
+    return env("EVM_KEY", DEV_EVM_MNEMONIC)
+}
+
+export function botchainUsdt(): string {
+    return requireContract(
+        isDev() ? DEV_BOTCHAIN_USDT : MAIN_BOTCHAIN_USDT,
+        "BOT Chain USDT"
+    )
+}
+
+export function botchainVault(): string {
+    return requireContract(
+        isDev() ? DEV_BOTCHAIN_VAULT : MAIN_BOTCHAIN_VAULT,
+        "BOT Chain vault"
+    )
 }

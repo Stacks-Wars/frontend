@@ -5,13 +5,15 @@ export function depositNetworkLabel(chain: ChainId): string {
     const network = chainAdapter(chain).playNetwork()
     switch (chain) {
         case "stacks":
-            return network === "mainnet" ? "Stacks mainnet" : "Stacks testnet"
+            return network === "mainnet" ? "Stacks" : "Stacks testnet"
         case "solana":
             return network === "mainnet" || network === "mainnet-beta"
                 ? "Solana"
                 : "Solana Devnet"
         case "arbitrum":
             return network === "one" ? "Arbitrum One" : "Arbitrum Sepolia"
+        case "botchain":
+            return network === "mainnet" ? "BOT Chain" : "BOT Chain Bohr"
     }
 }
 

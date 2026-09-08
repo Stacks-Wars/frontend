@@ -19,6 +19,7 @@ import {
     MIN_WITHDRAW_MICRO,
 } from "@/lib/vault/config"
 import { broadcastArbitrumUsdcTransfer } from "@/lib/arbitrum/withdraw-transfer"
+import { broadcastBotchainUsdtTransfer } from "@/lib/botchain/withdraw-transfer"
 import { broadcastSolanaUsdcTransfer } from "@/lib/solana/withdraw-transfer"
 import { broadcastUsdcxTransfer } from "@/lib/wallet/withdraw-transfer"
 
@@ -115,6 +116,13 @@ export async function withdrawAction(input: {
                 break
             case "arbitrum":
                 txid = await broadcastArbitrumUsdcTransfer({
+                    userId: user.id,
+                    amountMicro: prepared.amountMicro,
+                    toAddress: prepared.toAddress,
+                })
+                break
+            case "botchain":
+                txid = await broadcastBotchainUsdtTransfer({
                     userId: user.id,
                     amountMicro: prepared.amountMicro,
                     toAddress: prepared.toAddress,
