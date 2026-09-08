@@ -14,7 +14,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { chainAdapter, CHAIN_IDS, type ChainId } from "@/lib/chain"
+import { chainAdapter, CHAIN_IDS, DEFAULT_CHAIN, type ChainId } from "@/lib/chain"
 import { LEGAL_VERSION } from "@/lib/legal"
 import { cn } from "@/lib/utils"
 import { provisionChain } from "@/lib/wallet/provision-chain"
@@ -56,7 +56,7 @@ export function ChainOnboardingDialog() {
     const needsPick = useSessionNeedsChainPick()
     const { setCurrentChain, setBalance, setNeedsChainPick } =
         useSessionActions()
-    const [selected, setSelected] = React.useState<ChainId>("solana")
+    const [selected, setSelected] = React.useState<ChainId>(DEFAULT_CHAIN)
     const [busy, setBusy] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
 

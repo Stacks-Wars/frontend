@@ -1,8 +1,8 @@
-export const CHAIN_IDS = ["solana", "stacks", "arbitrum", "botchain"] as const
+export const CHAIN_IDS = ["botchain", "stacks", "arbitrum", "solana"] as const
 
 export type ChainId = (typeof CHAIN_IDS)[number]
 
-export const DEFAULT_CHAIN: ChainId = "solana"
+export const DEFAULT_CHAIN: ChainId = "botchain"
 
 export type ChainNetwork = string
 
