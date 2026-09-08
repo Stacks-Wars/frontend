@@ -5,6 +5,7 @@ import { randomSeedPhrase } from "@stacks/wallet-sdk"
 import { chainAdapter, type ChainId } from "@/lib/chain"
 import { encryptWithKms, mnemonicAad } from "@/lib/kms/envelope"
 import { deriveArbitrumWalletFromMnemonic } from "@/lib/arbitrum/wallet-from-mnemonic"
+import { deriveBotchainWalletFromMnemonic } from "@/lib/botchain/wallet-from-mnemonic"
 import { deriveCustodialAccountFromMnemonic } from "@/lib/stacks/wallet-from-mnemonic"
 import { deriveSolanaAccountFromMnemonic } from "@/lib/solana/wallet-from-mnemonic"
 
@@ -59,15 +60,19 @@ async function createSolanaMaterial(
     }
 }
 
-async function createArbitrumMaterial(
-    userId: string
+async function createEvmMaterial(
+    userId: string,
+    chain: "arbitrum" | "botchain"
 ): Promise<CustodialWalletMaterial> {
-    const network = chainAdapter("arbitrum").playNetwork()
+    const network = chainAdapter(chain).playNetwork()
     const mnemonic = randomSeedPhrase(256)
-    const account = deriveArbitrumWalletFromMnemonic(mnemonic)
+    const account =
+        chain === "arbitrum"
+            ? deriveArbitrumWalletFromMnemonic(mnemonic)
+            : deriveBotchainWalletFromMnemonic(mnemonic)
     const encrypted = await encryptWithKms(
         mnemonic,
-        mnemonicAad(userId, network, "arbitrum")
+        mnemonicAad(userId, network, chain)
     )
 
     return {
@@ -76,7 +81,7 @@ async function createArbitrumMaterial(
         encryptedSigningMaterial: encrypted.ciphertext,
         kmsKeyVersion: encrypted.kmsKeyVersion,
         network,
-        chain: "arbitrum",
+        chain,
     }
 }
 
@@ -91,6 +96,7 @@ export async function createCustodialWalletMaterial(
         case "stacks":
             return createStacksMaterial(userId)
         case "arbitrum":
-            return createArbitrumMaterial(userId)
+        case "botchain":
+            return createEvmMaterial(userId, chain)
     }
 }

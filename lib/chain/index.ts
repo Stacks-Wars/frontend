@@ -6,6 +6,7 @@ export {
     DEFAULT_CHAIN,
     inferChainFromAddress,
     isChainId,
+    isEvmChain,
     lobbyVisibleOnChain,
     parseChainId,
     type ChainAdapter,

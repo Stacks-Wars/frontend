@@ -19,7 +19,7 @@ import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network"
 
 import { getSigningMaterial } from "@/lib/api/server"
 import { chainAdapter, isChainId, type ChainId } from "@/lib/chain"
-import { provisionDestWallet } from "@/lib/custodial/provision-dest"
+import { provisionDestWallet } from "@/lib/custodial/provision"
 import { unlockCustodialAccount } from "@/lib/custodial/unlock"
 import { waitForArbitrumTx } from "@/lib/arbitrum/rpc"
 import {
@@ -28,6 +28,13 @@ import {
     arbitrumVaultKick,
     arbitrumVaultLeave,
 } from "@/lib/arbitrum/vault"
+import { waitForBotchainTx } from "@/lib/botchain/rpc"
+import {
+    botchainVaultClaim,
+    botchainVaultJoin,
+    botchainVaultKick,
+    botchainVaultLeave,
+} from "@/lib/botchain/vault"
 import { waitForSolanaSignature } from "@/lib/solana/rpc"
 import {
     solanaVaultClaim,
@@ -188,6 +195,13 @@ export async function waitForVaultTx(
                 options?.maxWaitMs
             )
         }
+        case "botchain": {
+            const hash = txid.startsWith("0x") ? txid : `0x${txid}`
+            return waitForBotchainTx(
+                hash as `0x${string}`,
+                options?.maxWaitMs
+            )
+        }
         case "stacks":
             break
     }
@@ -223,7 +237,7 @@ export async function resumeVaultTxOrDiscard(input: {
     recover?: VaultCallLookup
 }): Promise<string | null> {
     const chain = resolveVaultWaitChain(input.chain, input.txid)
-    if (chain === "solana" || chain === "arbitrum") {
+    if (chain === "solana" || chain === "arbitrum" || chain === "botchain") {
         return waitForVaultTx(input.txid, {
             discardDraftsOnFailure: input.drafts,
             chain,
@@ -361,6 +375,45 @@ export async function vaultJoinOnChain(input: {
             chain,
         })
     }
+    if (chain === "botchain") {
+        if (input.resumeTxid) {
+            return waitForVaultTx(input.resumeTxid, {
+                discardDraftsOnFailure: [
+                    { kind: "join", lobbyPath: input.lobbyPath },
+                    { kind: "create", lobbyPath: input.lobbyPath },
+                ],
+                chain,
+            })
+        }
+        const txid = await botchainVaultJoin({
+            userId: input.userId,
+            lobbyPath: input.lobbyPath,
+            amountMicro: input.transferMicro || input.entryAmountMicro,
+        })
+        try {
+            const { saveVaultDraft } = await import("@/lib/api/server")
+            await saveVaultDraft({
+                kind: "join",
+                lobbyPath: input.lobbyPath,
+                txid,
+                entryAmountMicro: input.entryAmountMicro,
+                transferMicro: input.transferMicro,
+                sponsored: input.sponsored,
+            })
+        } catch (error) {
+            console.error("[vault] failed to persist join draft", error)
+        }
+        if (input.wait === false) {
+            return txid
+        }
+        return waitForVaultTx(txid, {
+            discardDraftsOnFailure: [
+                { kind: "join", lobbyPath: input.lobbyPath },
+                { kind: "create", lobbyPath: input.lobbyPath },
+            ],
+            chain,
+        })
+    }
     const player = await loadPlayerKey(input.userId)
     const recover: VaultCallLookup = {
         sender: player.address,
@@ -453,6 +506,13 @@ export async function vaultLeaveOnChain(input: {
             playerAddress: material.address,
         })
     }
+    if (chain === "botchain") {
+        const material = await getSigningMaterial(input.userId, "botchain")
+        return botchainVaultLeave({
+            lobbyPath: input.lobbyPath,
+            playerAddress: material.address,
+        })
+    }
     if (input.resumeTxid) {
         return waitForVaultTx(input.resumeTxid, {
             discardDraftsOnFailure: [
@@ -535,6 +595,12 @@ export async function vaultKickOnChain(input: {
             playerAddress: input.targetAddress,
         })
     }
+    if (chain === "botchain") {
+        return botchainVaultKick({
+            lobbyPath: input.lobbyPath,
+            playerAddress: input.targetAddress,
+        })
+    }
     const player = await loadPlayerKey(input.actorUserId)
     const txid = await broadcastKick({
         senderKey: player.senderKey,
@@ -564,6 +630,12 @@ export async function vaultKickAsPlatform(input: {
     }
     if (chain === "arbitrum") {
         return arbitrumVaultKick({
+            lobbyPath: input.lobbyPath,
+            playerAddress: input.targetAddress,
+        })
+    }
+    if (chain === "botchain") {
+        return botchainVaultKick({
             lobbyPath: input.lobbyPath,
             playerAddress: input.targetAddress,
         })
@@ -675,6 +747,16 @@ export async function vaultClaimOnChain(input: {
     if (chain === "arbitrum") {
         const material = await getSigningMaterial(input.userId, "arbitrum")
         return arbitrumVaultClaim({
+            lobbyPath: input.lobbyPath,
+            playerAddress: material.address,
+            amountMicro: input.amountMicro,
+            destFeePct: dest.devFee,
+            destAddress: dest.devWallet,
+        })
+    }
+    if (chain === "botchain") {
+        const material = await getSigningMaterial(input.userId, "botchain")
+        return botchainVaultClaim({
             lobbyPath: input.lobbyPath,
             playerAddress: material.address,
             amountMicro: input.amountMicro,

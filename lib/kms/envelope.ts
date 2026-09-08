@@ -9,6 +9,7 @@ import {
 
 import { KeyManagementServiceClient } from "@google-cloud/kms"
 
+import { isChainId, isEvmChain } from "@/lib/chain/types"
 import { isDev, LOCAL_CUSTODIAL_SECRET, optional } from "@/lib/config"
 import { getKmsConfig } from "@/lib/kms/config"
 
@@ -26,7 +27,7 @@ export type SealedMnemonic = {
 
 /**
  * Cloud KMS version 1 (and `local:dev1`) has no AAD.
- * Version 2+ (and `local:dev2`) is bound to `wallet:{id}:stacks:{network}`.
+ * Version 2+ (and `local:dev2`) is bound to `mnemonicAad(...)`.
  */
 export function kmsWrapVersion(kmsKeyVersion: string): number {
     const gcp = kmsKeyVersion.match(/\/cryptoKeyVersions\/(\d+)$/)
@@ -71,16 +72,63 @@ function aadBytes(aad: string | undefined): Buffer | undefined {
     return Buffer.from(aad, "utf8")
 }
 
+export type EvmKeyCluster = "testnet" | "mainnet"
+
 /**
- * Bind ciphertext to a wallet row. Stacks v2 rows stay
- * `wallet:{userId}:stacks:{network}` so existing envelopes still open.
+ * Dest Arb Sepolia + dest Bot Bohr share `evm:testnet`.
+ * Prod Arb One + prod Bot mainnet share `evm:mainnet`.
+ * Dest and prod envelopes never mix.
+ */
+export function evmKeyCluster(network: string): EvmKeyCluster {
+    switch (network.trim().toLowerCase()) {
+        case "sepolia":
+        case "bohr":
+        case "testnet":
+            return "testnet"
+        case "one":
+        case "mainnet":
+            return "mainnet"
+        default:
+            throw new Error(
+                `Unknown EVM network for custodial key cluster: ${network}`
+            )
+    }
+}
+
+/**
+ * Bind ciphertext to a wallet row. Stacks and Solana stay
+ * `wallet:{userId}:{chain}:{network}`. EVM chains share one envelope
+ * per dest/prod cluster: `wallet:{userId}:evm:testnet|mainnet`.
  */
 export function mnemonicAad(
     userId: string,
     network: string,
     chain = "stacks"
 ): string {
+    if (isChainId(chain) && isEvmChain(chain)) {
+        return `wallet:${userId}:evm:${evmKeyCluster(network)}`
+    }
     return `wallet:${userId}:${chain}:${network}`
+}
+
+/** Per-chain EVM AADs used before the shared `evm:{cluster}` family. */
+export function legacyEvmMnemonicAads(
+    userId: string,
+    network: string,
+    chain: string
+): string[] {
+    const cluster = evmKeyCluster(network)
+    const byCluster =
+        cluster === "testnet"
+            ? [
+                  `wallet:${userId}:arbitrum:sepolia`,
+                  `wallet:${userId}:botchain:bohr`,
+              ]
+            : [
+                  `wallet:${userId}:arbitrum:one`,
+                  `wallet:${userId}:botchain:mainnet`,
+              ]
+    return [...new Set([`wallet:${userId}:${chain}:${network}`, ...byCluster])]
 }
 
 function encryptWithDevSecret(

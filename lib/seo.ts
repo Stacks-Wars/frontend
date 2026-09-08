@@ -21,6 +21,7 @@ export const SITE_KEYWORDS = [
     "gaming on solana",
     "gaming on stacks",
     "gaming on arbitrum",
+    "gaming on bot chain",
     "onchain gaming",
     "blockchain gaming",
     "web3 games",

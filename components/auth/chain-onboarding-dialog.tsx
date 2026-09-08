@@ -29,6 +29,7 @@ const COPY: Record<ChainId, string> = {
     solana: "Play with USDC on Solana.",
     stacks: "Play with USDCx on Stacks.",
     arbitrum: "Play with USDC on Arbitrum One.",
+    botchain: "Play with USDT on BOT Chain.",
 }
 
 function networkBadge(chain: ChainId) {
@@ -42,6 +43,7 @@ function networkBadge(chain: ChainId) {
     }
     if (network === "devnet") return "Devnet"
     if (network === "sepolia") return "Sepolia"
+    if (network === "bohr") return "Bohr"
     return "Testnet"
 }
 

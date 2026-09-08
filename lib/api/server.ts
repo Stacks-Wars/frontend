@@ -966,6 +966,17 @@ export async function getSigningMaterial(
     userId: string,
     chain: ChainId
 ): Promise<SigningMaterial> {
+    const material = await getSigningMaterialOrNull(userId, chain)
+    if (!material) {
+        throw new Error(`Failed to load signing material (404)`)
+    }
+    return material
+}
+
+export async function getSigningMaterialOrNull(
+    userId: string,
+    chain: ChainId
+): Promise<SigningMaterial | null> {
     const response = await fetch(
         `${getApiBaseUrl()}/wallet/custodial/${userId}/signing-material?${chainQuery(chain)}`,
         {
@@ -974,6 +985,9 @@ export async function getSigningMaterial(
             cache: "no-store",
         }
     )
+    if (response.status === 404) {
+        return null
+    }
     if (!response.ok) {
         throw new Error(`Failed to load signing material (${response.status})`)
     }
@@ -1009,6 +1023,7 @@ export async function updateCustodialEncryption(
         encryptedSigningMaterial: string
         kmsKeyVersion: string
         chain?: ChainId
+        rewrap?: boolean
     }
 ): Promise<void> {
     const response = await fetch(

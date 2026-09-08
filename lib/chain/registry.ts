@@ -1,4 +1,5 @@
 import { arbitrumAdapter } from "@/lib/chain/arbitrum"
+import { botchainAdapter } from "@/lib/chain/botchain"
 import { solanaAdapter } from "@/lib/chain/solana"
 import { stacksAdapter } from "@/lib/chain/stacks"
 import type { ChainAdapter, ChainId } from "@/lib/chain/types"
@@ -7,6 +8,7 @@ const ADAPTERS: Record<ChainId, ChainAdapter> = {
     stacks: stacksAdapter,
     solana: solanaAdapter,
     arbitrum: arbitrumAdapter,
+    botchain: botchainAdapter,
 }
 
 export function chainAdapter(chain: ChainId): ChainAdapter {
