@@ -111,26 +111,6 @@ export function mnemonicAad(
     return `wallet:${userId}:${chain}:${network}`
 }
 
-/** Per-chain EVM AADs used before the shared `evm:{cluster}` family. */
-export function legacyEvmMnemonicAads(
-    userId: string,
-    network: string,
-    chain: string
-): string[] {
-    const cluster = evmKeyCluster(network)
-    const byCluster =
-        cluster === "testnet"
-            ? [
-                  `wallet:${userId}:arbitrum:sepolia`,
-                  `wallet:${userId}:botchain:bohr`,
-              ]
-            : [
-                  `wallet:${userId}:arbitrum:one`,
-                  `wallet:${userId}:botchain:mainnet`,
-              ]
-    return [...new Set([`wallet:${userId}:${chain}:${network}`, ...byCluster])]
-}
-
 function encryptWithDevSecret(
     plaintext: string,
     secret: string,
