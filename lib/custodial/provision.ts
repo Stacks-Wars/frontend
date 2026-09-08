@@ -10,7 +10,6 @@ import {
     createCustodialWalletInternal,
     getSigningMaterialOrNull,
 } from "@/lib/api/server"
-import { rewrapEvmSigningMaterial } from "@/lib/custodial/unlock"
 import {
     createCustodialWalletMaterial,
     type CustodialWalletMaterial,
@@ -35,12 +34,11 @@ export async function provisionCustodialWalletMaterial(
         const secret = await getSigningMaterialOrNull(userId, sibling)
         if (!secret) continue
         if (evmKeyCluster(secret.network) !== cluster) continue
-        const reused = await rewrapEvmSigningMaterial(secret)
         return {
-            address: reused.address,
-            publicKey: reused.publicKey,
-            encryptedSigningMaterial: reused.encryptedSigningMaterial,
-            kmsKeyVersion: reused.kmsKeyVersion,
+            address: secret.address,
+            publicKey: secret.publicKey,
+            encryptedSigningMaterial: secret.encryptedSigningMaterial,
+            kmsKeyVersion: secret.kmsKeyVersion,
             network: chainAdapter(chain).playNetwork(),
             chain,
         }

@@ -1023,7 +1023,6 @@ export async function updateCustodialEncryption(
         encryptedSigningMaterial: string
         kmsKeyVersion: string
         chain?: ChainId
-        rewrap?: boolean
     }
 ): Promise<void> {
     const response = await fetch(
