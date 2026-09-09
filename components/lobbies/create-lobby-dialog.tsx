@@ -78,8 +78,7 @@ export function CreateLobbyDialog({
     const balance = useSessionBalance()
 
     const [picked, setPicked] = React.useState<string | null>(null)
-    // Falls through to the catalogue default, which may arrive after mount.
-    const selectedGame = picked ?? gameId ?? games[0]?.id ?? ""
+    const selectedGame = picked ?? gameId ?? ""
     const [name, setName] = React.useState(() => randomLobbyName())
     const [description, setDescription] = React.useState("")
     const [entryUsd, setEntryUsd] = React.useState("0")
@@ -204,7 +203,7 @@ export function CreateLobbyDialog({
                     incompleteDraft.description ??
                     (description.trim() || undefined),
                 gameId:
-                    incompleteDraft.gameId || selectedGame || games[0]?.id || "",
+                    incompleteDraft.gameId || selectedGame || "",
                 isPrivate: Boolean(incompleteDraft.isPrivate),
                 isSponsored: Boolean(
                     incompleteDraft.isSponsored ?? incompleteDraft.sponsored
