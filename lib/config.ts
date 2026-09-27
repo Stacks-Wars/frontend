@@ -5,7 +5,7 @@
 
 export const LOCAL_INTERNAL_API_SECRET = "sw-dev-internal"
 export const LOCAL_DATABASE_URL =
-    "postgres://postgres:postgres@127.0.0.1:5433/stacks_wars"
+    "postgres://postgres:postgres@127.0.0.1:5434/stacks_wars"
 export const LOCAL_BETTER_AUTH_SECRET =
     "sw-dev-better-auth-secret-min-32-chars!"
 export const LOCAL_CUSTODIAL_SECRET = "sw-dev-custodial-secret"
