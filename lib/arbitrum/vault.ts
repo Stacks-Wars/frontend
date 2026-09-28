@@ -30,7 +30,7 @@ async function sendVault(write: (nonce: number) => Promise<Hex>): Promise<string
         return await sendArbitrumPlatformTx(write)
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        throw new Error(humanizeVaultTxError(message))
+        throw new Error(humanizeVaultTxError(message, "arbitrum"))
     }
 }
 

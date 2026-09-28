@@ -86,6 +86,17 @@ After reconnect, use the existing snapshot/resync path. Do not invent a second p
 
 Play funds settle on the chain the player picked. Address format, vault calls, and explorer URLs live behind `lib/chain` adapters — do not sprinkle chain names through games or room UI. Individual official chain explorers are the source of truth for balances. Wire fields use `address`, not chain-prefixed names. Do not add a second wallet path (browser extensions) for play funds. Custodial play tokens only.
 
+Each chain charges its own entry token — Stacks USDCx, Solana and Arbitrum USDC, BOT Chain **USDT** — from `chainAdapter(chain).playToken`. Never hardcode a token name in a message; pass the chain to `humanizeVaultTxError` so it can name the right one.
+
+### Gas has to be funded, and it is not the player's token
+
+Joins are platform-sponsored, but two native-gas balances still have to exist:
+
+- **BOT Chain main**: official USDT has no permit, so each new player sends a one-time `approve` for Permit2 **from their own account**. `ensureBotchainPermit2Allowance` tops them up with `DUST_BOT` (0.05 BOT) when they hold less than `MIN_PLAYER_BOT`. The platform payer (`EVM_KEY`) must therefore hold BOT. If it runs dry, _every_ new player on main fails at join — top it up (`0xD456920A03D7F01864DafA4AB3709ACc999033Aa` on mainnet).
+- **Solana**: the platform fee payer covers fees and rent, so it needs SOL.
+
+A native-gas shortfall is a platform funding problem, not a missing player balance. `humanizeVaultTxError` reports EVM gas shortfalls as a temporary fee problem; keep it that way, because "add funds" sends players to a wallet that was already funded.
+
 ## Solana MCP
 
 For Solana-related work, prefer the Solana Developer MCP tools over model memory.

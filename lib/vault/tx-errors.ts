@@ -12,6 +12,8 @@
  * or platform ATA.
  */
 
+import { chainAdapter, isEvmChain, type ChainId } from "@/lib/chain"
+
 /** Abort reasons that mean the operation already applied — safe to treat as ok. */
 const IDEMPOTENT_SUCCESS = [
     /\(err u202\)/i, // ERR-ALREADY-JOINED
@@ -59,6 +61,21 @@ function customProgramCodes(raw: string): number[] {
     return [...new Set(codes.filter((n) => Number.isFinite(n)))]
 }
 
+/**
+ * The entry token this chain actually charges. BOT Chain takes USDT, so
+ * defaulting to "USDC" told players to go find a token that chain never uses.
+ */
+function entryToken(chain?: ChainId): string | null {
+    return chain ? chainAdapter(chain).playToken : null
+}
+
+function notEnoughEntryFunds(chain?: ChainId): string {
+    const token = entryToken(chain)
+    return token
+        ? `Not enough ${token} to cover the entry. Add funds, then try again.`
+        : "Not enough funds to cover the entry. Add funds, then try again."
+}
+
 export const TX_PROCESSING_MESSAGE =
     "Transaction is processing on chain. Please wait."
 
@@ -93,7 +110,10 @@ export function shouldDiscardVaultDraftOnFailure(reason?: string): boolean {
     return true
 }
 
-export function humanizeVaultTxError(reason?: string): string {
+export function humanizeVaultTxError(
+    reason?: string,
+    chain?: ChainId
+): string {
     const raw = expandSolanaKitError(
         reason?.trim() || "vault transaction failed"
     )
@@ -145,6 +165,25 @@ export function humanizeVaultTxError(reason?: string): string {
     if (codes.includes(2012) || /ConstraintAddress/i.test(raw)) {
         return "The platform wallet on this transaction does not match the vault."
     }
+    // EVM "insufficient funds for gas * price + value" is about the native gas
+    // token, and this platform sponsors gas, so the wallet named in the error is
+    // usually the platform's — not the player's entry token. Answering with the
+    // token message below sent players chasing a balance that was already fine.
+    if (
+        chain !== undefined &&
+        isEvmChain(chain) &&
+        /insufficient funds for gas|exceeds the balance of the account/i.test(raw)
+    ) {
+        return "The network fee couldn't be covered. Try again in a moment."
+    }
+    // EVM token shortfall, as opposed to the gas shortfall above.
+    if (
+        /ERC20InsufficientBalance|ERC20: transfer amount exceeds balance|transfer amount exceeds balance/i.test(
+            raw
+        )
+    ) {
+        return notEnoughEntryFunds(chain)
+    }
     if (
         (codes.includes(1) && codes.every((code) => code < 2000)) ||
         /custom program error:\s*0x1\b/i.test(raw) ||
@@ -153,7 +192,7 @@ export function humanizeVaultTxError(reason?: string): string {
         if (/rent/i.test(raw)) {
             return "The platform wallet needs more SOL to cover rent. Try again in a moment."
         }
-        return "Not enough USDC to cover the entry. Add funds, then try again."
+        return notEnoughEntryFunds(chain)
     }
     if (/InsufficientFundsForRent|insufficient funds for rent/i.test(raw)) {
         return "The platform wallet needs more SOL to cover rent. Try again in a moment."

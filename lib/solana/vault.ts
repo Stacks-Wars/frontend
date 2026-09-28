@@ -165,7 +165,7 @@ async function sendSponsored(instructions: Instruction[]) {
             value.lastValidBlockHeight
         )
     } catch (error) {
-        throw new Error(humanizeVaultTxError(solanaErrorText(error)))
+        throw new Error(humanizeVaultTxError(solanaErrorText(error), "solana"))
     }
 }
 
@@ -202,7 +202,7 @@ async function sendOrReuse(
         }
         throw error instanceof Error
             ? error
-            : new Error(humanizeVaultTxError(raw))
+            : new Error(humanizeVaultTxError(raw, "solana"))
     }
 }
 
