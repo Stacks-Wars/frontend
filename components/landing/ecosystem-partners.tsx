@@ -27,8 +27,10 @@ const PARTNERS = [
 ]
 
 export function EcosystemPartners() {
+    // scroll-mt clears the 64px sticky header so the heading is not hidden when
+    // the section is deep-linked.
     return (
-        <section className="space-y-5">
+        <section id="partners" className="scroll-mt-20 space-y-5">
             <SectionHeader title="Ecosystem partners" />
             <div className="flex flex-wrap items-center gap-x-8 gap-y-5 sm:gap-x-12">
                 {PARTNERS.map((partner, index) => (
