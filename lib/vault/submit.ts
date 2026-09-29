@@ -220,7 +220,7 @@ export async function waitForVaultTx(
         if (shouldDiscardVaultDraftOnFailure(wait.reason)) {
             await discardDrafts(options?.discardDraftsOnFailure)
         }
-        throw new Error(humanizeVaultTxError(wait.reason))
+        throw new Error(humanizeVaultTxError(wait.reason, chain))
     }
     return txid
 }

@@ -17,6 +17,15 @@ import { BOTCHAIN_PERMIT2, botchainUsdt, isDev } from "@/lib/config"
 const PERMIT2 = BOTCHAIN_PERMIT2 as Address
 const DUST_BOT = parseEther("0.05")
 const MIN_PLAYER_BOT = parseEther("0.01")
+/** Generous ceiling for the player's one-time approve, used to size the top-up. */
+const APPROVE_GAS_LIMIT = BigInt(100_000)
+
+/**
+ * Shown when the platform cannot fund a new player's gas. The player's USDT is
+ * irrelevant here, so the message must not send them to the wallet page.
+ */
+export const PLATFORM_GAS_SHORTFALL_MESSAGE =
+    "Match payments are briefly unavailable. Try again in a few minutes."
 
 type SignTypedData = (typed: {
     domain: {
@@ -88,6 +97,20 @@ export async function ensureBotchainPermit2Allowance(input: {
     if (botBalance < MIN_PLAYER_BOT) {
         const payer = getBotchainFeePayer()
         const payerWallet = botchainWalletClient(payer)
+        // The player's approve below is sent from their own account, so they
+        // need native gas. Check the platform can actually cover the top-up:
+        // otherwise the send fails with a generic low-balance error that reads
+        // like the player's own funds are the problem.
+        const payerBalance = await client.getBalance({ address: payer.address })
+        const gasPrice = await client.getGasPrice()
+        const topUpCost = DUST_BOT + gasPrice * APPROVE_GAS_LIMIT
+        if (payerBalance < topUpCost) {
+            console.error(
+                `[botchain] platform payer ${payer.address} holds ${payerBalance} wei ` +
+                    `but needs ${topUpCost} wei to gas-fund ${input.player}`
+            )
+            throw new Error(PLATFORM_GAS_SHORTFALL_MESSAGE)
+        }
         await sendBotchainPlatformTx((nonce, gasPrice) =>
             payerWallet.sendTransaction({
                 account: payer,

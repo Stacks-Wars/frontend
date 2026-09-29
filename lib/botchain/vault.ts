@@ -36,7 +36,7 @@ async function sendVault(write: (nonce: number, gasPrice: bigint) => Promise<Hex
         return await sendBotchainPlatformTx(write)
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        throw new Error(humanizeVaultTxError(message))
+        throw new Error(humanizeVaultTxError(message, "botchain"))
     }
 }
 
