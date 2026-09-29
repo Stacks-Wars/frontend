@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { PageContainer } from "@/components/common/page-container"
 import { ClosingCta } from "@/components/landing/closing-cta"
+import { EcosystemPartners } from "@/components/landing/ecosystem-partners"
 import { FeaturedGames } from "@/components/landing/featured-games"
 import { GettingStartedRail } from "@/components/quests/getting-started-rail"
 import { Hero } from "@/components/landing/hero"
@@ -102,6 +103,7 @@ export default async function LandingPage() {
 
             <HowItWorks />
             <ClosingCta />
+            <EcosystemPartners />
         </PageContainer>
     )
 }
